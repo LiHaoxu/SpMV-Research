@@ -30,6 +30,9 @@ struct CSR5Arrays : Matrix_Format
 	~CSR5Arrays()
 	{
 		A->destroy();
+		free(a);
+		free(row_ptr);
+		free(ja);
 	}
 
 	void spmv(ValueType * x, ValueType * y);

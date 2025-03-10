@@ -30,8 +30,6 @@ extern "C"{
 #endif
 
 
-extern int prefetch_distance;
-
 double * thread_time_compute, * thread_time_barrier;
 
 #ifndef BLOCK_SIZE

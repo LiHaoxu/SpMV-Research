@@ -44,8 +44,6 @@ using namespace cooperative_groups;
 #endif
 
 
-extern int prefetch_distance;
-
 double * thread_time_compute, * thread_time_barrier;
 
 void
@@ -711,8 +709,8 @@ __device__ void reduce_warp(group_t g, INT_T row, ValueType val, ValueType * res
 	INT_T row_prev;
 	ValueType val_prev;
 	flag = 0xaaaaaaaa; // 10101010101010101010101010101010
-	row_prev = __shfl_sync(flag, row, tidl-1);
-	val_prev = __shfl_sync(flag, val, tidl-1);
+	row_prev = g.shfl_up(row, 1); // __shfl_sync(flag, row, tidl-1);
+	val_prev = g.shfl_up(val, 1); // __shfl_sync(flag, val, tidl-1);
 	if (tidl_one_hot & flag)
 	{
 		if (row == row_prev)
@@ -725,8 +723,8 @@ __device__ void reduce_warp(group_t g, INT_T row, ValueType val, ValueType * res
 		}
 	}
 	flag = 0x88888888; // 10001000100010001000100010001000
-	row_prev = __shfl_sync(flag, row, tidl-2);
-	val_prev = __shfl_sync(flag, val, tidl-2);
+	row_prev = g.shfl_up(row, 2); // __shfl_sync(flag, row, tidl-2);
+	val_prev = g.shfl_up(val, 2); // __shfl_sync(flag, val, tidl-2);
 	if (tidl_one_hot & flag)
 	{
 		if (row == row_prev)
@@ -739,8 +737,8 @@ __device__ void reduce_warp(group_t g, INT_T row, ValueType val, ValueType * res
 		}
 	}
 	flag = 0x80808080; // 10000000100000001000000010000000
-	row_prev = __shfl_sync(flag, row, tidl-4);
-	val_prev = __shfl_sync(flag, val, tidl-4);
+	row_prev = g.shfl_up(row, 4); // __shfl_sync(flag, row, tidl-4);
+	val_prev = g.shfl_up(val, 4); // __shfl_sync(flag, val, tidl-4);
 	if (tidl_one_hot & flag)
 	{
 		if (row == row_prev)
@@ -753,8 +751,8 @@ __device__ void reduce_warp(group_t g, INT_T row, ValueType val, ValueType * res
 		}
 	}
 	flag = 0x80008000; // 10000000000000001000000000000000
-	row_prev = __shfl_sync(flag, row, tidl-8);
-	val_prev = __shfl_sync(flag, val, tidl-8);
+	row_prev = g.shfl_up(row, 8); // __shfl_sync(flag, row, tidl-8);
+	val_prev = g.shfl_up(val, 8); // __shfl_sync(flag, val, tidl-8);
 	if (tidl_one_hot & flag)
 	{
 		if (row == row_prev)
@@ -767,8 +765,8 @@ __device__ void reduce_warp(group_t g, INT_T row, ValueType val, ValueType * res
 		}
 	}
 	flag = 0x80000000; // 10000000000000000000000000000000
-	row_prev = __shfl_sync(flag, row, tidl-16);
-	val_prev = __shfl_sync(flag, val, tidl-16);
+	row_prev = g.shfl_up(row, 16); // __shfl_sync(flag, row, tidl-16);
+	val_prev = g.shfl_up(val, 16); // __shfl_sync(flag, val, tidl-16);
 	if (tidl_one_hot & flag)
 	{
 		if (row == row_prev)
@@ -848,7 +846,7 @@ __device__ ValueType reduce_warp_single_line(group_t g, ValueType val, ValueType
 	// Use XOR mode to perform butterfly reduction
 	for (int i=g.size()/2; i>=1; i/=2)
 	{
-		val += __shfl_xor_sync(0xffffffff, val, i, g.size());   // 'sum' is same on all threads
+		val += g.shfl_xor(val, i); // __shfl_xor_sync(0xffffffff, val, i, g.size());   // 'sum' is same on all threads
 		// val += __shfl_down_sync(0xffffffff, val, i, g.size());   // Only thread 0 has the total sum.
 	}
 	return val;
@@ -974,10 +972,8 @@ __global__ void gpu_kernel_spmv_row_indices_continuous(INT_T * thread_block_i_s,
 void
 compute_csr(CSRArrays * restrict csr, ValueType * restrict x, ValueType * restrict y)
 {
-	// int num_threads = csr->num_threads;
-	int num_blocks = csr->num_blocks;
 	dim3 block_dims(BLOCK_SIZE);
-	dim3 grid_dims(num_blocks);
+	dim3 grid_dims(csr->num_blocks);
 	// long shared_mem_size = BLOCK_SIZE * (sizeof(ValueType));
 	// long shared_mem_size = BLOCK_SIZE * (sizeof(ValueType) + sizeof(INT_T));
 	long shared_mem_size = 0;
@@ -988,7 +984,7 @@ compute_csr(CSRArrays * restrict csr, ValueType * restrict x, ValueType * restri
 		csr->x = x;
 		if(TIME_IT) gpuCudaErrorCheck(cudaEventRecord(csr->startEvent_memcpy_x, csr->stream));
 		memcpy(csr->x_h, x, csr->n * sizeof(ValueType));
-		gpuCudaErrorCheck(cudaMemcpyAsync(csr->x_d, csr->x_h, csr->n * sizeof(*csr->x), cudaMemcpyHostToDevice, csr->stream));
+		gpuCudaErrorCheck(cudaMemcpyAsync(csr->x_d, csr->x_h, csr->n * sizeof(*csr->x_d), cudaMemcpyHostToDevice, csr->stream));
 		if(TIME_IT) gpuCudaErrorCheck(cudaEventRecord(csr->endEvent_memcpy_x, csr->stream));
 		gpuCudaErrorCheck(cudaStreamSynchronize(csr->stream));
 		if(TIME_IT){
@@ -998,8 +994,7 @@ compute_csr(CSRArrays * restrict csr, ValueType * restrict x, ValueType * restri
 			printf("(CUDA) Memcpy x time = %.4lf ms\n", memcpyTime_cuda);
 		}
 
-		// #ifdef PERSISTENT_L2_PREFETCH
-		#if 1
+		#ifdef PERSISTENT_L2_PREFETCH
 			int x_d_size = csr->n * sizeof(*csr->x);
 			gpuCudaErrorCheck(cudaCtxResetPersistingL2Cache()); // This needs to happen every time before running kernel for 1st time for a matrix...
 			if(x_d_size < csr->max_persistent_l2_cache){
@@ -1013,30 +1008,24 @@ compute_csr(CSRArrays * restrict csr, ValueType * restrict x, ValueType * restri
 				gpuCudaErrorCheck(cudaStreamSetAttribute(csr->stream, cudaStreamAttributeAccessPolicyWindow, &attribute));
 			}
 		#endif
-		// #endif
 	}
 
-	// cudaMemsetAsync(csr->y_d, 0, csr->m * sizeof(csr->y_d), csr->stream);
-	cudaMemset(csr->y_d, 0, csr->m * sizeof(csr->y_d));
+	cudaMemsetAsync(csr->y_d, 0, csr->m * sizeof(csr->y_d), csr->stream);
 
 	// cudaFuncCachePreferNone:   no preference for shared memory or L1 (default);
 	// cudaFuncCachePreferShared: prefer larger shared memory and smaller L1 cache;
 	// cudaFuncCachePreferL1:     prefer larger L1 cache and smaller shared memory;
 	gpuCudaErrorCheck(cudaFuncSetCacheConfig(gpu_kernel_spmv_row_indices_continuous, cudaFuncCachePreferL1));
-
-	// gpu_kernel_spmv_row_indices_continuous<<<grid_dims, block_dims, shared_mem_size, csr->stream>>>(csr->thread_block_i_s_d, csr->thread_block_i_e_d, csr->thread_block_j_s_d, csr->thread_block_j_e_d, csr->row_ptr_d, csr->ia_d, csr->ja_d, csr->a_d, csr->m, csr->n, csr->nnz, csr->x_d, csr->y_d);
-	gpu_kernel_spmv_row_indices_continuous<<<grid_dims, block_dims, shared_mem_size>>>(csr->thread_block_i_s_d, csr->thread_block_i_e_d, csr->thread_block_j_s_d, csr->thread_block_j_e_d, csr->row_ptr_d, csr->ia_d, csr->ja_d, csr->a_d, csr->m, csr->n, csr->nnz, csr->x_d, csr->y_d);
-
+	gpu_kernel_spmv_row_indices_continuous<<<grid_dims, block_dims, shared_mem_size, csr->stream>>>(csr->thread_block_i_s_d, csr->thread_block_i_e_d, csr->thread_block_j_s_d, csr->thread_block_j_e_d, csr->row_ptr_d, csr->ia_d, csr->ja_d, csr->a_d, csr->m, csr->n, csr->nnz, csr->x_d, csr->y_d);
 	gpuCudaErrorCheck(cudaPeekAtLastError());
 	gpuCudaErrorCheck(cudaDeviceSynchronize());
-	// gpuCudaErrorCheck(cudaStreamSynchronize(csr->stream));
 
 	if (csr->y == NULL)
 	{
 		csr->y = y;
 
 		if(TIME_IT) gpuCudaErrorCheck(cudaEventRecord(csr->startEvent_memcpy_y, csr->stream));
-		gpuCudaErrorCheck(cudaMemcpyAsync(csr->y_h, csr->y_d, csr->m * sizeof(*csr->y), cudaMemcpyDeviceToHost, csr->stream));
+		gpuCudaErrorCheck(cudaMemcpyAsync(csr->y_h, csr->y_d, csr->m * sizeof(*csr->y_d), cudaMemcpyDeviceToHost, csr->stream));
 		gpuCudaErrorCheck(cudaStreamSynchronize(csr->stream));
 		memcpy(y, csr->y_h, csr->m * sizeof(ValueType));
 		if(TIME_IT) gpuCudaErrorCheck(cudaEventRecord(csr->endEvent_memcpy_y, csr->stream));
