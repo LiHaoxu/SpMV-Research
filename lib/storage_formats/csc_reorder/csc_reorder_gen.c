@@ -1143,8 +1143,8 @@ void update_or_create_col_subgroup(int col, int row_start, int row_finish, col_s
 #undef  csc_extract_subgroups
 #define csc_extract_subgroups  CSC_REORDER_GEN_EXPAND(csc_extract_subgroups)
 void
-csc_extract_subgroups(_TYPE_I * row_idx, _TYPE_I * col_ptr, _TYPE_V * val, 
-					  int m, int n, int nnz, float threshold)
+csc_extract_subgroups(_TYPE_I * row_idx, _TYPE_I * col_ptr, __attribute__((unused)) _TYPE_V * val, 
+					  __attribute__((unused)) int m, int n, __attribute__((unused)) int nnz, float threshold)
 {
 	// Assuming a maximum of 1000 subgroups
 	col_subgroup subgroups[1000];
@@ -1188,11 +1188,11 @@ csc_extract_subgroups(_TYPE_I * row_idx, _TYPE_I * col_ptr, _TYPE_V * val,
 				update_or_create_col_subgroup(i, row_start, row_finish, subgroups, &num_subgroups, threshold);
 		}
 	}
-	printf("extra_population = %d (%.4lf \%)\n", extra_population, extra_population*100.0/n);
-	printf("empty            = %d (%.4lf \%)\n", extra_population2, extra_population2*100.0/n);
+	printf("extra_population = %d (%.4lf%%)\n", extra_population, extra_population*100.0/n);
+	printf("empty            = %d (%.4lf%%)\n", extra_population2, extra_population2*100.0/n);
 	printf("in the end, there are %d subgroups\n", num_subgroups);
 	for (int i = 0; i < num_subgroups; i++) 
-		printf("subgroup #%d: %d - %d\t(population %d - %.4lf %)\n", i+1, subgroups[i].row_start, subgroups[i].row_finish, subgroups[i].population, subgroups[i].population*100.0/n);
+		printf("subgroup #%d: %d - %d\t(population %d - %.4lf%%)\n", i+1, subgroups[i].row_start, subgroups[i].row_finish, subgroups[i].population, subgroups[i].population*100.0/n);
 }
 
 /*****************************************/
@@ -1441,7 +1441,7 @@ csc_split_matrix_batch_n(_TYPE_I * row_idx, _TYPE_I * col_ptr, _TYPE_V * val,
 						 _TYPE_I *** row_idx_split_n_out, _TYPE_I *** col_ptr_split_n_out, _TYPE_V *** val_split_n_out, 
 						 _TYPE_I ** nnz_part_out, _TYPE_I ** n_part_out, 
 						 char *file_in,
-						 int m, int n, int nnz, int batch_n)
+						 int m, int n, __attribute__((unused)) int nnz, int batch_n)
 {
 	int n_b = (n-1 + batch_n) / batch_n;
 	_TYPE_I * nnz_part, * n_part;
@@ -1514,6 +1514,7 @@ csc_split_matrix_batch_n(_TYPE_I * row_idx, _TYPE_I * col_ptr, _TYPE_V * val,
 		}
 	}
 	);
+	printf("time_split = %lf\n", time_split);
 
 	// for(int i=0; i<n_b; i++){
 	// 	if(nnz_part[i] != 0){
@@ -1536,9 +1537,6 @@ csc_split_matrix_batch_n(_TYPE_I * row_idx, _TYPE_I * col_ptr, _TYPE_V * val,
 	// 		}
 	// 	}
 	// }
-
-
-
 
 	// for(int i=0; i<n_b; i++){
 	// 	if(nnz_part[i] != 0){

@@ -1084,7 +1084,7 @@ void
 hashtable_entries_serial(struct hashtable * ht, _TYPE_K ** keys_out, _VC(_TYPE_V ** values_out,) long * num_entries_out)
 {
 	long i, j, k;
-	_TYPE_K * keys;
+	_TYPE_K * keys = NULL;
 	_VC(_TYPE_V * values = NULL;)
 	long num_entries;
 	struct hashtable_bucket * bucket;
