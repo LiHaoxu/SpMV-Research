@@ -141,8 +141,7 @@ struct SELLArray : Matrix_Format
 			{
 				row_cluster_ptr[num_row_clusters] = 0;
 			}
-			scan_reduce_concurrent(row_cluster_ptr, row_cluster_ptr, num_row_clusters+1, 0, 1, 0);
-			// scan_reduce_concurrent(_TYPE_IN * A, _TYPE_OUT * P, long N, _TYPE_OUT zero, const int exclusive, const int backwards);
+			scan_reduce_concurrent(row_cluster_ptr, row_cluster_ptr, num_row_clusters+1, 0, 1, 0);   // scan_reduce_concurrent(_TYPE_IN * A, _TYPE_OUT * P, long N, _TYPE_OUT zero, const int exclusive, const int backwards);
 
 			#pragma omp barrier
 
@@ -238,10 +237,10 @@ compute_sell(SELLArray * sell, ValueType * x , ValueType * y)
 	{
 		long tnum = omp_get_thread_num();
 		struct thread_data * td = tds[tnum];
-		long i;
 		vec_t(VTF, VEC_LEN) zero = vec_set1(VTF, VEC_LEN, 0);
 		__attribute__((unused)) vec_t(VTF, VEC_LEN) val = zero, mul = zero, x_buf = zero, sum = zero;
 		long ii, ii_s, ii_e, jj, jj_s, jj_e;
+		long i;
 		__attribute__((unused)) long k;
 		ii_s = td->ii_s;
 		ii_e = td->ii_e;
@@ -249,7 +248,6 @@ compute_sell(SELLArray * sell, ValueType * x , ValueType * y)
 		// #pragma GCC unroll 2
 		for (ii=ii_s;ii<ii_e;ii++)
 		{
-			// width = (sell->row_cluster_ptr[ii+1] - sell->row_cluster_ptr[ii]) / VEC_LEN;
 			sum = vec_set1(VTF, VEC_LEN, 0);
 			jj_s = sell->row_cluster_ptr[ii];
 			jj_e = sell->row_cluster_ptr[ii+1];

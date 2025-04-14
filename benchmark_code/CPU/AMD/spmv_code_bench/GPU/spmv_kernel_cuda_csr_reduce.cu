@@ -328,7 +328,7 @@ __global__ void gpu_kernel_spmv_row_indices_atomics(INT_T * thread_block_i_s, IN
 	INT_T * ia_buf = (typeof(ia_buf)) &sm[block_size * sizeof(ValueType)];
 	INT_T * ja_rel;
 	ValueType * a_rel;
-	[[gnu::unused]] int i, i_s, i_e, j, j_s, j_e, k, l, p;
+	__attribute__((unused)) int i, i_s, i_e, j, j_s, j_e, k, l, p;
 	i_s = thread_block_i_s[block_id];
 	i_e = thread_block_i_e[block_id];
 	j_s = thread_block_j_s[block_id];
@@ -418,7 +418,7 @@ __global__ void gpu_kernel_spmv_row_indices_continuous(INT_T * thread_block_i_s,
 	INT_T * ia_buf = (typeof(ia_buf)) &sm[block_size * sizeof(ValueType)];
 	INT_T * ja_rel;
 	ValueType * a_rel;
-	[[gnu::unused]] int i, i_s, i_e, j, j_s, j_e, k, l, p;
+	__attribute__((unused)) int i, i_s, i_e, j, j_s, j_e, k, l, p;
 	i_s = thread_block_i_s[block_id];
 	i_e = thread_block_i_e[block_id];
 	j_s = thread_block_j_s[block_id];

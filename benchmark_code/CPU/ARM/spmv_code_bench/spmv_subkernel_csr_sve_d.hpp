@@ -71,7 +71,7 @@ __subkernel_row_csr_vector_SVE(INT_T * restrict ja, ValueType * restrict a, Valu
 	const long vector_length = svcntd();  // Get the number of double elements in an SVE vector
 	svfloat64_t v_a, v_sum, v_x; // __m128d v_a, v_x, v_sum;
 	ValueType sum = 0, sum_v = 0;
-    v_sum = svdup_f64(0.0); // _mm_setzero_pd();
+	v_sum = svdup_f64(0.0); // _mm_setzero_pd();
 	// j_e_vector = j_s + ((j_e - j_s) & mask);
 	j_e_vector = j_s + ((j_e - j_s) & ~(vector_length - 1));  // Align to vector length
 	if (j_s != j_e_vector)

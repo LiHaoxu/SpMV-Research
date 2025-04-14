@@ -566,7 +566,7 @@ safe_mremap_fixed(void * old_address, size_t old_size, size_t new_size, void * n
 
 static
 int
-unlink_cb(const char * fpath, [[gnu::unused]] const struct stat * sb, [[gnu::unused]] int typeflag, [[gnu::unused]] struct FTW * ftwbuf)
+unlink_cb(const char * fpath, __attribute__((unused)) const struct stat * sb, __attribute__((unused)) int typeflag, __attribute__((unused)) struct FTW * ftwbuf)
 {
 	int rv = remove(fpath);
 	if (rv)

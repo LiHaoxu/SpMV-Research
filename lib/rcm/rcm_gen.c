@@ -123,17 +123,17 @@ reduce_sum(_TYPE_I x, _TYPE_I y)
 #undef  reverse_cuthill_mckee
 #define reverse_cuthill_mckee  RCM_GEN_EXPAND(reverse_cuthill_mckee)
 void
-reverse_cuthill_mckee(_TYPE_I * row_ptr, _TYPE_I * col_idx, [[gnu::unused]] _TYPE_V * values, long m, [[gnu::unused]] long n, [[gnu::unused]] long nnz, long sort_columns,
+reverse_cuthill_mckee(_TYPE_I * row_ptr, _TYPE_I * col_idx, __attribute__((unused)) _TYPE_V * values, long m, __attribute__((unused)) long n, __attribute__((unused)) long nnz, long sort_columns,
 	_TYPE_I ** reordered_row_ptr_ret, _TYPE_I ** reordered_col_idx_ret, _TYPE_V ** reordered_values_ret, _TYPE_I ** permutation_ret)
 {
 	int num_threads = safe_omp_get_num_threads();
 	long R_n = 0, R_n_prev = 0;
-	[[gnu::cleanup(cleanup_free)]] _TYPE_I * R = (typeof(R)) malloc(m * sizeof(*R));   // Visited vertices.
-	[[gnu::cleanup(cleanup_free)]] _TYPE_I * position_in_R = (typeof(R)) malloc(m * sizeof(*R));
-	[[gnu::cleanup(cleanup_free)]] char * A_flag = (typeof(A_flag)) malloc(m * sizeof(*A_flag));   // New frontier membership flags for each vertex.
-	[[gnu::cleanup(cleanup_free)]] _TYPE_I * A = (typeof(A)) malloc(m * sizeof(*A));   // New frontier.
-	[[gnu::cleanup(cleanup_free)]] _TYPE_I * A_min_pred_pos = (typeof(A_min_pred_pos)) malloc(m * sizeof(*A_min_pred_pos));   // New frontier vertices neighbour with minimum position in R.
-	[[gnu::unused]] long i;
+	__attribute__((cleanup(cleanup_free))) _TYPE_I * R = (typeof(R)) malloc(m * sizeof(*R));   // Visited vertices.
+	__attribute__((cleanup(cleanup_free))) _TYPE_I * position_in_R = (typeof(R)) malloc(m * sizeof(*R));
+	__attribute__((cleanup(cleanup_free))) char * A_flag = (typeof(A_flag)) malloc(m * sizeof(*A_flag));   // New frontier membership flags for each vertex.
+	__attribute__((cleanup(cleanup_free))) _TYPE_I * A = (typeof(A)) malloc(m * sizeof(*A));   // New frontier.
+	__attribute__((cleanup(cleanup_free))) _TYPE_I * A_min_pred_pos = (typeof(A_min_pred_pos)) malloc(m * sizeof(*A_min_pred_pos));   // New frontier vertices neighbour with minimum position in R.
+	__attribute__((unused)) long i;
 
 	if (m <= 0)
 		error("empty matrix");

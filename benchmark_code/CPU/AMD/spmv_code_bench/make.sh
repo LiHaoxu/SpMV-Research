@@ -33,8 +33,10 @@ elif [[ -d "/local/pmpakos/arm-compiler/gcc-13.2.0_Ubuntu-22.04/bin" ]]; then
     gcc_bin=/local/pmpakos/arm-compiler/gcc-13.2.0_Ubuntu-22.04/bin/gcc
     gpp_bin=/local/pmpakos/arm-compiler/gcc-13.2.0_Ubuntu-22.04/bin/g++
 else
-    gcc_bin=gcc
-    gpp_bin=g++
+    # gcc_bin=gcc
+    # gpp_bin=g++
+    gcc_bin=clang
+    gpp_bin=clang++
 fi
 
 
@@ -71,8 +73,8 @@ CFLAGS=''
 CFLAGS+=" -Wall -Wextra"
 CFLAGS+=" -pipe"  # Tells the compiler to use pipes instead of temporary files (faster compilation, but uses more memory).
 # CFLAGS+=" -Wno-unused-variable"
-CFLAGS+=" -Wno-alloc-size-larger-than"
-CFLAGS+=" -fno-unsigned-char"
+# CFLAGS+=" -Wno-alloc-size-larger-than"
+CFLAGS+=" -fsigned-char"
 CFLAGS+=" -fopenmp"
 
 CFLAGS+=" -D'_GNU_SOURCE'"

@@ -1314,7 +1314,6 @@ csr_value_distances_from_cluster_centers(char * title_base, double * vals, doubl
 	long buf_n = strlen(title_base) + 1 + 1000;
 	char buf[buf_n], buf_title[buf_n];
 	// long num_bins = 1024;
-	double time;
 
 	double vals_min;
 	// double vals_grouped_ctz_avg;
@@ -1337,7 +1336,6 @@ csr_value_distances_from_cluster_centers(char * title_base, double * vals, doubl
 
 	vals_cluster_centers_diffs = (typeof(vals_cluster_centers_diffs)) malloc(nnz * sizeof(*vals_cluster_centers_diffs));
 	vals_sorted_shifted_by_min = (typeof(vals_sorted_shifted_by_min)) malloc(nnz * sizeof(*vals_sorted_shifted_by_min));
-	printf("time samplesort = %lf\n", time);
 	if (do_plot)
 	{
 		snprintf(buf, buf_n, "%s_values_sorted.png", title_base);
@@ -1512,6 +1510,7 @@ csr_value_features(char * title_base, _TYPE_I * row_ptr, _TYPE_I * col_idx, _TYP
 	time = time_it(1,
 		samplesort(vals_sorted, nnz, NULL);
 	);
+	printf("time samplesort = %lf\n", time);
 	vals_sorted_diff[0] = 0;
 	vals_sorted_ratio_abs[0] = 0;
 	vals_sorted_diff_fraction_abs[0] = 0;
@@ -2196,15 +2195,15 @@ csr_bandwidth_histogram_plot(char * title_base, _TYPE_I * row_ptr, _TYPE_I * col
 #define csr_bandwidth_batch_nnz_bar_plot  CSR_UTIL_GEN_EXPAND(csr_bandwidth_batch_nnz_bar_plot)
 void
 csr_bandwidth_batch_nnz_bar_plot(char * title_base, __attribute__((unused)) _TYPE_I * row_ptr, _TYPE_I * col_idx, __attribute__((unused)) _TYPE_V * val, __attribute__((unused)) long m, long n, __attribute__((unused)) long nnz, int batch_nnz, 
-		[[gnu::unused]] int enable_legend, [[gnu::unused]] long num_pixels_x, [[gnu::unused]] long num_pixels_y)
+		__attribute__((unused)) int enable_legend, __attribute__((unused)) long num_pixels_x, __attribute__((unused)) long num_pixels_y)
 {
 	_TYPE_I * row_idx;
 	csr_row_indices(row_ptr, col_idx, m, n, nnz, &row_idx);
 
-	[[gnu::unused]] float * x_part_size, * y_part_size, * x_unique_values;
+	__attribute__((unused)) float * x_part_size, * y_part_size, * x_unique_values;
 	int * x_part_s, * x_part_f;
 	long buf_n = strlen(title_base) + 1 + 1000;
-	[[gnu::unused]] char buf[buf_n], buf_title[buf_n];
+	__attribute__((unused)) char buf[buf_n], buf_title[buf_n];
 
 	_TYPE_I nnz_b = (nnz+batch_nnz-1)/batch_nnz;
 	x_part_size = (typeof(x_part_size)) malloc(nnz_b * sizeof(*x_part_size));
@@ -2359,7 +2358,7 @@ csr_bandwidth_batch_nnz_bar_plot(char * title_base, __attribute__((unused)) _TYP
 #undef  csr_quantize_columns
 #define csr_quantize_columns  CSR_UTIL_GEN_EXPAND(csr_quantize_columns)
 void
-csr_quantize_columns(_TYPE_I * row_ptr, _TYPE_I * col_idx, long m, [[gnu::unused]] long n, long nnz, long window_len,
+csr_quantize_columns(_TYPE_I * row_ptr, _TYPE_I * col_idx, long m, __attribute__((unused)) long n, long nnz, long window_len,
 		_TYPE_I ** q_row_ptr_out, _TYPE_I ** q_col_idx_out, _TYPE_I ** q_frequencies_out, _TYPE_I * q_nnz_out)
 {
 	int num_threads = omp_get_max_threads();
@@ -2436,7 +2435,7 @@ csr_quantize_columns(_TYPE_I * row_ptr, _TYPE_I * col_idx, long m, [[gnu::unused
 #undef  csr_reorder_rows
 #define csr_reorder_rows  CSR_UTIL_GEN_EXPAND(csr_reorder_rows)
 void
-csr_reorder_rows(_TYPE_I * permutation, _TYPE_I * row_ptr, _TYPE_I * col_idx, _TYPE_V * values, long m, [[gnu::unused]] long n, long nnz,
+csr_reorder_rows(_TYPE_I * permutation, _TYPE_I * row_ptr, _TYPE_I * col_idx, _TYPE_V * values, long m, __attribute__((unused)) long n, long nnz,
 		_TYPE_I * reordered_row_ptr, _TYPE_I * reordered_col_idx, _TYPE_V * reordered_values)
 {
 	int num_threads = omp_get_max_threads();

@@ -102,8 +102,8 @@ quicksort_cmp(int a, int b, struct cmp_data * aux)
 	double * vals = aux->vals;
 	unsigned int ra=rows[a], rb=rows[b];
 	unsigned int ca=cols[a], cb=cols[b];
-	[[gnu::unused]] int ra_mul = ra / 8, rb_mul = rb / 8;
-	[[gnu::unused]] int ca_mul = ca / 256, cb_mul = cb / 256;
+	__attribute__((unused)) int ra_mul = ra / 8, rb_mul = rb / 8;
+	__attribute__((unused)) int ca_mul = ca / 256, cb_mul = cb / 256;
 	double va=vals[a], vb=vals[b];
 	int ret = 0;
 	// ret = (ra_mul > rb_mul) ? 1 : (ra_mul < rb_mul) ? -1 : 0;
@@ -179,8 +179,8 @@ quicksort_cmp(int a, int b, struct cmp_data * aux)
 	double * vals = aux->vals;
 	unsigned int ra=rows[a], rb=rows[b];
 	unsigned int ca=cols[a], cb=cols[b];
-	[[gnu::unused]] int ra_mul = ra / 8, rb_mul = rb / 8;
-	[[gnu::unused]] int ca_mul = ca / 256, cb_mul = cb / 256;
+	__attribute__((unused)) int ra_mul = ra / 8, rb_mul = rb / 8;
+	__attribute__((unused)) int ca_mul = ca / 256, cb_mul = cb / 256;
 	double va=vals[a], vb=vals[b];
 	int ret = 0;
 	// ret = (ra_mul > rb_mul) ? 1 : (ra_mul < rb_mul) ? -1 : 0;
@@ -224,7 +224,7 @@ quicksort_cmp(int a, int b, struct cmp_data * aux)
 #include "sort/bucketsort/bucketsort_gen.c"
 static inline
 int
-bucketsort_find_bucket(int * A, long i, [[gnu::unused]] void * unused)
+bucketsort_find_bucket(int * A, long i, __attribute__((unused)) void * unused)
 {
 		return A[i];
 }
@@ -947,8 +947,8 @@ compress_kernel_sort_diff(INT_T * row_ptr, INT_T * ja, ValueType * vals, long i_
 
 static __attribute__((always_inline)) inline
 void
-mult_add_serial(ValueType * x_rel, ValueType * y_rel, [[gnu::unused]] ValueType * x, [[gnu::unused]] ValueType * y, ValueType val, uint64_t row_rel, uint64_t col_rel, [[gnu::unused]] uint64_t row, [[gnu::unused]] uint64_t col,
-		[[gnu::unused]] ValueType * sum_ptr, [[gnu::unused]] uint64_t * row_rel_prev_ptr, [[gnu::unused]] uint64_t * col_rel_prev_ptr, [[gnu::unused]] uint64_t * row_prev_ptr, [[gnu::unused]] uint64_t * col_prev_ptr)
+mult_add_serial(ValueType * x_rel, ValueType * y_rel, __attribute__((unused)) ValueType * x, __attribute__((unused)) ValueType * y, ValueType val, uint64_t row_rel, uint64_t col_rel, __attribute__((unused)) uint64_t row, __attribute__((unused)) uint64_t col,
+		__attribute__((unused)) ValueType * sum_ptr, __attribute__((unused)) uint64_t * row_rel_prev_ptr, __attribute__((unused)) uint64_t * col_rel_prev_ptr, __attribute__((unused)) uint64_t * row_prev_ptr, __attribute__((unused)) uint64_t * col_prev_ptr)
 {
 	// if (row_rel != *row_rel_prev_ptr)
 	// {
@@ -963,8 +963,8 @@ mult_add_serial(ValueType * x_rel, ValueType * y_rel, [[gnu::unused]] ValueType 
 
 static __attribute__((always_inline)) inline
 void
-mult_add_vector(ValueType * x_rel, ValueType * y_rel, [[gnu::unused]] ValueType * x, [[gnu::unused]] ValueType * y, vec_d_t val, vec_i_t row_rel, vec_i_t col_rel, [[gnu::unused]] vec_i_t row, [[gnu::unused]] vec_i_t col,
-		[[gnu::unused]] vec_d_t * sum_ptr, [[gnu::unused]] vec_i_t * row_rel_prev_ptr, [[gnu::unused]] vec_i_t * col_rel_prev_ptr, [[gnu::unused]] vec_i_t * row_prev_ptr, [[gnu::unused]] vec_i_t * col_prev_ptr)
+mult_add_vector(ValueType * x_rel, ValueType * y_rel, __attribute__((unused)) ValueType * x, __attribute__((unused)) ValueType * y, vec_d_t val, vec_i_t row_rel, vec_i_t col_rel, __attribute__((unused)) vec_i_t row, __attribute__((unused)) vec_i_t col,
+		__attribute__((unused)) vec_d_t * sum_ptr, __attribute__((unused)) vec_i_t * row_rel_prev_ptr, __attribute__((unused)) vec_i_t * col_rel_prev_ptr, __attribute__((unused)) vec_i_t * row_prev_ptr, __attribute__((unused)) vec_i_t * col_prev_ptr)
 {
 	// for (long iter=0;iter<vec_len_pd;iter++)
 	// {
@@ -983,8 +983,8 @@ mult_add_vector(ValueType * x_rel, ValueType * y_rel, [[gnu::unused]] ValueType 
 
 static __attribute__((always_inline)) inline
 void
-mult_add_cleanup([[gnu::unused]] long num_vals, [[gnu::unused]] ValueType * y_rel, [[gnu::unused]] ValueType * y,
-		[[gnu::unused]] vec_d_t * sum_ptr, [[gnu::unused]] vec_i_t * row_rel_prev_ptr, [[gnu::unused]] vec_i_t * row_prev_ptr, [[gnu::unused]] vec_i_t * col_rel_prev_ptr, [[gnu::unused]] vec_i_t * col_prev_ptr)
+mult_add_cleanup(__attribute__((unused)) long num_vals, __attribute__((unused)) ValueType * y_rel, __attribute__((unused)) ValueType * y,
+		__attribute__((unused)) vec_d_t * sum_ptr, __attribute__((unused)) vec_i_t * row_rel_prev_ptr, __attribute__((unused)) vec_i_t * row_prev_ptr, __attribute__((unused)) vec_i_t * col_rel_prev_ptr, __attribute__((unused)) vec_i_t * col_prev_ptr)
 {
 	// for (long iter=0;iter<vec_len_pd && iter<num_vals;iter++)
 	// {
@@ -995,8 +995,8 @@ mult_add_cleanup([[gnu::unused]] long num_vals, [[gnu::unused]] ValueType * y_re
 
 static __attribute__((always_inline)) inline
 void
-mult_add_serial_sym([[gnu::unused]] ValueType * x_rel, [[gnu::unused]] ValueType * y_rel, ValueType * x, ValueType * y, ValueType val, [[gnu::unused]] uint64_t row_rel, [[gnu::unused]] uint64_t col_rel, uint64_t row, uint64_t col,
-		[[gnu::unused]] ValueType * sum_ptr, [[gnu::unused]] uint64_t * row_rel_prev_ptr, [[gnu::unused]] uint64_t * col_rel_prev_ptr, [[gnu::unused]] uint64_t * row_prev_ptr, [[gnu::unused]] uint64_t * col_prev_ptr)
+mult_add_serial_sym(__attribute__((unused)) ValueType * x_rel, __attribute__((unused)) ValueType * y_rel, ValueType * x, ValueType * y, ValueType val, __attribute__((unused)) uint64_t row_rel, __attribute__((unused)) uint64_t col_rel, uint64_t row, uint64_t col,
+		__attribute__((unused)) ValueType * sum_ptr, __attribute__((unused)) uint64_t * row_rel_prev_ptr, __attribute__((unused)) uint64_t * col_rel_prev_ptr, __attribute__((unused)) uint64_t * row_prev_ptr, __attribute__((unused)) uint64_t * col_prev_ptr)
 {
 	if (col != *col_prev_ptr)
 	{
@@ -1011,8 +1011,8 @@ mult_add_serial_sym([[gnu::unused]] ValueType * x_rel, [[gnu::unused]] ValueType
 
 static __attribute__((always_inline)) inline
 void
-mult_add_vector_sym([[gnu::unused]] ValueType * x_rel, [[gnu::unused]] ValueType * y_rel, ValueType * x, ValueType * y, vec_d_t val, [[gnu::unused]] vec_i_t row_rel, [[gnu::unused]] vec_i_t col_rel, vec_i_t row, vec_i_t col,
-		[[gnu::unused]] vec_d_t * sum_ptr, [[gnu::unused]] vec_i_t * row_rel_prev_ptr, [[gnu::unused]] vec_i_t * col_rel_prev_ptr, [[gnu::unused]] vec_i_t * row_prev_ptr, [[gnu::unused]] vec_i_t * col_prev_ptr)
+mult_add_vector_sym(__attribute__((unused)) ValueType * x_rel, __attribute__((unused)) ValueType * y_rel, ValueType * x, ValueType * y, vec_d_t val, __attribute__((unused)) vec_i_t row_rel, __attribute__((unused)) vec_i_t col_rel, vec_i_t row, vec_i_t col,
+		__attribute__((unused)) vec_d_t * sum_ptr, __attribute__((unused)) vec_i_t * row_rel_prev_ptr, __attribute__((unused)) vec_i_t * col_rel_prev_ptr, __attribute__((unused)) vec_i_t * row_prev_ptr, __attribute__((unused)) vec_i_t * col_prev_ptr)
 {
 	for (long iter=0;iter<vec_len_pd;iter++)
 	{
@@ -1030,8 +1030,8 @@ mult_add_vector_sym([[gnu::unused]] ValueType * x_rel, [[gnu::unused]] ValueType
 
 static __attribute__((always_inline)) inline
 void
-mult_add_cleanup_sym([[gnu::unused]] long num_vals, [[gnu::unused]] ValueType * y_rel, [[gnu::unused]] ValueType * y,
-		[[gnu::unused]] vec_d_t * sum_ptr, [[gnu::unused]] vec_i_t * row_rel_prev_ptr, [[gnu::unused]] vec_i_t * row_prev_ptr, [[gnu::unused]] vec_i_t * col_rel_prev_ptr, [[gnu::unused]] vec_i_t * col_prev_ptr)
+mult_add_cleanup_sym(__attribute__((unused)) long num_vals, __attribute__((unused)) ValueType * y_rel, __attribute__((unused)) ValueType * y,
+		__attribute__((unused)) vec_d_t * sum_ptr, __attribute__((unused)) vec_i_t * row_rel_prev_ptr, __attribute__((unused)) vec_i_t * row_prev_ptr, __attribute__((unused)) vec_i_t * col_rel_prev_ptr, __attribute__((unused)) vec_i_t * col_prev_ptr)
 {
 	for (long iter=0;iter<vec_len_pd && iter<num_vals;iter++)
 	{
@@ -1054,8 +1054,8 @@ decompress_and_compute_kernel_sort_diff_base(unsigned char * restrict buf, Value
 			ValueType * sum_ptr, uint64_t * row_rel_prev_ptr, uint64_t * col_rel_prev_ptr, uint64_t * row_prev_ptr, uint64_t * col_prev_ptr),
 		void (* mult_add_v)(ValueType * x_rel, ValueType * y_rel, ValueType * x, ValueType * y, vec_d_t val, vec_i_t row_rel, vec_i_t col_rel, vec_i_t row, vec_i_t col,
 			vec_d_t * sum_ptr, vec_i_t * row_rel_prev_ptr, vec_i_t * col_rel_prev_ptr, vec_i_t * row_prev_ptr, vec_i_t * col_prev_ptr),
-		void (* mult_add_cleanup)(long num_vals, ValueType * y_rel, [[gnu::unused]] ValueType * y,
-			[[gnu::unused]] vec_d_t * sum_ptr, [[gnu::unused]] vec_i_t * row_rel_prev_ptr, [[gnu::unused]] vec_i_t * row_prev_ptr, [[gnu::unused]] vec_i_t * col_rel_prev_ptr, [[gnu::unused]] vec_i_t * col_prev_ptr)
+		void (* mult_add_cleanup)(long num_vals, ValueType * y_rel, __attribute__((unused)) ValueType * y,
+			__attribute__((unused)) vec_d_t * sum_ptr, __attribute__((unused)) vec_i_t * row_rel_prev_ptr, __attribute__((unused)) vec_i_t * row_prev_ptr, __attribute__((unused)) vec_i_t * col_rel_prev_ptr, __attribute__((unused)) vec_i_t * col_prev_ptr)
 		)
 {
 	int tnum = omp_get_thread_num();
@@ -1065,7 +1065,7 @@ decompress_and_compute_kernel_sort_diff_base(unsigned char * restrict buf, Value
 	long num_vals;
 	long num_vals_unique;
 	uint64_t row_min, col_min;
-	[[gnu::unused]] long num_rows;
+	__attribute__((unused)) long num_rows;
 	uint64_t row_bits, col_bits;
 	long i, j, k, l;
 
@@ -1274,8 +1274,8 @@ decompress_and_compute_kernel_sort_diff_select(unsigned char * restrict buf, Val
 			ValueType * sum_ptr, uint64_t * row_rel_prev_ptr, uint64_t * col_rel_prev_ptr, uint64_t * row_prev_ptr, uint64_t * col_prev_ptr),
 		void (* mult_add_v)(ValueType * x_rel, ValueType * y_rel, ValueType * x, ValueType * y, vec_d_t val, vec_i_t row_rel, vec_i_t col_rel, vec_i_t row, vec_i_t col,
 			vec_d_t * sum_ptr, vec_i_t * row_rel_prev_ptr, vec_i_t * col_rel_prev_ptr, vec_i_t * row_prev_ptr, vec_i_t * col_prev_ptr),
-		void (* mult_add_cleanup)(long num_vals, ValueType * y_rel, [[gnu::unused]] ValueType * y,
-			[[gnu::unused]] vec_d_t * sum_ptr, [[gnu::unused]] vec_i_t * row_rel_prev_ptr, [[gnu::unused]] vec_i_t * row_prev_ptr, [[gnu::unused]] vec_i_t * col_rel_prev_ptr, [[gnu::unused]] vec_i_t * col_prev_ptr)
+		void (* mult_add_cleanup)(long num_vals, ValueType * y_rel, __attribute__((unused)) ValueType * y,
+			__attribute__((unused)) vec_d_t * sum_ptr, __attribute__((unused)) vec_i_t * row_rel_prev_ptr, __attribute__((unused)) vec_i_t * row_prev_ptr, __attribute__((unused)) vec_i_t * col_rel_prev_ptr, __attribute__((unused)) vec_i_t * col_prev_ptr)
 		)
 {
 	uint64_t row_bits, col_bits;
@@ -1339,7 +1339,7 @@ decompress_and_compute_kernel_sort_diff_select(unsigned char * restrict buf, Val
 
 static inline
 long
-decompress_and_compute_kernel_sort_diff(unsigned char * restrict buf, ValueType * restrict x, ValueType * restrict y, [[gnu::unused]] long i_t_s, [[gnu::unused]] long i_t_e)
+decompress_and_compute_kernel_sort_diff(unsigned char * restrict buf, ValueType * restrict x, ValueType * restrict y, __attribute__((unused)) long i_t_s, __attribute__((unused)) long i_t_e)
 {
 	unsigned char * data_intro = buf;
 	uint64_t data_intro_bytes = 0;
@@ -1371,7 +1371,7 @@ decompress_and_compute_kernel_sort_diff(unsigned char * restrict buf, ValueType 
 
 static
 long
-decompress_kernel_sort_diff(ValueType * vals, unsigned char * restrict buf, [[gnu::unused]] long i_t_s, [[gnu::unused]] long i_t_e)
+decompress_kernel_sort_diff(ValueType * vals, unsigned char * restrict buf, __attribute__((unused)) long i_t_s, __attribute__((unused)) long i_t_e)
 {
 	long num_vals = 0;
 	int tnum = omp_get_thread_num();

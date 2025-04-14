@@ -950,7 +950,7 @@ __device__ void spmv_last_block(INT_T * thread_block_i_s, INT_T * thread_block_i
 	const int nnz_per_block = BLOCK_SIZE * NNZ_PER_THREAD;
 	// ValueType * val_buf = (typeof(val_buf)) sm;
 	// INT_T * ia_buf = (typeof(ia_buf)) &sm[BLOCK_SIZE * sizeof(ValueType)];
-	[[gnu::unused]] int i, i_s, i_e, j, j_s, j_e, k, l, p;
+	__attribute__((unused)) int i, i_s, i_e, j, j_s, j_e, k, l, p;
 	i_s = thread_block_i_s[block_id];
 	i_e = thread_block_i_e[block_id];
 	j_s = block_id * nnz_per_block + tidb * NNZ_PER_THREAD;
@@ -1024,7 +1024,7 @@ __device__ void spmv_warp_single_row(group_t g, int i, int j_s, int j_e, INT_T *
 template <typename group_t>
 __device__ void spmv_full_warp(group_t g, int one_line, int i_s, int j_s, int j_e, INT_T * row_ptr, INT_T * ja, ValueType * a, ValueType * restrict x, ValueType * restrict y)
 {
-	[[gnu::unused]] int i, j, k, l, p;
+	__attribute__((unused)) int i, j, k, l, p;
 	int ptr_next;
 	i = i_s;
 	ptr_next = row_ptr[i_s+1];
@@ -1081,7 +1081,7 @@ __device__ void spmv_full_block(INT_T * thread_block_i_s, INT_T * thread_block_i
 	const int nnz_per_block = BLOCK_SIZE * NNZ_PER_THREAD;
 	// ValueType * val_buf = (typeof(val_buf)) sm;
 	// INT_T * ia_buf = (typeof(ia_buf)) &sm[BLOCK_SIZE * sizeof(ValueType)];
-	[[gnu::unused]] int i_s, i_e, j, j_s, j_e, j_w_s, k, l, p;
+	__attribute__((unused)) int i_s, i_e, j, j_s, j_e, j_w_s, k, l, p;
 	i_s = thread_block_i_s[block_id];
 	i_e = thread_block_i_e[block_id];
 	// i_s = 0;

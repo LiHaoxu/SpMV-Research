@@ -118,7 +118,7 @@ quicksort_cmp(int a, int b, double * vals)
 #include "sort/bucketsort/bucketsort_gen.c"
 static inline
 int
-bucketsort_find_bucket(int * A, long i, [[gnu::unused]] void * unused)
+bucketsort_find_bucket(int * A, long i, __attribute__((unused)) void * unused)
 {
 	return A[i];
 }

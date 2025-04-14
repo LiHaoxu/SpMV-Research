@@ -513,8 +513,8 @@ main(int argc, char **argv)
 	INT_T csr_m = 0;
 	INT_T csr_n = 0;
 	INT_T csr_nnz = 0;
-	[[gnu::unused]] INT_T csr_nnz_diag = 0;
-	[[gnu::unused]] INT_T csr_nnz_non_diag = 0;
+	__attribute__((unused)) INT_T csr_nnz_diag = 0;
+	__attribute__((unused)) INT_T csr_nnz_non_diag = 0;
 	int csr_symmetric = 0;
 
 	struct Matrix_Format * MF;   // Real matrices.

@@ -140,7 +140,7 @@ void csr_bandwidth_batch_nnz_bar_plot(char * title_base, __attribute__((unused))
  */
 #undef  csr_quantize_columns
 #define csr_quantize_columns  CSR_UTIL_GEN_EXPAND(csr_quantize_columns)
-void csr_quantize_columns(_TYPE_I * row_ptr, _TYPE_I * col_idx, long m, [[gnu::unused]] long n, long nnz, long window_len, _TYPE_I ** q_row_ptr_out, _TYPE_I ** q_col_idx_out, _TYPE_I ** q_frequencies_out, _TYPE_I * q_nnz_out);
+void csr_quantize_columns(_TYPE_I * row_ptr, _TYPE_I * col_idx, long m, __attribute__((unused)) long n, long nnz, long window_len, _TYPE_I ** q_row_ptr_out, _TYPE_I ** q_col_idx_out, _TYPE_I ** q_frequencies_out, _TYPE_I * q_nnz_out);
 
 
 //==========================================================================================================================================
@@ -150,5 +150,5 @@ void csr_quantize_columns(_TYPE_I * row_ptr, _TYPE_I * col_idx, long m, [[gnu::u
 
 #undef  csr_reorder_rows
 #define csr_reorder_rows  CSR_UTIL_GEN_EXPAND(csr_reorder_rows)
-void csr_reorder_rows(_TYPE_I * permutation, _TYPE_I * row_ptr, _TYPE_I * col_idx, _TYPE_V * values, long m, [[gnu::unused]] long n, long nnz, _TYPE_I * reordered_row_ptr, _TYPE_I * reordered_col_idx, _TYPE_V * reordered_values);
+void csr_reorder_rows(_TYPE_I * permutation, _TYPE_I * row_ptr, _TYPE_I * col_idx, _TYPE_V * values, long m, __attribute__((unused)) long n, long nnz, _TYPE_I * reordered_row_ptr, _TYPE_I * reordered_col_idx, _TYPE_V * reordered_values);
 

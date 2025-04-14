@@ -31,14 +31,14 @@
 #define FUNCTOOLS_GEN_TYPE_2  int
 #define FUNCTOOLS_GEN_SUFFIX  _plot_i_i
 #include "functools/functools_gen.c"
-[[gnu::pure]]
+__attribute__((pure))
 static inline
 int
 functools_map_fun(int * A, long i)
 {
 	return A[i];
 }
-[[gnu::pure]]
+__attribute__((pure))
 static inline
 int
 functools_reduce_fun(int a, int b)
@@ -52,14 +52,14 @@ functools_reduce_fun(int a, int b)
 #define FUNCTOOLS_GEN_TYPE_2  long
 #define FUNCTOOLS_GEN_SUFFIX  _plot_l_l
 #include "functools/functools_gen.c"
-[[gnu::pure]]
+__attribute__((pure))
 static inline
 long
 functools_map_fun(long * A, long i)
 {
 	return A[i];
 }
-[[gnu::pure]]
+__attribute__((pure))
 static inline
 long
 functools_reduce_fun(long a, long b)
@@ -95,7 +95,7 @@ functools_reduce_fun(long a, long b)
 
 static
 double
-id([[gnu::unused]] void * x, long i)
+id(__attribute__((unused)) void * x, long i)
 {
 	return (double) i;
 }
@@ -105,7 +105,7 @@ static inline
 double
 normal_distribution(double m, double s, double x)
 {
-	static const double c = sqrt(2 * M_PI);
+	const double c = sqrt(2 * M_PI);
 	double y, tmp;
 	tmp = (x - m) / s;
 	y = exp(tmp*tmp / -2);
@@ -129,7 +129,7 @@ write_image_file(struct Figure * fig, struct Pixel_Array * pa, char * filename)
 	int fd, ret;
 	long i;
 
-	[[gnu::cleanup(cleanup_free)]] char * const f = strdup(filename);
+	__attribute__((cleanup(cleanup_free))) char * const f = strdup(filename);
 	len = strlen(f);
 	for (i=len-1;i>=0;i--)
 		if (f[i] == '.')
@@ -143,12 +143,12 @@ write_image_file(struct Figure * fig, struct Pixel_Array * pa, char * filename)
 	long buf_n;
 	buf_n = len + 4; // +4 to be sure it fits 'ppm\0' at the end.
 	buf_n = 2 * buf_n + 1000; // More space to fit a command line.
-	[[gnu::cleanup(cleanup_free)]] char * buf = (typeof(buf)) malloc(buf_n);
+	__attribute__((cleanup(cleanup_free))) char * buf = (typeof(buf)) malloc(buf_n);
 
 	snprintf(buf, buf_n, "%s.ppm", base);
-	[[gnu::cleanup(cleanup_free)]] char * const f_ppm = strdup(buf);
+	__attribute__((cleanup(cleanup_free))) char * const f_ppm = strdup(buf);
 	snprintf(buf, buf_n, "%s.%s", base, ext);
-	[[gnu::cleanup(cleanup_free)]] char * const f_conv = strdup(buf);
+	__attribute__((cleanup(cleanup_free))) char * const f_conv = strdup(buf);
 	if (fig->legend_conf.title == NULL)
 		fig->legend_conf.title = strdup(f_conv);       // Better for the viewer to immediately understand that it's just the file name, than try to extract a possibly non-existent meaning from it, so keep extension.
 
@@ -549,7 +549,7 @@ figure_series_type_histogram_base(struct Figure_Series * s, long num_bins, doubl
 
 	// if (num_bins > 1000000000)
 		// warning("too many bins: %ld", num_bins);
-	[[gnu::cleanup(cleanup_free)]] long * freq = (typeof(freq)) malloc(num_bins * sizeof(*freq));
+	__attribute__((cleanup(cleanup_free))) long * freq = (typeof(freq)) malloc(num_bins * sizeof(*freq));
 	x = (typeof(x)) malloc(num_bins * sizeof(*x));
 	y = (typeof(y)) malloc(num_bins * sizeof(*y));
 
@@ -662,7 +662,7 @@ figure_color_mapping_geodesics(double val_norm, double val,
 
 
 void
-figure_color_mapping_normal(double val_norm, [[gnu::unused]] double val,
+figure_color_mapping_normal(double val_norm, __attribute__((unused)) double val,
 		uint8_t * r_out, uint8_t * g_out, uint8_t * b_out)
 {
 	double val_proj = (val_norm - 0.5) * 4;    // [-2, 2]
@@ -676,7 +676,7 @@ figure_color_mapping_normal(double val_norm, [[gnu::unused]] double val,
 
 
 void
-figure_color_mapping_normal_logscale(double val_norm, [[gnu::unused]] double val,
+figure_color_mapping_normal_logscale(double val_norm, __attribute__((unused)) double val,
 		uint8_t * r_out, uint8_t * g_out, uint8_t * b_out)
 {
 	double val_proj = log2(((double) 0xFF) * val_norm + 1);  // [0, log2(256)=8]
@@ -691,7 +691,7 @@ figure_color_mapping_normal_logscale(double val_norm, [[gnu::unused]] double val
 
 
 void
-figure_color_mapping_linear(double val_norm, [[gnu::unused]] double val,
+figure_color_mapping_linear(double val_norm, __attribute__((unused)) double val,
 		uint8_t * r_out, uint8_t * g_out, uint8_t * b_out)
 {
 	double r, g, b;
@@ -705,7 +705,7 @@ figure_color_mapping_linear(double val_norm, [[gnu::unused]] double val,
 
 
 void
-figure_color_mapping_cyclic(double val_norm, [[gnu::unused]] double val,
+figure_color_mapping_cyclic(double val_norm, __attribute__((unused)) double val,
 		uint8_t * r_out, uint8_t * g_out, uint8_t * b_out)
 {
 	double r, g, b;
@@ -719,7 +719,7 @@ figure_color_mapping_cyclic(double val_norm, [[gnu::unused]] double val,
 
 
 void
-figure_color_mapping_greyscale(double val_norm, [[gnu::unused]] double val,
+figure_color_mapping_greyscale(double val_norm, __attribute__((unused)) double val,
 		uint8_t * r_out, uint8_t * g_out, uint8_t * b_out)
 {
 	double val_proj = ((double) 0xFF) * val_norm;
@@ -996,7 +996,7 @@ series_plot_density_map(struct Figure * fig, struct Figure_Series * s, struct Pi
 	double min, max;
 
 	long counts_n = x_num_pixels * y_num_pixels;
-	[[gnu::cleanup(cleanup_free)]] int * counts = (typeof(counts)) malloc(counts_n * sizeof(*counts));
+	__attribute__((cleanup(cleanup_free))) int * counts = (typeof(counts)) malloc(counts_n * sizeof(*counts));
 
 	// Calculate densities for the pixels.
 	#pragma omp parallel
@@ -1093,8 +1093,8 @@ series_plot_bounded_median_curve(struct Figure * fig, struct Figure_Series * s, 
 		// bucket_size = x_num_pixels;
 	}
 
-	[[gnu::cleanup(cleanup_free)]] int * offsets = (typeof(offsets)) malloc((num_buckets+1) * sizeof(*offsets));
-	[[gnu::cleanup(cleanup_free)]] int * indices = (typeof(indices)) malloc(s->L * sizeof(*indices));
+	__attribute__((cleanup(cleanup_free))) int * offsets = (typeof(offsets)) malloc((num_buckets+1) * sizeof(*offsets));
+	__attribute__((cleanup(cleanup_free))) int * indices = (typeof(indices)) malloc(s->L * sizeof(*indices));
 
 	/* Create a CSR structure that describes the colored pixels of each x column or y row (primary axis), depending on bounded_median_curve_axis value.
 	 */
@@ -1271,7 +1271,7 @@ static
 double
 closest_pair_distance(void * A, long N, double (* get_val_as_double)(void * A, long i))
 {
-	[[gnu::cleanup(cleanup_free)]] double * B = (typeof(B)) malloc(N * sizeof(*B));
+	__attribute__((cleanup(cleanup_free))) double * B = (typeof(B)) malloc(N * sizeof(*B));
 	double dist, min;
 	long i;
 	if (N <= 1)

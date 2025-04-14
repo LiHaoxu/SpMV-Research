@@ -299,7 +299,7 @@ conf_vars=(
 
     # Path for the validation matrices.
     ['path_validation']="$( options=(
-                        # "$HOME/Data/graphs/validation_matrices"
+                        "$HOME/Data/graphs/validation_matrices"
                         "${script_dir}/../../../validation_matrices"
                         # '/various/pmpakos/SpMV-Research/validation_matrices'
                         # '/various/pmpakos/SpMV-Research/validation_matrices/matrix_features/matrices'
@@ -459,7 +459,7 @@ progs=(
     # ['csr_vector_perfect_nnz_balance_d']="${script_dir}/spmv_code_bench/spmv_csr_vector_perfect_nnz_balance_d.exe"
 
     # Custom csr x86
-    ['csr_vector_x86_d']="${script_dir}/spmv_code_bench/spmv_csr_vector_x86_d.exe" # BENCH_AMD, BENCH_INTEL
+    # ['csr_vector_x86_d']="${script_dir}/spmv_code_bench/spmv_csr_vector_x86_d.exe" # BENCH_AMD, BENCH_INTEL
     # ['csr_vector_oracle_balance_x86_d']="${script_dir}/spmv_code_bench/spmv_csr_vector_oracle_balance_x86_d.exe"
     # ['csr_vector_queues_x86_d']="${script_dir}/spmv_code_bench/spmv_csr_vector_queues_x86_d.exe"
     # ['csr_vector_perfect_nnz_balance_x86_d']="${script_dir}/spmv_code_bench/spmv_csr_vector_perfect_nnz_balance_x86_d.exe"
@@ -475,19 +475,20 @@ progs=(
     # ['csr_cv_block_fpzip_d']="${script_dir}/spmv_code_bench/spmv_csr_cv_block_fpzip_d.exe" # BENCH_AMD
 
     # Custom compressed values stream
-    # ['csr_div_d']="${script_dir}/spmv_code_bench/spmv_div_d.exe" # BENCH_AMD, BENCH_INTEL
-    # ['csr_div_f']="${script_dir}/spmv_code_bench/spmv_div_f.exe" # BENCH_AMD, BENCH_INTEL
-    # ['csr_div_rf_d']="${script_dir}/spmv_code_bench/spmv_div_rf_d.exe" # BENCH_AMD, BENCH_INTEL
-    # ['csr_div_rf_f']="${script_dir}/spmv_code_bench/spmv_div_rf_f.exe" # BENCH_AMD, BENCH_INTEL
-    # ['csr_div_adapt_d']="${script_dir}/spmv_code_bench/spmv_div_adapt_d.exe" # BENCH_AMD, BENCH_INTEL
-    # ['csr_div_adapt_f']="${script_dir}/spmv_code_bench/spmv_div_adapt_f.exe" # BENCH_AMD, BENCH_INTEL
-    # ['csr_div_rf_const_size_row_d']="${script_dir}/spmv_code_bench/spmv_div_rf_const_size_row_d.exe"
-    # ['csr_div_rf_const_size_row_f']="${script_dir}/spmv_code_bench/spmv_div_rf_const_size_row_f.exe"
-    # ['csr_div_select_d']="${script_dir}/spmv_code_bench/spmv_div_select_d.exe"
-    # ['csr_div_cols_sort_d']="${script_dir}/spmv_code_bench/spmv_div_cols_sort_d.exe"
-    # ['csr_div_rf_ord2_d']="${script_dir}/spmv_code_bench/spmv_div_rf_ord2_d.exe"
-    # ['csr_div_sym_rf_local_d']="${script_dir}/spmv_code_bench/spmv_div_sym_rf_local_d.exe" # BENCH_SYM
-    # ['csr_div_sym_rf_local_f']="${script_dir}/spmv_code_bench/spmv_div_sym_rf_local_f.exe" # BENCH_SYM
+    # ['div_d']="${script_dir}/spmv_code_bench/spmv_div_d.exe" # BENCH_AMD, BENCH_INTEL
+    # ['div_f']="${script_dir}/spmv_code_bench/spmv_div_f.exe" # BENCH_AMD, BENCH_INTEL
+    ['div_rf_d']="${script_dir}/spmv_code_bench/spmv_div_rf_d.exe" # BENCH_AMD, BENCH_INTEL
+    # ['div_rf_f']="${script_dir}/spmv_code_bench/spmv_div_rf_f.exe" # BENCH_AMD, BENCH_INTEL
+    # ['div_adapt_d']="${script_dir}/spmv_code_bench/spmv_div_adapt_d.exe" # BENCH_AMD, BENCH_INTEL
+    # ['div_adapt_f']="${script_dir}/spmv_code_bench/spmv_div_adapt_f.exe" # BENCH_AMD, BENCH_INTEL
+    # ['div_rf_const_size_row_d']="${script_dir}/spmv_code_bench/spmv_div_rf_const_size_row_d.exe"
+    # ['div_rf_const_size_row_f']="${script_dir}/spmv_code_bench/spmv_div_rf_const_size_row_f.exe"
+    # ['div_select_d']="${script_dir}/spmv_code_bench/spmv_div_select_d.exe"
+    # ['div_cols_sort_d']="${script_dir}/spmv_code_bench/spmv_div_cols_sort_d.exe"
+    # ['div_rf_ord2_d']="${script_dir}/spmv_code_bench/spmv_div_rf_ord2_d.exe"
+    # ['div_sym_rf_local_d']="${script_dir}/spmv_code_bench/spmv_div_sym_rf_local_d.exe" # BENCH_SYM
+    # ['div_sym_rf_local_f']="${script_dir}/spmv_code_bench/spmv_div_sym_rf_local_f.exe" # BENCH_SYM
+    # ['csr_cuda_div_rf_d']="${script_dir}/spmv_code_bench/spmv_cuda_div_rf_d.exe" # BENCH_AMD, BENCH_INTEL
 
     # MKL IE
     # ['mkl_ie_d']="${script_dir}/spmv_code_bench/spmv_mkl_ie_d.exe" # BENCH_AMD, BENCH_INTEL
@@ -530,7 +531,7 @@ progs=(
 
     # ['ell_d']="${script_dir}/spmv_code_bench/spmv_ell_d.exe"
     # ['sell_d']="${script_dir}/spmv_code_bench/spmv_sell_d.exe"
-    ['sell_sorted_d']="${script_dir}/spmv_code_bench/spmv_sell_sorted_d.exe"
+    # ['sell_sorted_d']="${script_dir}/spmv_code_bench/spmv_sell_sorted_d.exe"
     # ['ldu_d']="${script_dir}/spmv_code_bench/spmv_ldu_d.exe"
     # ['dia_d']="${script_dir}/spmv_code_bench/spmv_dia_d.exe"
 

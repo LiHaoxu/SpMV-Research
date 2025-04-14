@@ -38,7 +38,7 @@ do {                                                   \
 } while (0)
 
 
-[[gnu::always_inline]]
+__attribute__((always_inline))
 static inline
 long
 str_check_mem_overlap(const char * s1, long s1_n, const char * s2, long s2_n)
@@ -56,7 +56,7 @@ str_check_mem_overlap(const char * s1, long s1_n, const char * s2, long s2_n)
 //==========================================================================================================================================
 
 
-[[gnu::always_inline]]
+__attribute__((always_inline))
 static inline
 int
 str_char_is_ws(const char c)
@@ -87,7 +87,7 @@ str_char_is_ws(const char c)
 
 
 /* Returns the number of chars written. */
-[[gnu::always_inline]]
+__attribute__((always_inline))
 static inline
 long
 str_hex_char_to_bin_char_array(const char c_hex, char * buf, long N)
@@ -123,7 +123,7 @@ str_hex_char_to_bin_char_array(const char c_hex, char * buf, long N)
 //==========================================================================================================================================
 
 
-[[gnu::always_inline]]
+__attribute__((always_inline))
 static inline
 long
 str_find_char_from_start(const char * str, long N, char c)
@@ -136,7 +136,7 @@ str_find_char_from_start(const char * str, long N, char c)
 }
 
 
-[[gnu::always_inline]]
+__attribute__((always_inline))
 static inline
 long
 str_find_char_from_end(const char * str, long N, char c)
@@ -149,7 +149,7 @@ str_find_char_from_end(const char * str, long N, char c)
 }
 
 
-[[gnu::always_inline]]
+__attribute__((always_inline))
 static inline
 long
 str_find_ws(const char * str, long N)
@@ -162,7 +162,7 @@ str_find_ws(const char * str, long N)
 }
 
 
-[[gnu::always_inline]]
+__attribute__((always_inline))
 static inline
 long
 str_find_non_ws(const char * str, long N)
@@ -175,7 +175,7 @@ str_find_non_ws(const char * str, long N)
 }
 
 
-[[gnu::always_inline]]
+__attribute__((always_inline))
 static inline
 long
 str_find_eol(const char * str, long N)
@@ -188,7 +188,7 @@ str_find_eol(const char * str, long N)
 }
 
 
-[[gnu::always_inline]]
+__attribute__((always_inline))
 static inline
 long
 str_next_word(const char * str, long N)
@@ -381,7 +381,7 @@ void
 str_path_split_path(const char * path, long N, char * buf_dst, long buf_dst_n, char ** head_ptr_out, char ** tail_ptr_out)
 {
 	long buf_n = N + 3;
-	[[gnu::cleanup(cleanup_free)]] char * buf = (typeof(buf)) malloc(buf_n * sizeof(*buf));
+	__attribute__((cleanup(cleanup_free))) char * buf = (typeof(buf)) malloc(buf_n * sizeof(*buf));
 	char * head, * tail;
 	long i, pos, head_n, tail_n;
 	if (buf_dst_n < N + 3)
@@ -453,7 +453,7 @@ void
 str_path_split_ext(char * path, long N, char * buf_dst, long buf_dst_n, char ** base_ptr_out, char ** ext_ptr_out)
 {
 	long buf_n = N + 3;
-	[[gnu::cleanup(cleanup_free)]] char * buf = (typeof(buf)) malloc(buf_n * sizeof(*buf));
+	__attribute__((cleanup(cleanup_free))) char * buf = (typeof(buf)) malloc(buf_n * sizeof(*buf));
 	char * base, * ext;
 	long i, pos, base_n, ext_n;
 	if (buf_dst_n < N + 3)

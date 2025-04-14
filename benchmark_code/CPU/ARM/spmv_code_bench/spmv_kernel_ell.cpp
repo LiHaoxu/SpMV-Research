@@ -402,8 +402,8 @@ compute_ell_v(ELLArrays * ell, ValueType * x , ValueType * y)
 	long i, i_vector, j, j_s, j_e, k;
 	const long mask = ~(((long) VEC_LEN) - 1);      // VEC_LEN is a power of 2.
 	Vector4_Value_t zero = {0};
-	[[gnu::unused]] Vector4_Value_t v_a = zero, v_x = zero, v_mul = zero, v_sum = zero;
-	[[gnu::unused]] ValueType sum = 0;
+	__attribute__((unused)) Vector4_Value_t v_a = zero, v_x = zero, v_mul = zero, v_sum = zero;
+	__attribute__((unused)) ValueType sum = 0;
 	i_vector = ell->m & mask;
 	for (i=0;i<i_vector;i+=VEC_LEN)
 	{
@@ -451,8 +451,8 @@ compute_ell_v_hor(ELLArrays * ell, ValueType * x , ValueType * y)
 	long i, j, j_s, j_e, k, j_vector_width, j_e_vector;
 	const long mask = ~(((long) VEC_LEN) - 1);      // VEC_LEN is a power of 2.
 	Vector4_Value_t zero = {0};
-	[[gnu::unused]] Vector4_Value_t v_a, v_x = zero, v_mul = zero, v_sum = zero;
-	[[gnu::unused]] ValueType sum = 0;
+	__attribute__((unused)) Vector4_Value_t v_a, v_x = zero, v_mul = zero, v_sum = zero;
+	__attribute__((unused)) ValueType sum = 0;
 	j_vector_width = ell->width & mask;
 	for (i=0;i<ell->m;i++)
 	{
@@ -487,8 +487,8 @@ compute_ell_v_hor_split(ELLArrays * ell, ValueType * x , ValueType * y)
 	long i, j, j_s, j_e, k, j_vector_width, j_e_vector;
 	const long mask = ~(((long) VEC_LEN) - 1);      // VEC_LEN is a power of 2.
 	Vector4_Value_t zero = {0};
-	[[gnu::unused]] Vector4_Value_t v_a, v_x = zero, v_mul = zero, v_sum = zero;
-	[[gnu::unused]] ValueType sum = 0;
+	__attribute__((unused)) Vector4_Value_t v_a, v_x = zero, v_mul = zero, v_sum = zero;
+	__attribute__((unused)) ValueType sum = 0;
 	j_vector_width = ell->width & mask;
 	for (i=0;i<ell->m;i++)
 	{
@@ -527,8 +527,8 @@ compute_ell_transposed_v(ELLArrays * ell, ValueType * x , ValueType * y)
 	long i, i_vector, j, j_s, j_e, k;
 	const long mask = ~(((long) VEC_LEN) - 1);      // VEC_LEN is a power of 2.
 	Vector4_Value_t zero = {0};
-	[[gnu::unused]] Vector4_Value_t v_a = zero, v_x = zero, v_mul = zero, v_sum = zero;
-	[[gnu::unused]] ValueType sum = 0;
+	__attribute__((unused)) Vector4_Value_t v_a = zero, v_x = zero, v_mul = zero, v_sum = zero;
+	__attribute__((unused)) ValueType sum = 0;
 	i_vector = ell->m & mask;
 	PRAGMA(GCC unroll VEC_LEN)
 	PRAGMA(GCC ivdep)

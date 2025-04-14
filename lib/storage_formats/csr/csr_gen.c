@@ -255,7 +255,7 @@ csr_save_to_mtx(_TYPE_I * row_ptr, _TYPE_I * col_idx, _TYPE_V * values, long m, 
 #undef  csr_expand_symmetric
 #define csr_expand_symmetric  CSR_GEN_EXPAND(csr_expand_symmetric)
 void
-csr_expand_symmetric(_TYPE_I * row_ptr, _TYPE_I * col_idx, _TYPE_V * values, long m, long n, [[gnu::unused]] long nnz, _TYPE_I ** row_ptr_ret, _TYPE_I ** col_idx_ret, _TYPE_V ** values_ret, long * nnz_out, long * nnz_diag_out, const int sort_columns)
+csr_expand_symmetric(_TYPE_I * row_ptr, _TYPE_I * col_idx, _TYPE_V * values, long m, long n, __attribute__((unused)) long nnz, _TYPE_I ** row_ptr_ret, _TYPE_I ** col_idx_ret, _TYPE_V ** values_ret, long * nnz_out, long * nnz_diag_out, const int sort_columns)
 {
 	_TYPE_I * row_ptr_new;
 	_TYPE_I * col_idx_new;
@@ -351,7 +351,7 @@ csr_expand_symmetric(_TYPE_I * row_ptr, _TYPE_I * col_idx, _TYPE_V * values, lon
 
 #undef  csr_drop_upper
 #define csr_drop_upper  CSR_GEN_EXPAND(csr_drop_upper)
-void csr_drop_upper(_TYPE_I * row_ptr, _TYPE_I * col_idx, _TYPE_V * values, long m, long n, [[gnu::unused]] long nnz, _TYPE_I ** row_ptr_ret, _TYPE_I ** col_idx_ret, _TYPE_V ** values_ret, long * nnz_out, long * nnz_diag_out, const int sort_columns)
+void csr_drop_upper(_TYPE_I * row_ptr, _TYPE_I * col_idx, _TYPE_V * values, long m, long n, __attribute__((unused)) long nnz, _TYPE_I ** row_ptr_ret, _TYPE_I ** col_idx_ret, _TYPE_V ** values_ret, long * nnz_out, long * nnz_diag_out, const int sort_columns)
 {
 	_TYPE_I * row_ptr_new;
 	_TYPE_I * col_idx_new;

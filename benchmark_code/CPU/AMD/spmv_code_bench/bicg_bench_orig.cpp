@@ -162,23 +162,23 @@ preconditioned_bicgstab(
 		int * row_ptr, int * col_idx, ValueType * vals, 
 		long m, __attribute__((unused)) long n, __attribute__((unused)) long nnz, ValueType * b, ValueType * x_res_out, long max_iterations)
 {
-	[[gnu::cleanup(cleanup_free)]] ValueType * r0_ = NULL;
-	[[gnu::cleanup(cleanup_free)]] ValueType * rk = NULL;
-	[[gnu::cleanup(cleanup_free)]] ValueType * rk_explicit = NULL;
-	[[gnu::cleanup(cleanup_free)]] ValueType * pk = NULL;
-	[[gnu::cleanup(cleanup_free)]] ValueType * xk = NULL;
-	[[gnu::cleanup(cleanup_free)]] ValueType * x_best = NULL;
-	[[gnu::cleanup(cleanup_free)]] ValueType * K = NULL;
+	__attribute__((cleanup(cleanup_free))) ValueType * r0_ = NULL;
+	__attribute__((cleanup(cleanup_free))) ValueType * rk = NULL;
+	__attribute__((cleanup(cleanup_free))) ValueType * rk_explicit = NULL;
+	__attribute__((cleanup(cleanup_free))) ValueType * pk = NULL;
+	__attribute__((cleanup(cleanup_free))) ValueType * xk = NULL;
+	__attribute__((cleanup(cleanup_free))) ValueType * x_best = NULL;
+	__attribute__((cleanup(cleanup_free))) ValueType * K = NULL;
 
-	[[gnu::cleanup(cleanup_free)]] ValueType * z = NULL;
-	[[gnu::cleanup(cleanup_free)]] ValueType * h = NULL;
-	[[gnu::cleanup(cleanup_free)]] ValueType * s = NULL;
-	[[gnu::cleanup(cleanup_free)]] ValueType * v = NULL;
-	[[gnu::cleanup(cleanup_free)]] ValueType * y = NULL;
-	[[gnu::cleanup(cleanup_free)]] ValueType * t = NULL;
+	__attribute__((cleanup(cleanup_free))) ValueType * z = NULL;
+	__attribute__((cleanup(cleanup_free))) ValueType * h = NULL;
+	__attribute__((cleanup(cleanup_free))) ValueType * s = NULL;
+	__attribute__((cleanup(cleanup_free))) ValueType * v = NULL;
+	__attribute__((cleanup(cleanup_free))) ValueType * y = NULL;
+	__attribute__((cleanup(cleanup_free))) ValueType * t = NULL;
 
-	[[gnu::cleanup(cleanup_free)]] ValueType * buf1 = NULL;
-	[[gnu::cleanup(cleanup_free)]] ValueType * buf2 = NULL;
+	__attribute__((cleanup(cleanup_free))) ValueType * buf1 = NULL;
+	__attribute__((cleanup(cleanup_free))) ValueType * buf2 = NULL;
 
 	ValueType g_s_a, g_s_pk_p;
 
@@ -659,8 +659,8 @@ main(int argc, char **argv)
 	INT_T csr_m = 0;
 	INT_T csr_n = 0;
 	INT_T csr_nnz = 0;
-	[[gnu::unused]] INT_T csr_nnz_diag = 0;
-	[[gnu::unused]] INT_T csr_nnz_non_diag = 0;
+	__attribute__((unused)) INT_T csr_nnz_diag = 0;
+	__attribute__((unused)) INT_T csr_nnz_non_diag = 0;
 	int csr_symmetric = 0;
 
 	struct Matrix_Format * MF;   // Real matrices.

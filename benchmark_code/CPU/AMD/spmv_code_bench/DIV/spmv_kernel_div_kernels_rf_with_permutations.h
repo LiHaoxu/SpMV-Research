@@ -59,7 +59,7 @@ struct thread_data_kernel {
 static struct thread_data_kernel ** tdks;
 
 
-// struct [[gnu::packed]] packet_header {
+// struct __attribute__((packed)) packet_header {
 struct packet_header {
 	uint32_t num_vals;
 	uint32_t num_vals_unique;
@@ -136,7 +136,7 @@ extern "C"{
 
 static inline
 int
-quicksort_cmp(struct cmp_data_packed_t a, struct cmp_data_packed_t b, [[gnu::unused]] void * unused)
+quicksort_cmp(struct cmp_data_packed_t a, struct cmp_data_packed_t b, __attribute__((unused)) void * unused)
 {
 	unsigned __int128 va, vb;
 	va = a.u128;
@@ -194,13 +194,13 @@ create_permutation_table()
 }
 static inline
 int
-quicksort_blocked_cmp(struct cmp_data_packed_t a, struct cmp_data_packed_t b, [[gnu::unused]] void * unused)
+quicksort_blocked_cmp(struct cmp_data_packed_t a, struct cmp_data_packed_t b, __attribute__((unused)) void * unused)
 {
 	return (a.u128 > b.u128) ? 1 : (a.u128 < b.u128) ? -1 : 0;
 }
 static inline
 void
-quicksort_blocked_buffer_and_partition_block(struct cmp_data_packed_t pivot_scalar, struct cmp_data_packed_t * A, long i_start, [[gnu::unused]] void * aux_data, const long place_equal_right,
+quicksort_blocked_buffer_and_partition_block(struct cmp_data_packed_t pivot_scalar, struct cmp_data_packed_t * A, long i_start, __attribute__((unused)) void * aux_data, const long place_equal_right,
 		struct cmp_data_packed_t * buf_out, long * i_buf_l_ptr, long * i_buf_r_ptr)
 {
 	__m256i pivot0 = _mm256_set1_epi64x(pivot_scalar.u64[0]);
@@ -282,7 +282,7 @@ quicksort_blocked_buffer_and_partition_block(struct cmp_data_packed_t pivot_scal
 // int
 // quicksort_cmp(int a, int b, struct cmp_data_t * aux)
 // {
-	// [[gnu::unused]] unsigned int * rows = aux->rows;
+	// __attribute__((unused)) unsigned int * rows = aux->rows;
 	// unsigned int * cols = aux->cols;
 	// ValueType * vals = aux->vals;
 	// int ca=cols[a], cb=cols[b];
@@ -301,13 +301,13 @@ quicksort_blocked_buffer_and_partition_block(struct cmp_data_packed_t pivot_scal
 int
 quicksort_cmp(int a, int b, struct cmp_data_t * aux)
 {
-	[[gnu::unused]] unsigned int * rows = aux->rows;
+	__attribute__((unused)) unsigned int * rows = aux->rows;
 	unsigned int * cols = aux->cols;
 	ValueType * vals = aux->vals;
 	int ra=rows[a], rb=rows[b];
 	int ca=cols[a], cb=cols[b];
-	[[gnu::unused]] int ra_mul = ra / 8, rb_mul = rb / 8;
-	[[gnu::unused]] int ca_mul = ca / 256, cb_mul = cb / 256;
+	__attribute__((unused)) int ra_mul = ra / 8, rb_mul = rb / 8;
+	__attribute__((unused)) int ca_mul = ca / 256, cb_mul = cb / 256;
 	ValueType va=vals[a], vb=vals[b];
 	int ret = 0;
 	// ret = (ra_mul > rb_mul) ? 1 : (ra_mul < rb_mul) ? -1 : 0;
@@ -341,7 +341,7 @@ quicksort_cmp(int a, int b, struct cmp_data_t * aux)
 #include "sort/bucketsort/bucketsort_gen.c"
 static inline
 int
-bucketsort_find_bucket(int * A, long i, [[gnu::unused]] void * unused)
+bucketsort_find_bucket(int * A, long i, __attribute__((unused)) void * unused)
 {
 		return A[i];
 }
@@ -545,8 +545,8 @@ test_permutation(long num_vals, ValueTypeReference * vals, ValueType * window, i
 
 static inline
 void
-compress_kernel_div(INT_T * row_ptr, INT_T * ja, ValueTypeReference * vals, [[gnu::unused]] long symmetric, long i_s, [[gnu::unused]] long i_t_s, [[gnu::unused]] long i_t_e, long j_s,
-		unsigned char * buf_stealable, [[gnu::unused]] unsigned char * buf_protected, long num_vals, long * num_vals_out, long * size_stealable_out, long * size_protected_out)
+compress_kernel_div(INT_T * row_ptr, INT_T * ja, ValueTypeReference * vals, __attribute__((unused)) long symmetric, long i_s, __attribute__((unused)) long i_t_s, __attribute__((unused)) long i_t_e, long j_s,
+		unsigned char * buf_stealable, __attribute__((unused)) unsigned char * buf_protected, long num_vals, long * num_vals_out, long * size_stealable_out, long * size_protected_out)
 {
 	long tnum = omp_get_thread_num();
 	struct thread_data * td = tds[tnum];
@@ -1014,7 +1014,7 @@ decompress_and_compute_kernel_div_base(unsigned char * restrict buf, ValueType *
 	long num_vals;
 	long num_vals_unique;
 	uint64_t row_min, col_min;
-	[[gnu::unused]] long num_rows;
+	__attribute__((unused)) long num_rows;
 	uint64_t row_bits, col_bits;
 	long num_rfs;
 	uint32_t * data_val_lanes_size;
@@ -1292,7 +1292,7 @@ get_packet_rows(unsigned char * restrict buf, long * i_s_ptr, long * i_e_ptr)
 
 static inline
 long
-decompress_and_compute_kernel_div(unsigned char * restrict buf, ValueType * restrict x, ValueType * restrict y, [[gnu::unused]] long i_t_s, [[gnu::unused]] long i_t_e)
+decompress_and_compute_kernel_div(unsigned char * restrict buf, ValueType * restrict x, ValueType * restrict y, __attribute__((unused)) long i_t_s, __attribute__((unused)) long i_t_e)
 {
 	return decompress_and_compute_kernel_div_select(buf, x, y, NULL, 0);
 }
@@ -1300,7 +1300,7 @@ decompress_and_compute_kernel_div(unsigned char * restrict buf, ValueType * rest
 
 static
 long
-decompress_kernel_div(INT_T * ia_out, INT_T * ja_out, ValueType * a_out, long * num_vals_out, unsigned char * restrict buf, [[gnu::unused]] long i_t_s, [[gnu::unused]] long i_t_e)
+decompress_kernel_div(INT_T * ia_out, INT_T * ja_out, ValueType * a_out, long * num_vals_out, unsigned char * restrict buf, __attribute__((unused)) long i_t_s, __attribute__((unused)) long i_t_e)
 {
 	long num_vals;
 	int tnum = omp_get_thread_num();

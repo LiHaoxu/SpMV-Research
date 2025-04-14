@@ -64,14 +64,15 @@ extern "C"{
 	#define BUCKETSORT_GEN_TYPE_1  int
 	#define BUCKETSORT_GEN_TYPE_2  int
 	#define BUCKETSORT_GEN_TYPE_3  int
-	#define BUCKETSORT_GEN_TYPE_4  void
+	#define BUCKETSORT_GEN_TYPE_4  int
 	#define BUCKETSORT_GEN_SUFFIX  _i_i_i_v
 	#include "sort/bucketsort/bucketsort_gen.c"
 	static inline
 	int
-	bucketsort_find_bucket(int * A, long i, [[gnu::unused]] void * unused)
+	bucketsort_find_bucket(int * A, long i, __attribute__((unused)) int * degree_max_ptr)
 	{
-		return A[i+1] - A[i];
+		return A[i+1] - A[i];   // Ascending order.
+		// return *degree_max_ptr - (A[i+1] - A[i]);   // Descending order.
 	}
 
 #ifdef __cplusplus
@@ -116,7 +117,6 @@ struct SELLArray : Matrix_Format
 
 	int * permutation;
 	int * rev_permutation;
-	ValueType * y_buf;
 
 	long m_ext;
 	long nnz_ext;
@@ -134,7 +134,6 @@ struct SELLArray : Matrix_Format
 
 		permutation = (typeof(permutation)) aligned_alloc(64, m * sizeof(*permutation));
 		rev_permutation = (typeof(rev_permutation)) aligned_alloc(64, m * sizeof(*rev_permutation));
-		y_buf = (typeof(y_buf)) aligned_alloc(64, m_ext * sizeof(*y_buf));
 
 		INT_T * row_ptr_reordered = (typeof(row_ptr_reordered)) aligned_alloc(64, (m+1) * sizeof(*row_ptr_reordered));
 		INT_T * col_ind_reordered = (typeof(col_ind_reordered)) aligned_alloc(64, nnz * sizeof(*col_ind_reordered));
@@ -169,9 +168,17 @@ struct SELLArray : Matrix_Format
 			td->ii_e = ii_e;
 			td->i_s = i_s;
 			td->i_e = i_e;
-			printf("%2ld: %ld %ld (%d), m=%ld\n", tnum, i_s, i_e, row_ptr[i_e] - row_ptr[i_s], m);
+			// printf("%2ld: [%8ld %8ld] [%8ld %8ld] [%8ld %8ld] (%d) m=%ld\n", tnum, ii_s, ii_e, ii_s*VEC_LEN, ii_e*VEC_LEN, i_s, i_e, row_ptr[i_e] - row_ptr[i_s], m);
 
-			bucketsort_stable_recalculate_bucket_serial(&row_ptr[i_s], i_e-i_s, m, NULL, &permutation[i_s], NULL);
+			int degree, degree_max = 0;
+			for (i=i_s;i<i_e;i++)
+			{
+				degree = row_ptr[i+1] - row_ptr[i];
+				if (degree > degree_max)
+					degree_max = degree;
+			}
+
+			bucketsort_stable_recalculate_bucket_serial(&row_ptr[i_s], i_e-i_s, degree_max+1, &degree_max, &permutation[i_s], NULL);
 			for (i=i_s;i<i_e;i++)
 			{
 				permutation[i] += i_s;
@@ -195,14 +202,13 @@ struct SELLArray : Matrix_Format
 			k = row_ptr[i_s];
 			for (i=i_s;i<i_e;i++)
 			{
-				// if (tnum == 0)
-					// printf("%d\n", row_ptr[rev_permutation[i]+1] - row_ptr[rev_permutation[i]]);
 				for (j=row_ptr[rev_permutation[i]];j<row_ptr[rev_permutation[i]+1];j++,k++)
-				// for (j=row_ptr[i];j<row_ptr[i+1];j++,k++)
 				{
 					col_ind_reordered[k] = col_ind[j];
 					values_reordered[k] = values[j];
 				}
+				// if (tnum == 0)
+					// printf("%d\n", row_ptr[rev_permutation[i]+1] - row_ptr[rev_permutation[i]]);
 			}
 		}
 
@@ -241,8 +247,7 @@ struct SELLArray : Matrix_Format
 			{
 				row_cluster_ptr[num_row_clusters] = 0;
 			}
-			scan_reduce_concurrent(row_cluster_ptr, row_cluster_ptr, num_row_clusters+1, 0, 1, 0);
-			// scan_reduce_concurrent(_TYPE_IN * A, _TYPE_OUT * P, long N, _TYPE_OUT zero, const int exclusive, const int backwards);
+			scan_reduce_concurrent(row_cluster_ptr, row_cluster_ptr, num_row_clusters+1, 0, 1, 0);   // scan_reduce_concurrent(_TYPE_IN * A, _TYPE_OUT * P, long N, _TYPE_OUT zero, const int exclusive, const int backwards);
 
 			#pragma omp barrier
 
@@ -286,7 +291,7 @@ struct SELLArray : Matrix_Format
 			}
 		}
 
-		mem_footprint = (num_row_clusters+1) * sizeof(INT_T) + nnz_ext * (sizeof(ValueType) + sizeof(INT_T));
+		mem_footprint = (num_row_clusters+1) * sizeof(INT_T) + nnz_ext * (sizeof(ValueType) + sizeof(INT_T)) + m * sizeof(INT_T);   // Plus the permutation array size.
 	}
 
 	~SELLArray()
@@ -317,7 +322,7 @@ csr_to_format(INT_T * row_ptr, INT_T * col_ind, ValueTypeReference * values, lon
 	if (symmetric && !symmetry_expanded)
 		error("symmetric matrices have to be expanded to be supported by this format");
 	struct SELLArray * sell = new SELLArray(row_ptr, col_ind, values, m, n, nnz);
-	sell->format_name = (char *) "SELL";
+	sell->format_name = (char *) "SELL_SORTED";
 	return sell;
 }
 
@@ -337,17 +342,20 @@ compute_sell(SELLArray * sell, ValueType * x , ValueType * y)
 		vec_t(VTF, VEC_LEN) zero = vec_set1(VTF, VEC_LEN, 0);
 		__attribute__((unused)) vec_t(VTF, VEC_LEN) val = zero, mul = zero, x_buf = zero, sum = zero;
 		long ii, ii_s, ii_e, jj, jj_s, jj_e;
-		long i, i_s, i_e;
-		__attribute__((unused)) long k;
+		long i, k;
+		__attribute__((unused)) long i_s, i_e;
 		ii_s = td->ii_s;
 		ii_e = td->ii_e;
 		i_s = td->i_s;
 		i_e = td->i_e;
 
+		long ii_e_last = ii_e;
+		if (ii_e * VEC_LEN > i_e)
+			ii_e_last -= VEC_LEN;
+
 		// #pragma GCC unroll 2
-		for (ii=ii_s;ii<ii_e;ii++)
+		for (ii=ii_s;ii<ii_e_last;ii++)
 		{
-			// width = (sell->row_cluster_ptr[ii+1] - sell->row_cluster_ptr[ii]) / VEC_LEN;
 			sum = vec_set1(VTF, VEC_LEN, 0);
 			jj_s = sell->row_cluster_ptr[ii];
 			jj_e = sell->row_cluster_ptr[ii+1];
@@ -366,18 +374,31 @@ compute_sell(SELLArray * sell, ValueType * x , ValueType * y)
 
 			}
 			i = VEC_LEN * ii;
-			// vec_storeu(VTF, VEC_LEN, &sell->y_buf[i], sum);
 			for (k=0;k<VEC_LEN;k++)
 			{
-				y[sell->rev_permutation[VEC_LEN * ii + k]] = vec_array(VTF, VEC_LEN, sum)[k];
+				y[sell->rev_permutation[i + k]] = vec_array(VTF, VEC_LEN, sum)[k];
 			}
 
 		}
 
-		// for (i=i_s;i<i_e;i++)
-		// {
-			// y[sell->rev_permutation[i]] = sell->y_buf[i];
-		// }
+		for (ii=ii_e_last;ii<ii_e;ii++)
+		{
+			sum = vec_set1(VTF, VEC_LEN, 0);
+			jj_s = sell->row_cluster_ptr[ii];
+			jj_e = sell->row_cluster_ptr[ii+1];
+			for (jj=jj_s;jj<jj_e;jj+=VEC_LEN)
+			{
+				val = vec_loadu(VTF, VEC_LEN, &sell->a[jj]);
+				x_buf = vec_set_iter(VTF, VEC_LEN, iter, x[sell->ja[jj+iter]]);
+				sum = vec_fmadd(VTF, VEC_LEN, val, x_buf, sum);
+			}
+			i = VEC_LEN * ii;
+			for (k=0;k<VEC_LEN;k++)
+			{
+				if (i+k < i_e)
+					y[sell->rev_permutation[i + k]] = vec_array(VTF, VEC_LEN, sum)[k];
+			}
+		}
 
 	}
 }

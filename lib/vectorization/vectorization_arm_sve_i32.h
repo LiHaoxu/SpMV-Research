@@ -45,7 +45,7 @@
 	#error "__ARM_FEATURE_SVE_BITS not defined"
 #endif
 
-typedef uint32_t  vec_i32_t [[gnu::may_alias]];
+typedef uint32_t  vec_i32_t __attribute__((may_alias));
 
 
 #define vec_array_i32_16(val)                    ({vec_i32_16_t  * _tmp = &val; (vec_i32_t *) _tmp;})
@@ -116,6 +116,12 @@ typedef uint32_t  vec_i32_t [[gnu::may_alias]];
 #define vec_or_i32_4(a, b)                       svorr_s32_z(svptrue_b32(), a, b)
 #define vec_or_i32_2(a, b)                       svorr_s32_z(svptrue_b32(), a, b)
 #define vec_or_i32_1(a, b)                       (a | b)
+
+#define vec_xor_i32_16(a, b)                      svxor_s32_z(svptrue_b32(), a, b)
+#define vec_xor_i32_8(a, b)                       svxor_s32_z(svptrue_b32(), a, b)
+#define vec_xor_i32_4(a, b)                       svxor_s32_z(svptrue_b32(), a, b)
+#define vec_xor_i32_2(a, b)                       svxor_s32_z(svptrue_b32(), a, b)
+#define vec_xor_i32_1(a, b)                       (a | b)
 
 
 #define vec_slli_i32_16(a, imm8)                                       svlsl_n_s32_z(svptrue_b32(),                        a, imm8)

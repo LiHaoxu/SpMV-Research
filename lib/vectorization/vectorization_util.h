@@ -2,6 +2,8 @@
 #define VECTORIZATION_UTIL_H
 
 #include "macros/cpp_defines.h"
+#include "macros/macrolib.h"
+#include "bit_ops.h"
 
 
 #define vec_x2_128  256
@@ -20,6 +22,7 @@
 #define vec_loop_expr(type, N, tmp, iter, code)    \
 ({                                                 \
 	type tmp;                                  \
+	PRAGMA(GCC unroll N)                       \
 	for (long iter=0;iter<N;iter++)            \
 	{                                          \
 		code                               \
@@ -28,8 +31,21 @@
 })
 
 
+#define vec_loop_expr_init(type, N, tmp, init, iter, code)    \
+({                                                            \
+	type tmp = init;                                      \
+	PRAGMA(GCC unroll N)                                  \
+	for (long iter=0;iter<N;iter++)                       \
+	{                                                     \
+		code                                          \
+	}                                                     \
+	tmp;                                                  \
+})
+
+
 #define vec_loop_stmt(N, iter, code)       \
 do {                                       \
+	PRAGMA(GCC unroll N)               \
 	for (long iter=0;iter<N;iter++)    \
 	{                                  \
 		code                       \
@@ -40,6 +56,7 @@ do {                                       \
 #define vec_reduce_expr(type, N, zero, tmp, iter, code)    \
 ({                                                         \
 	type tmp = zero;                                   \
+	PRAGMA(GCC unroll N)                               \
 	for (long iter=0;iter<N;iter++)                    \
 	{                                                  \
 		code                                       \

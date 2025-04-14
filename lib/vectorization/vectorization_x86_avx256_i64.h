@@ -10,131 +10,231 @@
 #include "macros/macrolib.h"
 
 #include "vectorization/vectorization_util.h"
+#include "vectorization/vectorization_x86_avx256_m64.h"
 
 
-typedef struct [[gnu::packed]] { __m256i v[4]; }  __m256i_i64_4;
-#define vec_i64_16_t  __m256i_i64_4
-typedef struct [[gnu::packed]] { __m256i v[2]; }  __m256i_i64_2;
-#define vec_i64_8_t   __m256i_i64_2
-#define vec_i64_4_t   __m256i
-#define vec_i64_2_t   __m128i
-#define vec_i64_1_t   int64_t
+typedef union __attribute__((packed, aligned(8))) { int64_t v;    double  vf64;    float  vf32;     int64_t s[1];  int64_t si[1];  uint64_t su[1];  double sf[1];  }  vec_i64_1_t;
+typedef union __attribute__((packed, aligned(8))) { __m128i v;    __m128d vf64;    __m128 vf32;     int64_t s[2];  int64_t si[2];  uint64_t su[2];  double sf[2];  }  vec_i64_2_t;
+typedef union __attribute__((packed, aligned(8))) { __m256i v;    __m256d vf64;    __m256 vf32;     int64_t s[4];  int64_t si[4];  uint64_t su[4];  double sf[4];  }  vec_i64_4_t;
+typedef union __attribute__((packed, aligned(8))) { __m256i v[2]; __m256d vf64[2]; __m256 vf32[2];  int64_t s[8];  int64_t si[8];  uint64_t su[8];  double sf[8];  }  vec_i64_8_t;
+typedef union __attribute__((packed, aligned(8))) { __m256i v[4]; __m256d vf64[4]; __m256 vf32[4];  int64_t s[16]; int64_t si[16]; uint64_t su[16]; double sf[16]; }  vec_i64_16_t;
+
+typedef union __attribute__((packed, aligned(8))) { int64_t v;    int64_t s[1];  int32_t si32[1];  }  vec_perm_p64_1_t;
+typedef union __attribute__((packed, aligned(8))) { __m128i v;    int64_t s[2];  int32_t si32[4];  }  vec_perm_p64_2_t;
+typedef union __attribute__((packed, aligned(8))) { __m256i v;    int64_t s[4];  int32_t si32[8];  }  vec_perm_p64_4_t;
+typedef union __attribute__((packed, aligned(8))) { __m256i v[2]; int64_t s[8];  int32_t si32[16]; }  vec_perm_p64_8_t;
+typedef union __attribute__((packed, aligned(8))) { __m256i v[4]; int64_t s[16]; int32_t si32[32]; }  vec_perm_p64_16_t;
 
 #define vec_len_default_i64  4
 
-typedef uint64_t vec_i64_t [[gnu::may_alias]];
+
+#define vec_i64_4(val)                                     ( (vec_i64_4_t)  { .v = val } )
+#define vec_i64_2(val)                                     ( (vec_i64_2_t)  { .v = val } )
+#define vec_i64_1(val)                                     ( (vec_i64_1_t)  { .v = val } )
+
+#define vec_perm_p64_4(val)                                ( (vec_perm_p64_4_t)  { .v = val } )
+#define vec_perm_p64_2(val)                                ( (vec_perm_p64_2_t)  { .v = val } )
+#define vec_perm_p64_1(val)                                ( (vec_perm_p64_1_t)  { .v = val } )
 
 
-#define vec_array_i64_16(val)                    ({vec_i64_16_t * _tmp = &val; (vec_i64_t *) _tmp;})
-#define vec_array_i64_8(val)                     ({vec_i64_8_t  * _tmp = &val; (vec_i64_t *) _tmp;})
-#define vec_array_i64_4(val)                     ({vec_i64_4_t  * _tmp = &val; (vec_i64_t *) _tmp;})
-#define vec_array_i64_2(val)                     ({vec_i64_2_t  * _tmp = &val; (vec_i64_t *) _tmp;})
-#define vec_array_i64_1(val)                     ({vec_i64_1_t  * _tmp = &val; (vec_i64_t *) _tmp;})
+//------------------------------------------------------------------------------------------------------------------------------------------
+//- Cast
+//------------------------------------------------------------------------------------------------------------------------------------------
 
-#define vec_set1_i64_16(val)                     vec_loop_expr(__m256i_i64_4, 4, _tmp, _i, _tmp.v[_i] = vec_set1_i64_4(val);)
-#define vec_set1_i64_8(val)                      vec_loop_expr(__m256i_i64_2, 2, _tmp, _i, _tmp.v[_i] = vec_set1_i64_4(val);)
-#define vec_set1_i64_4(val)                      _mm256_set1_epi64x(val)
-#define vec_set1_i64_2(val)                      _mm_set1_epi64x(val)
-#define vec_set1_i64_1(val)                      val
+#define vec_cast_to_i32_i64_16(val)                        vec_loop_expr(vec_i32_32_t, 4, _tmp, _i, _tmp.v[_i] = val.v[_i];)
+#define vec_cast_to_i32_i64_8(val)                         vec_loop_expr(vec_i32_16_t, 2, _tmp, _i, _tmp.v[_i] = val.v[_i];)
+#define vec_cast_to_i32_i64_4(val)                         ( (vec_i32_8_t)  { .v = val.v } )
+#define vec_cast_to_i32_i64_2(val)                         ( (vec_i32_4_t)  { .v = val.v } )
+#define vec_cast_to_i32_i64_1(val)                         ( (vec_i32_2_t)  { .v = val.v } )
 
-#define vec_set_iter_i64_16(iter, expr)          vec_loop_expr(__m256i_i64_4, 4, _tmp, _i, _tmp.v[_i] = _mm256_set_epi64x(vec_iter_expr_4(iter, 4*_i, expr));)
-#define vec_set_iter_i64_8(iter, expr)           vec_loop_expr(__m256i_i64_2, 2, _tmp, _i, _tmp.v[_i] = _mm256_set_epi64x(vec_iter_expr_4(iter, 4*_i, expr));)
-#define vec_set_iter_i64_4(iter, expr)           _mm256_set_epi64x(vec_iter_expr_4(iter, 0, expr))
-#define vec_set_iter_i64_2(iter, expr)           _mm_set_epi64x(vec_iter_expr_2(iter, 0, expr))
-#define vec_set_iter_i64_1(iter, expr)           vec_iter_expr_1(iter, 0, expr)
+#define vec_cast_to_i64_i64_16(val)                        val
+#define vec_cast_to_i64_i64_8(val)                         val
+#define vec_cast_to_i64_i64_4(val)                         val
+#define vec_cast_to_i64_i64_2(val)                         val
+#define vec_cast_to_i64_i64_1(val)                         val
 
+#define vec_cast_to_f32_i64_16(val)                        vec_loop_expr(vec_f32_32_t, 4, _tmp, _i, _tmp.v[_i] = val.vf32[_i];)
+#define vec_cast_to_f32_i64_8(val)                         vec_loop_expr(vec_f32_16_t, 2, _tmp, _i, _tmp.v[_i] = val.vf32[_i];)
+#define vec_cast_to_f32_i64_4(val)                         ( (vec_f32_8_t)  { .v = val.vf32 } )
+#define vec_cast_to_f32_i64_2(val)                         ( (vec_f32_4_t)  { .v = val.vf32 } )
+#define vec_cast_to_f32_i64_1(val)                         ( (vec_f32_2_t)  { .v = val.vf32 } )
 
-#define vec_loadu_i64_16(ptr)                    vec_loop_expr(__m256i_i64_4, 4, _tmp, _i, _tmp.v[_i] = vec_loadu_i64_4(((vec_i64_4_t*)(ptr)) + _i);)
-#define vec_loadu_i64_8(ptr)                     vec_loop_expr(__m256i_i64_2, 2, _tmp, _i, _tmp.v[_i] = vec_loadu_i64_4(((vec_i64_4_t*)(ptr)) + _i);)
-#define vec_loadu_i64_4(ptr)                     _mm256_loadu_si256((vec_i64_4_t*)(ptr))
-#define vec_loadu_i64_2(ptr)                     _mm_loadu_si128((vec_i64_2_t*)(ptr))
-#define vec_loadu_i64_1(ptr)                     (*((vec_i64_1_t*)(ptr)))
-
-#define vec_storeu_i64_16(ptr, vec)              vec_loop_stmt(4, _i, vec_storeu_i64_4(((vec_i64_4_t*)(ptr)) + _i, (vec).v[_i]);)
-#define vec_storeu_i64_8(ptr, vec)               vec_loop_stmt(2, _i, vec_storeu_i64_4(((vec_i64_4_t*)(ptr)) + _i, (vec).v[_i]);)
-#define vec_storeu_i64_4(ptr, vec)               _mm256_storeu_si256((vec_i64_4_t*)(ptr), vec)
-#define vec_storeu_i64_2(ptr, vec)               _mm_storeu_si128((vec_i64_2_t*)(ptr), vec)
-#define vec_storeu_i64_1(ptr, vec)               do { (*((vec_i64_1_t*)(ptr))) = (vec); } while (0)
+#define vec_cast_to_f64_i64_16(val)                        vec_loop_expr(vec_f64_16_t, 4, _tmp, _i, _tmp.v[_i] = val.vf64[_i];)
+#define vec_cast_to_f64_i64_8(val)                         vec_loop_expr(vec_f64_8_t,  2, _tmp, _i, _tmp.v[_i] = val.vf64[_i];)
+#define vec_cast_to_f64_i64_4(val)                         ( (vec_f64_4_t)  { .v = val.vf64 } )
+#define vec_cast_to_f64_i64_2(val)                         ( (vec_f64_2_t)  { .v = val.vf64 } )
+#define vec_cast_to_f64_i64_1(val)                         ( (vec_f64_1_t)  { .v = val.vf64 } )
 
 
-#define vec_add_i64_16(a, b)                     vec_loop_expr(__m256i_i64_4, 4, _tmp, _i, _tmp.v[_i] = vec_add_i64_4(a.v[_i], b.v[_i]);)
-#define vec_add_i64_8(a, b)                      vec_loop_expr(__m256i_i64_2, 2, _tmp, _i, _tmp.v[_i] = vec_add_i64_4(a.v[_i], b.v[_i]);)
-#define vec_add_i64_4(a, b)                      _mm256_add_epi64(a, b)
-#define vec_add_i64_2(a, b)                      _mm_add_epi64(a, b)
-#define vec_add_i64_1(a, b)                      (a + b)
+//------------------------------------------------------------------------------------------------------------------------------------------
+//- Set - Load - Store
+//------------------------------------------------------------------------------------------------------------------------------------------
 
-#define vec_sub_i64_16(a, b)                     vec_loop_expr(__m256i_i64_4, 4, _tmp, _i, _tmp.v[_i] = vec_sub_i64_4(a.v[_i], b.v[_i]);)
-#define vec_sub_i64_8(a, b)                      vec_loop_expr(__m256i_i64_2, 2, _tmp, _i, _tmp.v[_i] = vec_sub_i64_4(a.v[_i], b.v[_i]);)
-#define vec_sub_i64_4(a, b)                      _mm256_sub_epi64(a, b)
-#define vec_sub_i64_2(a, b)                      _mm_sub_epi64(a, b)
-#define vec_sub_i64_1(a, b)                      (a - b)
+#define vec_array_i64_16(val)                              val.s
+#define vec_array_i64_8(val)                               val.s
+#define vec_array_i64_4(val)                               val.s
+#define vec_array_i64_2(val)                               val.s
+#define vec_array_i64_1(val)                               val.s
 
+#define vec_set1_i64_16(val)                               vec_loop_expr(vec_i64_16_t, 4, _tmp, _i, _tmp.v[_i] = _mm256_set1_epi64x(val);)
+#define vec_set1_i64_8(val)                                vec_loop_expr(vec_i64_8_t,  2, _tmp, _i, _tmp.v[_i] = _mm256_set1_epi64x(val);)
+#define vec_set1_i64_4(val)                                vec_i64_4( _mm256_set1_epi64x(val) )
+#define vec_set1_i64_2(val)                                vec_i64_2( _mm_set1_epi64x(val) )
+#define vec_set1_i64_1(val)                                vec_i64_1( (int64_t) (val) )
 
-#define vec_mul_i64_16(a, b)                     vec_loop_expr(__m256i_i64_4, 4, _tmp, _i, _tmp.v[_i] = vec_mul_i64_4(a.v[_i], b.v[_i]);)
-#define vec_mul_i64_8(a, b)                      vec_loop_expr(__m256i_i64_2, 2, _tmp, _i, _tmp.v[_i] = vec_mul_i64_4(a.v[_i], b.v[_i]);)
-#define vec_mul_i64_4(a, b)                      vec_set_iter_i64_4(_j, a[_j]*b[_j])
-#define vec_mul_i64_2(a, b)                      vec_set_iter_i64_2(_j, a[_j]*b[_j])
-#define vec_mul_i64_1(a, b)                      (a * b)
+#define vec_set_iter_i64_16(iter, expr)                    vec_loop_expr(vec_i64_16_t, 4, _tmp, _i, _tmp.v[_i] = _mm256_set_epi64x(vec_iter_expr_4(iter, 4*_i, expr));)
+#define vec_set_iter_i64_8(iter, expr)                     vec_loop_expr(vec_i64_8_t,  2, _tmp, _i, _tmp.v[_i] = _mm256_set_epi64x(vec_iter_expr_4(iter, 4*_i, expr));)
+#define vec_set_iter_i64_4(iter, expr)                     vec_i64_4( _mm256_set_epi64x(vec_iter_expr_4(iter, 0, expr)) )
+#define vec_set_iter_i64_2(iter, expr)                     vec_i64_2( _mm_set_epi64x(vec_iter_expr_2(iter, 0,  expr)) )
+#define vec_set_iter_i64_1(iter, expr)                     vec_i64_1( vec_iter_expr_1(iter, 0,  (int64_t) (expr)) )
 
-#define vec_div_i64_16(a, b)                     vec_loop_expr(__m256i_i64_4, 4, _tmp, _i, _tmp.v[_i] = vec_div_i64_4(a.v[_i], b.v[_i]);)
-#define vec_div_i64_8(a, b)                      vec_loop_expr(__m256i_i64_2, 2, _tmp, _i, _tmp.v[_i] = vec_div_i64_4(a.v[_i], b.v[_i]);)
-#define vec_div_i64_4(a, b)                      vec_set_iter_i64_4(_j, a[_j]/b[_j])
-#define vec_div_i64_2(a, b)                      vec_set_iter_i64_2(_j, a[_j]/b[_j])
-#define vec_div_i64_1(a, b)                      (a / b)
+#define vec_set_iter_p64_16(iter, expr)                    vec_loop_expr(vec_perm_p64_16_t, 16, _tmp, iter, _tmp.s[iter] = expr;)
+#define vec_set_iter_p64_8(iter, expr)                     vec_loop_expr(vec_perm_p64_8_t,   8, _tmp, iter, _tmp.s[iter] = expr;)
+#define vec_set_iter_p64_4(iter, expr)                     vec_loop_expr(vec_perm_p64_4_t,   8, _tmp, _i, long iter = _i/2; _tmp.si32[_i] = 2*(expr) + _i%2;)   /* Only 32bit operation available. Little-endian. */
+#define vec_set_iter_p64_2(iter, expr)                     vec_loop_expr(vec_perm_p64_2_t,   2, _tmp, iter, _tmp.s[iter] = ((expr) << 1);)    /* _mm_permutevar_pd: How paranoid must one be to use the second bit for selection??? FML. */
+#define vec_set_iter_p64_1(iter, expr)                     vec_perm_p64_1( (int64_t) (expr) )
 
+#define vec_loadu_i64_16(ptr)                              vec_loop_expr(vec_i64_16_t, 4, _tmp, _i, _tmp.v[_i] = _mm256_loadu_si256(((__m256i *)(ptr)) + _i);)
+#define vec_loadu_i64_8(ptr)                               vec_loop_expr(vec_i64_8_t,  2, _tmp, _i, _tmp.v[_i] = _mm256_loadu_si256(((__m256i *)(ptr)) + _i);)
+#define vec_loadu_i64_4(ptr)                               vec_i64_4( _mm256_loadu_si256((__m256i *) ptr) )
+#define vec_loadu_i64_2(ptr)                               vec_i64_2( _mm_loadu_si128((__m128i *) ptr) )
+#define vec_loadu_i64_1(ptr)                               vec_i64_1( (*((int64_t *) ptr)) )
 
-#define vec_and_i64_16(a, b)                     vec_loop_expr(__m256i_i64_4, 4, _tmp, _i, _tmp.v[_i] = vec_and_i64_4(a.v[_i], b.v[_i]);)
-#define vec_and_i64_8(a, b)                      vec_loop_expr(__m256i_i64_2, 2, _tmp, _i, _tmp.v[_i] = vec_and_i64_4(a.v[_i], b.v[_i]);)
-#define vec_and_i64_4(a, b)                      _mm256_and_si256(a, b)
-#define vec_and_i64_2(a, b)                      _mm_and_si128(a, b)
-#define vec_and_i64_1(a, b)                      (a & b)
-
-#define vec_or_i64_16(a, b)                      vec_loop_expr(__m256i_i64_4, 4, _tmp, _i, _tmp.v[_i] = vec_or_i64_4(a.v[_i], b.v[_i]);)
-#define vec_or_i64_8(a, b)                       vec_loop_expr(__m256i_i64_2, 2, _tmp, _i, _tmp.v[_i] = vec_or_i64_4(a.v[_i], b.v[_i]);)
-#define vec_or_i64_4(a, b)                       _mm256_or_si256(a, b)
-#define vec_or_i64_2(a, b)                       _mm_or_si128(a, b)
-#define vec_or_i64_1(a, b)                       (a | b)
-
-
-#define vec_slli_i64_16(a, imm8)                 vec_loop_expr(__m256i_i64_4, 4, _tmp, _i, _tmp.v[_i] = vec_slli_i64_4(a.v[_i], imm8);)
-#define vec_slli_i64_8(a, imm8)                  vec_loop_expr(__m256i_i64_2, 2, _tmp, _i, _tmp.v[_i] = vec_slli_i64_4(a.v[_i], imm8);)
-#define vec_slli_i64_4(a, imm8)                  _mm256_slli_epi64(a, imm8)
-#define vec_slli_i64_2(a, imm8)                  _mm_slli_epi64(a, imm8)
-#define vec_slli_i64_1(a, imm8)                  ((imm8 < 64) ? ((uint64_t) a)<<imm8 : 0)
-
-#define vec_srli_i64_16(a, imm8)                 vec_loop_expr(__m256i_i64_4, 4, _tmp, _i, _tmp.v[_i] = vec_srli_i64_4(a.v[_i], imm8);)
-#define vec_srli_i64_8(a, imm8)                  vec_loop_expr(__m256i_i64_2, 2, _tmp, _i, _tmp.v[_i] = vec_srli_i64_4(a.v[_i], imm8);)
-#define vec_srli_i64_4(a, imm8)                  _mm256_srli_epi64(a, imm8)
-#define vec_srli_i64_2(a, imm8)                  _mm_srli_epi64(a, imm8)
-#define vec_srli_i64_1(a, imm8)                  ((imm8 < 64) ? ((uint64_t) a)>>imm8 : 0)
+#define vec_storeu_i64_16(ptr, vec)                        vec_loop_stmt(4, _i, _mm256_storeu_si256(((__m256i *)(ptr)) + _i, vec.v[_i]);)
+#define vec_storeu_i64_8(ptr, vec)                         vec_loop_stmt(2, _i, _mm256_storeu_si256(((__m256i *)(ptr)) + _i, vec.v[_i]);)
+#define vec_storeu_i64_4(ptr, vec)                         _mm256_storeu_si256((__m256i *) ptr, vec.v)
+#define vec_storeu_i64_2(ptr, vec)                         _mm_storeu_si128((__m128i *) ptr, vec.v)
+#define vec_storeu_i64_1(ptr, vec)                         do { (*((int64_t *) ptr)) = (vec.v); } while (0)
 
 
-#define vec_srai_i64_16(a, imm8)                 vec_loop_expr(__m256i_i64_4, 4, _tmp, _i, _tmp.v[_i] = vec_srai_i64_4(a.v[_i], imm8);)
-#define vec_srai_i64_8(a, imm8)                  vec_loop_expr(__m256i_i64_2, 2, _tmp, _i, _tmp.v[_i] = vec_srai_i64_4(a.v[_i], imm8);)
-#define vec_srai_i64_4(a, imm8)                  ({union {vec_i64_4_t v; uint64_t s[4];} buf_a={.v=a}; vec_set_iter_i64_4(_j, vec_srai_i64_1(buf_a.s[_j], imm8));})
-#define vec_srai_i64_2(a, imm8)                  ({union {vec_i64_2_t v; uint64_t s[2];} buf_a={.v=a}; vec_set_iter_i64_2(_j, vec_srai_i64_1(buf_a.s[_j], imm8));})
-#define vec_srai_i64_1(a, imm8)                  ((imm8 < 64) ? ((int64_t) a)>>imm8 : (((int64_t) a) < 0) ? -1 : 0)
+//------------------------------------------------------------------------------------------------------------------------------------------
+//- Operations
+//------------------------------------------------------------------------------------------------------------------------------------------
+
+#define vec_add_i64_16(a, b)                               vec_loop_expr(vec_i64_16_t, 4, _tmp, _i, _tmp.v[_i] = _mm256_add_epi64(a.v[_i], b.v[_i]);)
+#define vec_add_i64_8(a, b)                                vec_loop_expr(vec_i64_8_t,  2, _tmp, _i, _tmp.v[_i] = _mm256_add_epi64(a.v[_i], b.v[_i]);)
+#define vec_add_i64_4(a, b)                                vec_i64_4( _mm256_add_epi64(a.v, b.v) )
+#define vec_add_i64_2(a, b)                                vec_i64_2( _mm_add_epi64(a.v, b.v) )
+#define vec_add_i64_1(a, b)                                vec_i64_1( (a.v + b.v) )
+
+#define vec_sub_i64_16(a, b)                               vec_loop_expr(vec_i64_16_t, 4, _tmp, _i, _tmp.v[_i] = _mm256_sub_epi64(a.v[_i], b.v[_i]);)
+#define vec_sub_i64_8(a, b)                                vec_loop_expr(vec_i64_8_t,  2, _tmp, _i, _tmp.v[_i] = _mm256_sub_epi64(a.v[_i], b.v[_i]);)
+#define vec_sub_i64_4(a, b)                                vec_i64_4( _mm256_sub_epi64(a.v, b.v) )
+#define vec_sub_i64_2(a, b)                                vec_i64_2( _mm_sub_epi64(a.v, b.v) )
+#define vec_sub_i64_1(a, b)                                vec_i64_1( (a.v - b.v) )
+
+#define vec_mul_i64_16(a, b)                               vec_set_iter_i64_16(_j, a.si[_j]*b.si[_j])
+#define vec_mul_i64_8(a, b)                                vec_set_iter_i64_8(_j, a.si[_j]*b.si[_j])
+#define vec_mul_i64_4(a, b)                                vec_set_iter_i64_4(_j, a.si[_j]*b.si[_j])
+#define vec_mul_i64_2(a, b)                                vec_set_iter_i64_2(_j, a.si[_j]*b.si[_j])
+#define vec_mul_i64_1(a, b)                                vec_i64_1( (a.v * b.v) )
+
+#define vec_div_i64_16(a, b)                               vec_set_iter_i64_16(_j, a.si[_j]/b.si[_j])
+#define vec_div_i64_8(a, b)                                vec_set_iter_i64_8(_j, a.si[_j]/b.si[_j])
+#define vec_div_i64_4(a, b)                                vec_set_iter_i64_4(_j, a.si[_j]/b.si[_j])
+#define vec_div_i64_2(a, b)                                vec_set_iter_i64_2(_j, a.si[_j]/b.si[_j])
+#define vec_div_i64_1(a, b)                                vec_i64_1( (a.v / b.v) )
+
+#define vec_and_i64_16(a, b)                               vec_loop_expr(vec_i64_16_t, 4, _tmp, _i, _tmp.v[_i] = _mm256_and_si256(a.v[_i], b.v[_i]);)
+#define vec_and_i64_8(a, b)                                vec_loop_expr(vec_i64_8_t,  2, _tmp, _i, _tmp.v[_i] = _mm256_and_si256(a.v[_i], b.v[_i]);)
+#define vec_and_i64_4(a, b)                                vec_i64_4( _mm256_and_si256(a.v, b.v) )
+#define vec_and_i64_2(a, b)                                vec_i64_2( _mm_and_si128(a.v, b.v) )
+#define vec_and_i64_1(a, b)                                vec_i64_1( (a.v & b.v) )
+
+#define vec_or_i64_16(a, b)                                vec_loop_expr(vec_i64_16_t, 4, _tmp, _i, _tmp.v[_i] = _mm256_or_si256(a.v[_i], b.v[_i]);)
+#define vec_or_i64_8(a, b)                                 vec_loop_expr(vec_i64_8_t,  2, _tmp, _i, _tmp.v[_i] = _mm256_or_si256(a.v[_i], b.v[_i]);)
+#define vec_or_i64_4(a, b)                                 vec_i64_4( _mm256_or_si256(a.v, b.v) )
+#define vec_or_i64_2(a, b)                                 vec_i64_2( _mm_or_si128(a.v, b.v) )
+#define vec_or_i64_1(a, b)                                 vec_i64_1( (a.v | b.v) )
+
+#define vec_not_i64_16(a)                                  vec_loop_expr(vec_i64_16_t, 4, _tmp, _i, _tmp.v[_i] = _mm256_xor_si256(a.v[_i], _mm256_set1_epi64x(-1LL));)
+#define vec_not_i64_8(a)                                   vec_loop_expr(vec_i64_8_t,  2, _tmp, _i, _tmp.v[_i] = _mm256_xor_si256(a.v[_i], _mm256_set1_epi64x(-1LL));)
+#define vec_not_i64_4(a)                                   vec_i64_4( _mm256_xor_si256(a.v, _mm256_set1_epi64x(-1LL)) )
+#define vec_not_i64_2(a)                                   vec_i64_2( _mm_xor_si128(a.v, _mm_set1_epi64x(-1LL)) )
+#define vec_not_i64_1(a)                                   vec_i64_1( (a.v ^ -1) )
+
+#define vec_xor_i64_16(a, b)                               vec_loop_expr(vec_i64_16_t, 4, _tmp, _i, _tmp.v[_i] = _mm256_xor_si256(a.v[_i], b.v[_i]);)
+#define vec_xor_i64_8(a, b)                                vec_loop_expr(vec_i64_8_t,  2, _tmp, _i, _tmp.v[_i] = _mm256_xor_si256(a.v[_i], b.v[_i]);)
+#define vec_xor_i64_4(a, b)                                vec_i64_4( _mm256_xor_si256(a.v, b.v) )
+#define vec_xor_i64_2(a, b)                                vec_i64_2( _mm_xor_si128(a.v, b.v) )
+#define vec_xor_i64_1(a, b)                                vec_i64_1( (a.v ^ b.v) )
 
 
-#define vec_sllv_i64_16(a, count)                vec_loop_expr(__m256i_i64_4, 4, _tmp, _i, _tmp.v[_i] = vec_sllv_i64_4(a.v[_i], count.v[_i]);)
-#define vec_sllv_i64_8(a, count)                 vec_loop_expr(__m256i_i64_2, 2, _tmp, _i, _tmp.v[_i] = vec_sllv_i64_4(a.v[_i], count.v[_i]);)
-#define vec_sllv_i64_4(a, count)                 _mm256_sllv_epi64(a, count)
-#define vec_sllv_i64_2(a, count)                 _mm_sllv_epi64(a, count)
-#define vec_sllv_i64_1(a, count)                 ((count < 64) ? ((uint64_t) a)<<count : 0)
+//------------------------------------------------------------------------------------------------------------------------------------------
+//- Shift
+//------------------------------------------------------------------------------------------------------------------------------------------
+
+#define vec_slli_i64_16(a, imm8)                           vec_loop_expr(vec_i64_16_t, 4, _tmp, _i, _tmp.v[_i] = _mm256_slli_epi64(a.v[_i], imm8);)
+#define vec_slli_i64_8(a, imm8)                            vec_loop_expr(vec_i64_8_t,  2, _tmp, _i, _tmp.v[_i] = _mm256_slli_epi64(a.v[_i], imm8);)
+#define vec_slli_i64_4(a, imm8)                            vec_i64_4( _mm256_slli_epi64(a.v, imm8) )
+#define vec_slli_i64_2(a, imm8)                            vec_i64_2( _mm_slli_epi64(a.v, imm8) )
+#define vec_slli_i64_1(a, imm8)                            vec_i64_1( (int64_t) ((imm8 < 64) ? ((uint64_t) a.v)<<imm8 : 0) )
+
+#define vec_srli_i64_16(a, imm8)                           vec_loop_expr(vec_i64_16_t, 4, _tmp, _i, _tmp.v[_i] = _mm256_srli_epi64(a.v[_i], imm8);)
+#define vec_srli_i64_8(a, imm8)                            vec_loop_expr(vec_i64_8_t,  2, _tmp, _i, _tmp.v[_i] = _mm256_srli_epi64(a.v[_i], imm8);)
+#define vec_srli_i64_4(a, imm8)                            vec_i64_4( _mm256_srli_epi64(a.v, imm8) )
+#define vec_srli_i64_2(a, imm8)                            vec_i64_2( _mm_srli_epi64(a.v, imm8) )
+#define vec_srli_i64_1(a, imm8)                            vec_i64_1( (int64_t) ((imm8 < 64) ? ((uint64_t) a.v)>>imm8 : 0) )
+
+#define vec_srai_i64_16(a, imm8)                           vec_set_iter_i64_16(_j, vec_srai_i64_s(a.si[_j], imm8))
+#define vec_srai_i64_8(a, imm8)                            vec_set_iter_i64_8(_j, vec_srai_i64_s(a.si[_j], imm8))
+#define vec_srai_i64_4(a, imm8)                            vec_set_iter_i64_4(_j, vec_srai_i64_s(a.si[_j], imm8))
+#define vec_srai_i64_2(a, imm8)                            vec_set_iter_i64_2(_j, vec_srai_i64_s(a.si[_j], imm8))
+#define vec_srai_i64_1(a, imm8)                            vec_set_iter_i64_1(_j, vec_srai_i64_s(a.si[_j], imm8))
+#define vec_srai_i64_s(a, imm8)                            ( (imm8 < 64) ? ((int64_t) a)>>imm8 : (((int64_t) a) < 0) ? -1 : 0 )
+
+#define vec_sllv_i64_16(a, count)                          vec_loop_expr(vec_i64_16_t, 4, _tmp, _i, _tmp.v[_i] = _mm256_sllv_epi64(a.v[_i], count.v[_i]);)
+#define vec_sllv_i64_8(a, count)                           vec_loop_expr(vec_i64_8_t,  2, _tmp, _i, _tmp.v[_i] = _mm256_sllv_epi64(a.v[_i], count.v[_i]);)
+#define vec_sllv_i64_4(a, count)                           vec_i64_4( _mm256_sllv_epi64(a.v, count.v) )
+#define vec_sllv_i64_2(a, count)                           vec_i64_2( _mm_sllv_epi64(a.v, count.v) )
+#define vec_sllv_i64_1(a, count)                           vec_i64_1( (int64_t) ((count.v < 64) ? ((uint64_t) a.v)<<count.v : 0) )
+
+#define vec_srlv_i64_16(a, count)                          vec_loop_expr(vec_i64_16_t, 4, _tmp, _i, _tmp.v[_i] = _mm256_srlv_epi64(a.v[_i], count.v[_i]);)
+#define vec_srlv_i64_8(a, count)                           vec_loop_expr(vec_i64_8_t,  2, _tmp, _i, _tmp.v[_i] = _mm256_srlv_epi64(a.v[_i], count.v[_i]);)
+#define vec_srlv_i64_4(a, count)                           vec_i64_4( _mm256_srlv_epi64(a.v, count.v) )
+#define vec_srlv_i64_2(a, count)                           vec_i64_2( _mm_srlv_epi64(a.v, count.v) )
+#define vec_srlv_i64_1(a, count)                           vec_i64_1( (int64_t) ((count.v < 64) ? ((uint64_t) a.v)>>count.v : 0) )
+
+#define vec_srav_i64_16(a, count)                          vec_set_iter_i64_16(_j, vec_srav_i64_s(a.si[_j], count.si[_j]))
+#define vec_srav_i64_8(a, count)                           vec_set_iter_i64_8(_j, vec_srav_i64_s(a.si[_j], count.si[_j]))
+#define vec_srav_i64_4(a, count)                           vec_set_iter_i64_4(_j, vec_srav_i64_s(a.si[_j], count.si[_j]))
+#define vec_srav_i64_2(a, count)                           vec_set_iter_i64_2(_j, vec_srav_i64_s(a.si[_j], count.si[_j]))
+#define vec_srav_i64_1(a, count)                           vec_set_iter_i64_1(_j, vec_srav_i64_s(a.si[_j], count.si[_j]))
+#define vec_srav_i64_s(a, count)                           ( (count < 64) ? ((int64_t) a)>>count : (((int64_t) a) < 0) ? -1 : 0 )
 
 
-#define vec_srlv_i64_16(a, count)                vec_loop_expr(__m256i_i64_4, 4, _tmp, _i, _tmp.v[_i] = vec_srlv_i64_4(a.v[_i], count.v[_i]);)
-#define vec_srlv_i64_8(a, count)                 vec_loop_expr(__m256i_i64_2, 2, _tmp, _i, _tmp.v[_i] = vec_srlv_i64_4(a.v[_i], count.v[_i]);)
-#define vec_srlv_i64_4(a, count)                 _mm256_srlv_epi64(a, count)
-#define vec_srlv_i64_2(a, count)                 _mm_srlv_epi64(a, count)
-#define vec_srlv_i64_1(a, count)                 ((count < 64) ? ((uint64_t) a)>>count : 0)
+//------------------------------------------------------------------------------------------------------------------------------------------
+//- Compare
+//------------------------------------------------------------------------------------------------------------------------------------------
+
+#define vec_cmpeq_i64_16(a, b)                             vec_loop_expr(vec_mask_m64_16_t, 4, _tmp, _i, _tmp.v[_i] = _mm256_cmpeq_epi64(a.v[_i], b.v[_i]);)
+#define vec_cmpeq_i64_8(a, b)                              vec_loop_expr(vec_mask_m64_8_t,  2, _tmp, _i, _tmp.v[_i] = _mm256_cmpeq_epi64(a.v[_i], b.v[_i]);)
+#define vec_cmpeq_i64_4(a, b)                              vec_mask_m64_4( _mm256_cmpeq_epi64(a.v, b.v) )
+#define vec_cmpeq_i64_2(a, b)                              vec_mask_m64_2( _mm_cmpeq_epi64(a.v, b.v) )
+#define vec_cmpeq_i64_1(a, b)                              vec_mask_m64_1( a.v == b.v )
+
+#define vec_cmpgt_i64_16(a, b)                             vec_loop_expr(vec_mask_m64_16_t, 4, _tmp, _i, _tmp.v[_i] = _mm256_cmpgt_epi64(a.v[_i], b.v[_i]);)
+#define vec_cmpgt_i64_8(a, b)                              vec_loop_expr(vec_mask_m64_8_t,  2, _tmp, _i, _tmp.v[_i] = _mm256_cmpgt_epi64(a.v[_i], b.v[_i]);)
+#define vec_cmpgt_i64_4(a, b)                              vec_mask_m64_4( _mm256_cmpgt_epi64(a.v, b.v) )
+#define vec_cmpgt_i64_2(a, b)                              vec_mask_m64_2( _mm_cmpgt_epi64(a.v, b.v) )
+#define vec_cmpgt_i64_1(a, b)                              vec_mask_m64_1( a.v > b.v )
 
 
-#define vec_srav_i64_16(a, count)                vec_loop_expr(__m256i_i64_4, 4, _tmp, _i, _tmp.v[_i] = vec_srav_i64_4(a.v[_i], count.v[_i]);)
-#define vec_srav_i64_8(a, count)                 vec_loop_expr(__m256i_i64_2, 2, _tmp, _i, _tmp.v[_i] = vec_srav_i64_4(a.v[_i], count.v[_i]);)
-#define vec_srav_i64_4(a, count)                 ({union {vec_i64_4_t v; uint64_t s[4];} buf_a={.v=a}, buf_count={.v=count}; vec_set_iter_i64_4(_j, vec_srav_i64_1(buf_a.s[_j], buf_count.s[_j]));})
-#define vec_srav_i64_2(a, count)                 ({union {vec_i64_2_t v; uint64_t s[2];} buf_a={.v=a}, buf_count={.v=count}; vec_set_iter_i64_2(_j, vec_srav_i64_1(buf_a.s[_j], buf_count.s[_j]));})
-#define vec_srav_i64_1(a, count)                 ((count < 64) ? ((int64_t) a)>>count : (((int64_t) a) < 0) ? -1 : 0)
+//------------------------------------------------------------------------------------------------------------------------------------------
+//- Shuffle - Permute
+//------------------------------------------------------------------------------------------------------------------------------------------
+
+// #define vec_permutexvar_i64_16(a, idx)                     vec_loop_expr(vec_i64_16_t, 16, _tmp, _i, _tmp.s[_i] = a.s[idx.s[_i]];)
+// #define vec_permutexvar_i64_8(a, idx)                      vec_loop_expr(vec_i64_8_t,   8, _tmp, _i, _tmp.s[_i] = a.s[idx.s[_i]];)
+// #define vec_permutexvar_i64_4(a, idx)                      vec_i64_4( _mm256_permutevar8x32_epi32(a.v, vec_set_iter_i32_8(_i, 2*idx.s[_i/2] + _i%2).v) )
+// #define vec_permutexvar_i64_2(a, idx)                      vec_i64_2( _mm_castpd_si128(_mm_permutevar_pd(a.vf64, idx.v)) )    /* How paranoid must one be to use the second bit for selection??? FML. */
+// #define vec_permutexvar_i64_1(a, idx)                      a
+
+#define vec_permutexvar_i64_16(a, idx)                     vec_loop_expr(vec_i64_16_t, 16, _tmp, _i, _tmp.s[_i] = a.s[idx.s[_i]];)
+#define vec_permutexvar_i64_8(a, idx)                      vec_loop_expr(vec_i64_8_t,   8, _tmp, _i, _tmp.s[_i] = a.s[idx.s[_i]];)
+#define vec_permutexvar_i64_4(a, idx)                      vec_i64_4( _mm256_permutevar8x32_epi32(a.v, idx.v) )
+#define vec_permutexvar_i64_2(a, idx)                      vec_i64_2( _mm_castpd_si128(_mm_permutevar_pd(a.vf64, idx.v)) )
+#define vec_permutexvar_i64_1(a, idx)                      a
 
 
 #endif /* VECTORIZATION_X86_AVX256_I64_H */

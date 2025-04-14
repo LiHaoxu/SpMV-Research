@@ -561,7 +561,7 @@ decompress_and_compute_kernel_sort_diff_base(unsigned char * restrict buf, Value
 	double * window = t_window[tnum];
 	long num_vals;
 	uint64_t row_min, col_min;
-	[[gnu::unused]] long num_rows;
+	__attribute__((unused)) long num_rows;
 	uint64_t row_bits, col_bits;
 	long i;
 

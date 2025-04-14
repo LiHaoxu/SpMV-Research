@@ -154,7 +154,7 @@ quicksort_cmp(int a, int b, struct cmp_data * aux)
 #include "sort/bucketsort/bucketsort_gen.c"
 static inline
 int
-bucketsort_find_bucket(int * A, long i, [[gnu::unused]] void * unused)
+bucketsort_find_bucket(int * A, long i, __attribute__((unused)) void * unused)
 {
 		return A[i];
 }
@@ -792,7 +792,7 @@ decompress_and_compute_kernel_sort_diff_base(unsigned char * restrict buf, Value
 	long num_vals;
 	long num_vals_unique;
 	uint64_t row_min, col_min;
-	[[gnu::unused]] long num_rows;
+	__attribute__((unused)) long num_rows;
 	uint64_t row_bits, col_bits;
 	long i, j, k, l;
 

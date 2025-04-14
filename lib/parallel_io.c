@@ -57,11 +57,11 @@ file_load(char * path, int use_mmap, long auto_decompress,
 	int fd;
 
 	long compressed_file = 0;
-	[[gnu::cleanup(cleanup_free)]] char * basename = NULL, * basename_no_ext = NULL, * ext = NULL, * path_extracted = NULL;
-	[[gnu::cleanup(cleanup_free)]] char * tmp_dir = NULL;
+	__attribute__((cleanup(cleanup_free))) char * basename = NULL, * basename_no_ext = NULL, * ext = NULL, * path_extracted = NULL;
+	__attribute__((cleanup(cleanup_free))) char * tmp_dir = NULL;
 	long buf_n = 100000 + strlen(path);
-	[[gnu::cleanup(cleanup_free)]] char * buf = (typeof(buf)) malloc(buf_n * sizeof(*buf));
-	[[gnu::cleanup(cleanup_free)]] char * cmd = (typeof(cmd)) malloc(buf_n * sizeof(*cmd));
+	__attribute__((cleanup(cleanup_free))) char * buf = (typeof(buf)) malloc(buf_n * sizeof(*buf));
+	__attribute__((cleanup(cleanup_free))) char * cmd = (typeof(cmd)) malloc(buf_n * sizeof(*cmd));
 	long i;
 
 	if (auto_decompress)

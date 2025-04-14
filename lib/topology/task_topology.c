@@ -252,7 +252,7 @@ topotk_get_topology()
 	long * task_tid_list;
 	long task_tid_max;
 
-	[[gnu::unused]] struct topohw_cpu * cpu;
+	__attribute__((unused)) struct topohw_cpu * cpu;
 	struct topohw_cache_class * cache_class;
 
 	struct dynarray ** das;

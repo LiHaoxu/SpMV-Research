@@ -69,7 +69,7 @@ uint64_t * t_col_bits_accum;
 uint64_t * t_row_col_bytes_accum;
 
 
-// struct [[gnu::packed]] packet_header {
+// struct __attribute__((packed)) packet_header {
 struct packet_header {
 	uint32_t num_vals;
 	uint32_t num_vals_unique;
@@ -120,8 +120,8 @@ quicksort_cmp(int a, int b, struct cmp_data * aux)
 	ValueType * vals = aux->vals;
 	unsigned int ra=rows[a], rb=rows[b];
 	unsigned int ca=cols[a], cb=cols[b];
-	[[gnu::unused]] int ra_mul = ra / 8, rb_mul = rb / 8;
-	[[gnu::unused]] int ca_mul = ca / 256, cb_mul = cb / 256;
+	__attribute__((unused)) int ra_mul = ra / 8, rb_mul = rb / 8;
+	__attribute__((unused)) int ca_mul = ca / 256, cb_mul = cb / 256;
 	ValueType va=vals[a], vb=vals[b];
 	int ret = 0;
 	// ret = (ra > rb) ? 1 : (ra < rb) ? -1 : 0;
@@ -198,8 +198,8 @@ quicksort_cmp(int a, int b, struct cmp_data * aux)
 	ValueType * vals = aux->vals;
 	unsigned int ra=rows[a], rb=rows[b];
 	unsigned int ca=cols[a], cb=cols[b];
-	[[gnu::unused]] int ra_mul = ra / 8, rb_mul = rb / 8;
-	[[gnu::unused]] int ca_mul = ca / 256, cb_mul = cb / 256;
+	__attribute__((unused)) int ra_mul = ra / 8, rb_mul = rb / 8;
+	__attribute__((unused)) int ca_mul = ca / 256, cb_mul = cb / 256;
 	ValueType va=vals[a], vb=vals[b];
 	int ret = 0;
 	// ret = (ra > rb) ? 1 : (ra < rb) ? -1 : 0;
@@ -244,7 +244,7 @@ quicksort_cmp(int a, int b, struct cmp_data * aux)
 #include "sort/bucketsort/bucketsort_gen.c"
 static inline
 int
-bucketsort_find_bucket(int * A, long i, [[gnu::unused]] void * unused)
+bucketsort_find_bucket(int * A, long i, __attribute__((unused)) void * unused)
 {
 	return A[i];
 }
@@ -457,7 +457,7 @@ compress_kernel_sort_diff_base(unsigned char * buf,
 		unsigned int * cols_buf,
 		long force_row_index_lte_1_byte,
 		long force_row_index_rounding,
-		[[gnu::unused]] long symmetric
+		__attribute__((unused)) long symmetric
 		)
 {
 	int tnum = omp_get_thread_num();
@@ -977,7 +977,7 @@ compress_kernel_sort_diff(INT_T * row_ptr, INT_T * ja, ValueType * vals, long i_
 
 static __attribute__((always_inline)) inline
 void
-mult_add_serial(ValueType * x_rel, ValueType * y_rel, [[gnu::unused]] ValueType * x, [[gnu::unused]] ValueType * y, ValueType val, uint64_t row_rel, uint64_t col_rel, [[gnu::unused]] uint64_t row, [[gnu::unused]] uint64_t col,
+mult_add_serial(ValueType * x_rel, ValueType * y_rel, __attribute__((unused)) ValueType * x, __attribute__((unused)) ValueType * y, ValueType val, uint64_t row_rel, uint64_t col_rel, __attribute__((unused)) uint64_t row, __attribute__((unused)) uint64_t col,
 		ValueType ** window_ptr, INT_T ** window_ia_ptr, INT_T ** window_ja_ptr, const int validate)
 {
 	if (validate)
@@ -996,7 +996,7 @@ mult_add_serial(ValueType * x_rel, ValueType * y_rel, [[gnu::unused]] ValueType 
 
 static __attribute__((always_inline)) inline
 void
-mult_add_vector(ValueType * x_rel, ValueType * y_rel, [[gnu::unused]] ValueType * x, [[gnu::unused]] ValueType * y, vec_t(VTF, VEC_LEN) val, vec_t(i64, VEC_LEN) row_rel, vec_t(i64, VEC_LEN) col_rel, [[gnu::unused]] vec_t(i64, VEC_LEN) row, [[gnu::unused]] vec_t(i64, VEC_LEN) col,
+mult_add_vector(ValueType * x_rel, ValueType * y_rel, __attribute__((unused)) ValueType * x, __attribute__((unused)) ValueType * y, vec_t(VTF, VEC_LEN) val, vec_t(i64, VEC_LEN) row_rel, vec_t(i64, VEC_LEN) col_rel, __attribute__((unused)) vec_t(i64, VEC_LEN) row, __attribute__((unused)) vec_t(i64, VEC_LEN) col,
 		ValueType ** window_ptr, INT_T ** window_ia_ptr, INT_T ** window_ja_ptr, const int validate)
 {
 	if (validate)
@@ -1022,7 +1022,7 @@ mult_add_vector(ValueType * x_rel, ValueType * y_rel, [[gnu::unused]] ValueType 
 
 static __attribute__((always_inline)) inline
 void
-mult_add_serial_sym([[gnu::unused]] ValueType * x_rel, [[gnu::unused]] ValueType * y_rel, ValueType * x, ValueType * y, ValueType val, [[gnu::unused]] uint64_t row_rel, [[gnu::unused]] uint64_t col_rel, uint64_t row, uint64_t col,
+mult_add_serial_sym(__attribute__((unused)) ValueType * x_rel, __attribute__((unused)) ValueType * y_rel, ValueType * x, ValueType * y, ValueType val, __attribute__((unused)) uint64_t row_rel, __attribute__((unused)) uint64_t col_rel, uint64_t row, uint64_t col,
 		ValueType ** window_ptr, INT_T ** window_ia_ptr, INT_T ** window_ja_ptr, const int validate)
 {
 	if (validate)
@@ -1050,7 +1050,7 @@ mult_add_serial_sym([[gnu::unused]] ValueType * x_rel, [[gnu::unused]] ValueType
 
 static __attribute__((always_inline)) inline
 void
-mult_add_vector_sym([[gnu::unused]] ValueType * x_rel, [[gnu::unused]] ValueType * y_rel, ValueType * x, ValueType * y, vec_t(VTF, VEC_LEN) val, [[gnu::unused]] vec_t(i64, VEC_LEN) row_rel, [[gnu::unused]] vec_t(i64, VEC_LEN) col_rel, vec_t(i64, VEC_LEN) row, vec_t(i64, VEC_LEN) col,
+mult_add_vector_sym(__attribute__((unused)) ValueType * x_rel, __attribute__((unused)) ValueType * y_rel, ValueType * x, ValueType * y, vec_t(VTF, VEC_LEN) val, __attribute__((unused)) vec_t(i64, VEC_LEN) row_rel, __attribute__((unused)) vec_t(i64, VEC_LEN) col_rel, vec_t(i64, VEC_LEN) row, vec_t(i64, VEC_LEN) col,
 		ValueType ** window_ptr, INT_T ** window_ia_ptr, INT_T ** window_ja_ptr, const int validate)
 {
 	if (validate)
@@ -1107,7 +1107,7 @@ decompress_and_compute_kernel_sort_diff_base(unsigned char * restrict buf, Value
 	long num_vals;
 	long num_vals_unique;
 	uint64_t row_min, col_min;
-	[[gnu::unused]] long num_rows;
+	__attribute__((unused)) long num_rows;
 	uint64_t row_bits, col_bits;
 	long num_rfs;
 	uint32_t * data_val_lanes_size;
@@ -1355,7 +1355,7 @@ get_packet_rows(unsigned char * restrict buf, long * i_s_ptr, long * i_e_ptr)
 
 static inline
 long
-decompress_and_compute_kernel_sort_diff(unsigned char * restrict buf, ValueType * restrict x, ValueType * restrict y, [[gnu::unused]] long i_t_s, [[gnu::unused]] long i_t_e)
+decompress_and_compute_kernel_sort_diff(unsigned char * restrict buf, ValueType * restrict x, ValueType * restrict y, __attribute__((unused)) long i_t_s, __attribute__((unused)) long i_t_e)
 {
 	unsigned char * data_intro = buf;
 	uint64_t data_intro_bytes = 0;
@@ -1387,7 +1387,7 @@ decompress_and_compute_kernel_sort_diff(unsigned char * restrict buf, ValueType 
 
 static
 long
-decompress_kernel_sort_diff(INT_T * ia_out, INT_T * ja_out, ValueType * a_out, long * num_vals_out, unsigned char * restrict buf, [[gnu::unused]] long i_t_s, [[gnu::unused]] long i_t_e)
+decompress_kernel_sort_diff(INT_T * ia_out, INT_T * ja_out, ValueType * a_out, long * num_vals_out, unsigned char * restrict buf, __attribute__((unused)) long i_t_s, __attribute__((unused)) long i_t_e)
 {
 	long num_vals = 0;
 	long num_vals_sym = 0;

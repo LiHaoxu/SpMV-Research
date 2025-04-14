@@ -134,58 +134,58 @@ done
 
 matrices_validation=(
 
-    scircuit.mtx
-    mac_econ_fwd500.mtx
-    raefsky3.mtx
-    rgg_n_2_17_s0.mtx
-    bbmat.mtx
-    appu.mtx
-    mc2depi.mtx
-    rma10.mtx
-    cop20k_A.mtx
-    thermomech_dK.mtx
-    webbase-1M.mtx
-    cant.mtx
-    ASIC_680k.mtx
-    roadNet-TX.mtx
-    pdb1HYS.mtx
-    TSOPF_RS_b300_c3.mtx
-    Chebyshev4.mtx
-    consph.mtx
-    com-Youtube.mtx
-    rajat30.mtx
-    radiation.mtx
-    Stanford_Berkeley.mtx
-    shipsec1.mtx
-    PR02R.mtx
-    CurlCurl_2.mtx
-    gupta3.mtx
-    mip1.mtx
-    rail4284.mtx
-    pwtk.mtx
-    crankseg_2.mtx
-    Si41Ge41H72.mtx
-    TSOPF_RS_b2383.mtx
-    in-2004.mtx
-    Ga41As41H72.mtx
-    eu-2005.mtx
-    wikipedia-20051105.mtx
-    kron_g500-logn18.mtx
-    rajat31.mtx
-    human_gene1.mtx
-    delaunay_n22.mtx
-    GL7d20.mtx
-    sx-stackoverflow.mtx
-    dgreen.mtx
-    mawi_201512012345.mtx
-    ldoor.mtx
-    dielFilterV2real.mtx
-    circuit5M.mtx
-    soc-LiveJournal1.mtx
-    bone010.mtx
-    audikw_1.mtx
-    cage15.mtx
-    kmer_V2a.mtx
+    scircuit
+    mac_econ_fwd500
+    raefsky3
+    rgg_n_2_17_s0
+    bbmat
+    appu
+    mc2depi
+    rma10
+    cop20k_A
+    thermomech_dK
+    webbase-1M
+    cant
+    ASIC_680k
+    roadNet-TX
+    pdb1HYS
+    TSOPF_RS_b300_c3
+    Chebyshev4
+    consph
+    com-Youtube
+    rajat30
+    radiation
+    Stanford_Berkeley
+    shipsec1
+    PR02R
+    CurlCurl_2
+    gupta3
+    mip1
+    rail4284
+    pwtk
+    crankseg_2
+    Si41Ge41H72
+    TSOPF_RS_b2383
+    in-2004
+    Ga41As41H72
+    eu-2005
+    wikipedia-20051105
+    kron_g500-logn18
+    rajat31
+    human_gene1
+    delaunay_n22
+    GL7d20
+    sx-stackoverflow
+    dgreen
+    mawi_201512012345
+    ldoor
+    dielFilterV2real
+    circuit5M
+    soc-LiveJournal1
+    bone010
+    audikw_1
+    cage15
+    kmer_V2a
 
 )
 matrices_validation_tamu=( ${matrices_validation[@]} )
@@ -253,8 +253,8 @@ done
 matrices_compression_small=(
 
     # scircuit
-    mac_econ_fwd500
-    # raefsky3
+    # mac_econ_fwd500
+    raefsky3
     # bbmat
     # appu
     # rma10
@@ -339,9 +339,9 @@ done
 matrices_compression=(
 
     # spal_004
-    # ldoor
+    ldoor
     # dielFilterV2real
-    af_shell10
+    # af_shell10
     # nv2
     # boneS10
     # circuit5M
@@ -724,10 +724,10 @@ matrices=(
     # "${matrices_validation_tamu[@]}"
     # "${matrices_paper_csr_rv[@]}"
 
-    "${matrices_compression_small[@]}"
+    # "${matrices_compression_small[@]}"
     # "${matrices_compression_medium[@]}"
     # "${matrices_compression_medium_symmetric[@]}"
-    # "${matrices_compression[@]}"
+    "${matrices_compression[@]}"
     # "${matrices_compression_symmetric[@]}"
     # "${matrices_M3E[@]}"
     # "${matrices_compression_all[@]}"

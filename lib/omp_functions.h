@@ -127,7 +127,7 @@ do {                                                                            
 #undef  omp_thread_reduce_global
 #define omp_thread_reduce_global(_reduce_fun, _partial, _zero, exclusive, _backwards, _local_result_ptr_ret, _total_result_ptr_ret)              \
 do {                                                                                                                                             \
-	_Static_assert(exclusive == 0 || exclusive == 1);                                                                                        \
+	_Static_assert(exclusive == 0 || exclusive == 1, "exclusive arg can only be 0 or 1");                                                    \
 	RENAME((_reduce_fun, reduce_fun), (_partial, __partial),                                                                                 \
 		OPT((_zero), ((_zero, zero, , __attribute__((unused))), ))                                                                       \
 		(_backwards, backwards, int, __attribute__((unused))),                                                                           \

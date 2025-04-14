@@ -469,11 +469,11 @@ void
 random_permutation_parallel(struct Random_State * rs, long * permutation_buf, long N)
 {
 	int num_threads = safe_omp_get_num_threads();
-	[[gnu::cleanup(cleanup_free)]] long * const offsets = (typeof(offsets)) malloc((num_threads * num_threads + 1) * sizeof(*offsets));
+	__attribute__((cleanup(cleanup_free))) long * const offsets = (typeof(offsets)) malloc((num_threads * num_threads + 1) * sizeof(*offsets));
 	#pragma omp parallel
 	{
 		int tnum = omp_get_thread_num();
-		[[gnu::cleanup(cleanup_free)]] struct Random_State * rs_t = random_new(0);
+		__attribute__((cleanup(cleanup_free))) struct Random_State * rs_t = random_new(0);
 		long counts[num_threads];
 		long i, i_s, i_e, j, j_s, j_e;
 		long N_t;

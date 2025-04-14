@@ -68,7 +68,7 @@ long num_loops_out;
 
 // #define ValueTypeValidation  double
 // #define ValueTypeValidation  long double
-#define ValueTypeValidation  _Float128
+#define ValueTypeValidation  __float128
 
 /* ldoor, mkl_ie, 8 threads:
  *     ValueType | ValueTypeValidation       | Errors
@@ -76,17 +76,17 @@ long num_loops_out;
  *     double    | double + kahan      | errors spmv: mae=1.20597e-10, max_ae=4.47035e-08, mse=3.30276e-19, mape=2.11222e-17, smape=1.05611e-17
  *     double    | long double         | errors spmv: mae=1.11432e-10, max_ae=4.47035e-08, mse=3.05508e-19, mape=1.14059e-17, smape=5.70295e-18
  *     double    | long double + kahan | errors spmv: mae=1.11426e-10, max_ae=4.47035e-08, mse=3.05491e-19, mape=1.14059e-17, smape=5.70295e-18
- *     double    | _Float128          | errors spmv: mae=1.11425e-10, max_ae=4.47035e-08, mse=3.05482e-19, mape=1.14059e-17, smape=5.70295e-18
- *     double    | _Float128 + kahan  | errors spmv: mae=1.11425e-10, max_ae=4.47035e-08, mse=3.05482e-19, mape=1.14059e-17, smape=5.70295e-18
+ *     double    | __float128          | errors spmv: mae=1.11425e-10, max_ae=4.47035e-08, mse=3.05482e-19, mape=1.14059e-17, smape=5.70295e-18
+ *     double    | __float128 + kahan  | errors spmv: mae=1.11425e-10, max_ae=4.47035e-08, mse=3.05482e-19, mape=1.14059e-17, smape=5.70295e-18
  *
  *     double    | double              | errors spmv: mae=2.01305e-10, max_ae=7.45058e-08, mse=1.04495e-18, mape=6.95171e-17, smape=3.47585e-17
  *     double    | double + kahan:     | errors spmv: mae=1.47387e-10, max_ae=5.96046e-08, mse=5.21976e-19, mape=5.22525e-17, smape=2.61262e-17
- *     double    | _Float128          | errors spmv: mae=1.39996e-10, max_ae=5.96046e-08, mse=4.99829e-19, mape=4.049e-17, smape=2.0245e-17
- *     double    | _Float128 + kahan  | errors spmv: mae=1.39996e-10, max_ae=5.96046e-08, mse=4.99829e-19, mape=4.049e-17, smape=2.0245e-17
+ *     double    | __float128          | errors spmv: mae=1.39996e-10, max_ae=5.96046e-08, mse=4.99829e-19, mape=4.049e-17, smape=2.0245e-17
+ *     double    | __float128 + kahan  | errors spmv: mae=1.39996e-10, max_ae=5.96046e-08, mse=4.99829e-19, mape=4.049e-17, smape=2.0245e-17
  *
  *     float     | double              | errors spmv: mae=0.0628685, max_ae=21.1667, mse=0.0826114, mape=1.63995e-08, smape=8.20012e-09
  *     float     | long double         | errors spmv: mae=0.0628685, max_ae=21.1667, mse=0.0826114, mape=1.63995e-08, smape=8.20012e-09
- *     float     | _Float128          | errors spmv: mae=0.0628685, max_ae=21.1667, mse=0.0826114, mape=1.63995e-08, smape=8.20012e-09
+ *     float     | __float128          | errors spmv: mae=0.0628685, max_ae=21.1667, mse=0.0826114, mape=1.63995e-08, smape=8.20012e-09
  */
 
 static inline

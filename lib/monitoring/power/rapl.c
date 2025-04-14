@@ -6,6 +6,7 @@
 #include <fcntl.h>
 #include <dirent.h>
 
+#include "macros/macrolib.h"
 #include "debug.h"
 #include "io.h"
 

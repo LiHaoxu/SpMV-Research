@@ -38,13 +38,13 @@ extern "C" {
 #endif
 
 
-struct [[gnu::aligned(64)]] padded_int64_t {
-	int64_t val [[gnu::aligned(64)]];
-	char padding[0] [[gnu::aligned(64)]];
+struct __attribute__((aligned(64))) padded_int64_t {
+	int64_t val __attribute__((aligned(64)));
+	char padding[0] __attribute__((aligned(64)));
 };
 
 
-struct [[gnu::aligned(64)]] thread_data {
+struct __attribute__((aligned(64))) thread_data {
 	long task_num;
 	long num_tasks;
 	long task_l3_node_num;
@@ -81,17 +81,17 @@ struct [[gnu::aligned(64)]] thread_data {
 
 	// Stealing.
 
-	long finished [[gnu::aligned(64)]];
+	long finished __attribute__((aligned(64)));
 	int tnum_owner;
 	int task_l3_node_num_owner;
 	int task_mem_node_num_owner;
 	long pg_e;
 
-	long pg_current [[gnu::aligned(64)]];
+	long pg_current __attribute__((aligned(64)));
 
-	long steal_lock [[gnu::aligned(64)]];
+	long steal_lock __attribute__((aligned(64)));
 
-	char padding[0] [[gnu::aligned(64)]];
+	char padding[0] __attribute__((aligned(64)));
 };
 
 static struct thread_data ** tds;
@@ -177,7 +177,7 @@ reduce_min_double(double a, double b)
 #include "sort/bucketsort/bucketsort_gen.c"
 static inline
 int
-bucketsort_find_bucket(int * A, long i, [[gnu::unused]] void * unused)
+bucketsort_find_bucket(int * A, long i, __attribute__((unused)) void * unused)
 {
 		return A[i];
 }
@@ -725,7 +725,6 @@ struct DIVArray : Matrix_Format
 		{
 			long tnum = omp_get_thread_num();
 			struct thread_data * td = tds[tnum];
-			unsigned char * compr_data_stealable = td->compr_data_stealable;
 			struct adapt_statistics_data stats;
 			// long i;
 			long i_s, i_e, j_s, j_e;
@@ -753,15 +752,17 @@ struct DIVArray : Matrix_Format
 			omp_thread_reduce_global(reduce_add_long, size_test, 0, 0, 0, , &size_test_accum);
 			_Pragma("omp barrier")
 			double time_mem;
-			// long n_test = predicted_private_size / sizeof(long) / fraction_test;
 			long n_test = predicted_private_size / fraction_test;
+			unsigned char * mem_test = (typeof(mem_test)) malloc(n_test * sizeof(*mem_test));
 			time_mem = time_it(1,
-				memset(compr_data_stealable, 0, n_test);
+				memset(mem_test, 0, n_test);
 				// for (i=0;i<n_test;i++)
 				// {
-					// ((long *) compr_data_stealable)[i] = 0;
+					// ((long *) mem_test)[i] = 0;
 				// }
 			);
+			free(mem_test);
+			_Pragma("omp barrier")
 			omp_thread_reduce_global(reduce_add_double, time_mem, 0, 0, 0, , &stats.time_memory);
 			stats.time_memory_per_byte = stats.time_memory / size_test_accum;
 			_Pragma("omp barrier")
@@ -964,9 +965,9 @@ DIVArray::spmv(ValueType * x, ValueType * y)
 }
 
 
-static inline
+inline
 long
-steal_sched_l3_node_only(struct thread_data ** tds, [[gnu::unused]] int num_threads, long tnum,
+steal_sched_l3_node_only(struct thread_data ** tds, __attribute__((unused)) int num_threads, long tnum,
 		long * tnum_target_out, long * work_out)
 {
 	long task_l3_node_num = tds[tnum]->task_l3_node_num;
@@ -1005,9 +1006,9 @@ steal_sched_l3_node_only(struct thread_data ** tds, [[gnu::unused]] int num_thre
 	return all_finished;
 }
 
-static inline
+inline
 long
-steal_sched_mem_node_only(struct thread_data ** tds, [[gnu::unused]] int num_threads, long tnum,
+steal_sched_mem_node_only(struct thread_data ** tds, __attribute__((unused)) int num_threads, long tnum,
 		long * tnum_target_out, long * work_out)
 {
 	long task_mem_node_num = tds[tnum]->task_mem_node_num;
@@ -1046,7 +1047,7 @@ steal_sched_mem_node_only(struct thread_data ** tds, [[gnu::unused]] int num_thr
 	return all_finished;
 }
 
-static inline
+inline
 long
 steal_sched_default(struct thread_data ** tds, int num_threads, long tnum,
 		long * tnum_target_out, long * work_out)

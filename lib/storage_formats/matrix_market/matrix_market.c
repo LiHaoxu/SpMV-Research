@@ -227,7 +227,6 @@ mtx_parse_header(struct File_Atoms * A, struct Matrix_Market * MTX)
 		if (sscanf(lines[i++], "%ld%ld%ld", &M, &N, &nnz_sym) != 3)
 			error("Error parsing MARKET matrix '%s': invalid/missing matrix sizes: %s\n", MTX->filename, lines[i-1]);
 		nnz = symmetric ? 2 * nnz_sym : nnz_sym;   // If symmetric, just place a worst case estimation for the mallocs.
-		nnz_sym = nnz_sym;
 	}
 	else
 	{

@@ -70,7 +70,7 @@ struct thread_data_kernel {
 static struct thread_data_kernel ** tdks;
 
 
-// struct [[gnu::packed]] packet_header {
+// struct __attribute__((packed)) packet_header {
 struct packet_header {
 	struct {
 		uint8_t symmetric   : 1;
@@ -128,8 +128,8 @@ quicksort_cmp(int a, int b, struct cmp_data_t * aux)
 	ValueType * vals = aux->vals;
 	unsigned int ra=rows[a], rb=rows[b];
 	unsigned int ca=cols[a], cb=cols[b];
-	[[gnu::unused]] int ra_mul = ra / 8, rb_mul = rb / 8;
-	[[gnu::unused]] int ca_mul = ca / 256, cb_mul = cb / 256;
+	__attribute__((unused)) int ra_mul = ra / 8, rb_mul = rb / 8;
+	__attribute__((unused)) int ca_mul = ca / 256, cb_mul = cb / 256;
 	ValueType va=vals[a], vb=vals[b];
 	int ret = 0;
 	// ret = (ra > rb) ? 1 : (ra < rb) ? -1 : 0;
@@ -206,8 +206,8 @@ quicksort_cmp(int a, int b, struct cmp_data_t * aux)
 	ValueType * vals = aux->vals;
 	unsigned int ra=rows[a], rb=rows[b];
 	unsigned int ca=cols[a], cb=cols[b];
-	[[gnu::unused]] int ra_mul = ra / 8, rb_mul = rb / 8;
-	[[gnu::unused]] int ca_mul = ca / 256, cb_mul = cb / 256;
+	__attribute__((unused)) int ra_mul = ra / 8, rb_mul = rb / 8;
+	__attribute__((unused)) int ca_mul = ca / 256, cb_mul = cb / 256;
 	ValueType va=vals[a], vb=vals[b];
 	int ret = 0;
 	// ret = (ra > rb) ? 1 : (ra < rb) ? -1 : 0;
@@ -252,7 +252,7 @@ quicksort_cmp(int a, int b, struct cmp_data_t * aux)
 #include "sort/bucketsort/bucketsort_gen.c"
 static inline
 int
-bucketsort_find_bucket(int * A, long i, [[gnu::unused]] void * unused)
+bucketsort_find_bucket(int * A, long i, __attribute__((unused)) void * unused)
 {
 		return A[i];
 }
@@ -858,7 +858,7 @@ compress_kernel_div_base(unsigned char * buf,
  */
 static inline
 void
-compress_kernel_div(INT_T * row_ptr, INT_T * ja, ValueTypeReference * vals, [[gnu::unused]] long symmetric, long i_s, long i_t_s, long i_t_e, long j_s,
+compress_kernel_div(INT_T * row_ptr, INT_T * ja, ValueTypeReference * vals, __attribute__((unused)) long symmetric, long i_s, long i_t_s, long i_t_e, long j_s,
 		unsigned char * buf_stealable, unsigned char * buf_protected, long num_vals, long * num_vals_out, long * size_stealable_out, long * size_protected_out)
 {
 	int tnum = omp_get_thread_num();
@@ -983,7 +983,7 @@ compress_kernel_div(INT_T * row_ptr, INT_T * ja, ValueTypeReference * vals, [[gn
 
 static __attribute__((always_inline)) inline
 void
-mult_add_serial(ValueType * x_rel, ValueType * y_rel, [[gnu::unused]] ValueType * x, [[gnu::unused]] ValueType * y, ValueType val, uint64_t row_rel, uint64_t col_rel, [[gnu::unused]] uint64_t row, [[gnu::unused]] uint64_t col,
+mult_add_serial(ValueType * x_rel, ValueType * y_rel, __attribute__((unused)) ValueType * x, __attribute__((unused)) ValueType * y, ValueType val, uint64_t row_rel, uint64_t col_rel, __attribute__((unused)) uint64_t row, __attribute__((unused)) uint64_t col,
 		ValueType ** window_ptr, INT_T ** window_ia_ptr, INT_T ** window_ja_ptr, const int validate)
 {
 	if (validate)
@@ -1002,16 +1002,16 @@ mult_add_serial(ValueType * x_rel, ValueType * y_rel, [[gnu::unused]] ValueType 
 
 static __attribute__((always_inline)) inline
 void
-mult_add_vector(ValueType * x_rel, ValueType * y_rel, [[gnu::unused]] ValueType * x, [[gnu::unused]] ValueType * y, vec_t(VTF, VEC_LEN) val, vec_t(i64, VEC_LEN) row_rel, vec_t(i64, VEC_LEN) col_rel, [[gnu::unused]] vec_t(i64, VEC_LEN) row, [[gnu::unused]] vec_t(i64, VEC_LEN) col,
+mult_add_vector(ValueType * x_rel, ValueType * y_rel, __attribute__((unused)) ValueType * x, __attribute__((unused)) ValueType * y, vec_t(VTF, VEC_LEN) val, vec_t(i64, VEC_LEN) row_rel, vec_t(i64, VEC_LEN) col_rel, __attribute__((unused)) vec_t(i64, VEC_LEN) row, __attribute__((unused)) vec_t(i64, VEC_LEN) col,
 		ValueType ** window_ptr, INT_T ** window_ia_ptr, INT_T ** window_ja_ptr, const int validate)
 {
 	if (validate)
 	{
 		for (long iter=0;iter<VEC_LEN;iter++)
 		{
-			**window_ptr = vec_array(VTF, VEC_LEN, val)[iter];
-			**window_ia_ptr = vec_array(i64, VEC_LEN, row)[iter];
-			**window_ja_ptr = vec_array(i64, VEC_LEN, col)[iter];
+			**window_ptr = val.s[iter];
+			**window_ia_ptr = row.s[iter];
+			**window_ja_ptr = col.s[iter];
 			(*window_ptr)++;
 			(*window_ia_ptr)++;
 			(*window_ja_ptr)++;
@@ -1021,14 +1021,14 @@ mult_add_vector(ValueType * x_rel, ValueType * y_rel, [[gnu::unused]] ValueType 
 	{
 		PRAGMA(GCC unroll VEC_LEN)
 		for (long iter=0;iter<VEC_LEN;iter++)
-			y_rel[vec_array(i64, VEC_LEN, row_rel)[iter]] += vec_array(VTF, VEC_LEN, val)[iter] * x_rel[vec_array(i64, VEC_LEN, col_rel)[iter]];
+			y_rel[row_rel.s[iter]] += val.s[iter] * x_rel[col_rel.s[iter]];
 	}
 }
 
 
 static __attribute__((always_inline)) inline
 void
-mult_add_serial_sym([[gnu::unused]] ValueType * x_rel, [[gnu::unused]] ValueType * y_rel, ValueType * x, ValueType * y, ValueType val, [[gnu::unused]] uint64_t row_rel, [[gnu::unused]] uint64_t col_rel, uint64_t row, uint64_t col,
+mult_add_serial_sym(__attribute__((unused)) ValueType * x_rel, __attribute__((unused)) ValueType * y_rel, ValueType * x, ValueType * y, ValueType val, __attribute__((unused)) uint64_t row_rel, __attribute__((unused)) uint64_t col_rel, uint64_t row, uint64_t col,
 		ValueType ** window_ptr, INT_T ** window_ia_ptr, INT_T ** window_ja_ptr, const int validate)
 {
 	if (validate)
@@ -1056,22 +1056,22 @@ mult_add_serial_sym([[gnu::unused]] ValueType * x_rel, [[gnu::unused]] ValueType
 
 static __attribute__((always_inline)) inline
 void
-mult_add_vector_sym([[gnu::unused]] ValueType * x_rel, [[gnu::unused]] ValueType * y_rel, ValueType * x, ValueType * y, vec_t(VTF, VEC_LEN) val, [[gnu::unused]] vec_t(i64, VEC_LEN) row_rel, [[gnu::unused]] vec_t(i64, VEC_LEN) col_rel, vec_t(i64, VEC_LEN) row, vec_t(i64, VEC_LEN) col,
+mult_add_vector_sym(__attribute__((unused)) ValueType * x_rel, __attribute__((unused)) ValueType * y_rel, ValueType * x, ValueType * y, vec_t(VTF, VEC_LEN) val, __attribute__((unused)) vec_t(i64, VEC_LEN) row_rel, __attribute__((unused)) vec_t(i64, VEC_LEN) col_rel, vec_t(i64, VEC_LEN) row, vec_t(i64, VEC_LEN) col,
 		ValueType ** window_ptr, INT_T ** window_ia_ptr, INT_T ** window_ja_ptr, const int validate)
 {
 	if (validate)
 	{
 		for (long iter=0;iter<VEC_LEN;iter++)
 		{
-			**window_ptr = vec_array(VTF, VEC_LEN, val)[iter];
-			**window_ia_ptr = vec_array(i64, VEC_LEN, row)[iter];
-			**window_ja_ptr = vec_array(i64, VEC_LEN, col)[iter];
+			**window_ptr = val.s[iter];
+			**window_ia_ptr = row.s[iter];
+			**window_ja_ptr = col.s[iter];
 			(*window_ptr)++;
 			(*window_ia_ptr)++;
 			(*window_ja_ptr)++;
-			**window_ptr = vec_array(VTF, VEC_LEN, val)[iter];
-			**window_ia_ptr = vec_array(i64, VEC_LEN, col)[iter];
-			**window_ja_ptr = vec_array(i64, VEC_LEN, row)[iter];
+			**window_ptr = val.s[iter];
+			**window_ia_ptr = col.s[iter];
+			**window_ja_ptr = row.s[iter];
 			(*window_ptr)++;
 			(*window_ia_ptr)++;
 			(*window_ja_ptr)++;
@@ -1082,10 +1082,10 @@ mult_add_vector_sym([[gnu::unused]] ValueType * x_rel, [[gnu::unused]] ValueType
 		// Extremely important for performance stability to split off the symmetric values to another loop.
 		PRAGMA(GCC unroll VEC_LEN)
 		for (long iter=0;iter<VEC_LEN;iter++)
-			y[vec_array(i64, VEC_LEN, row)[iter]] += vec_array(VTF, VEC_LEN, val)[iter] * x[vec_array(i64, VEC_LEN, col)[iter]];
+			y[row.s[iter]] += val.s[iter] * x[col.s[iter]];
 		PRAGMA(GCC unroll VEC_LEN)
 		for (long iter=0;iter<VEC_LEN;iter++)
-			y[vec_array(i64, VEC_LEN, col)[iter]] += vec_array(VTF, VEC_LEN, val)[iter] * x[vec_array(i64, VEC_LEN, row)[iter]];
+			y[col.s[iter]] += val.s[iter] * x[row.s[iter]];
 	}
 }
 
@@ -1119,7 +1119,7 @@ decompress_and_compute_kernel_div_base(unsigned char * restrict buf, ValueType *
 	long num_vals;
 	long num_vals_unique;
 	uint64_t row_min, col_min;
-	[[gnu::unused]] long num_rows;
+	__attribute__((unused)) long num_rows;
 	uint64_t row_bits, col_bits;
 	long num_rfs;
 	uint32_t * data_val_lanes_size;
@@ -1158,11 +1158,11 @@ decompress_and_compute_kernel_div_base(unsigned char * restrict buf, ValueType *
 	const uint64_t data_val_lens_bytes = num_vals_unique;
 
 	vec_t(i64, VEC_LEN) data_val_lanes;
-	vec_array(i64, VEC_LEN, data_val_lanes)[0] = (long long) &data_val_lens[data_val_lens_bytes];
+	data_val_lanes.s[0] = (long long) &data_val_lens[data_val_lens_bytes];
 	uint64_t data_val_lanes_bytes = data_val_lanes_size[0];
 	for (long iter=1;iter<VEC_LEN;iter++)
 	{
-		vec_array(i64, VEC_LEN, data_val_lanes)[iter] = vec_array(i64, VEC_LEN, data_val_lanes)[iter-1] + data_val_lanes_size[iter-1];
+		data_val_lanes.s[iter] = data_val_lanes.s[iter-1] + data_val_lanes_size[iter-1];
 		data_val_lanes_bytes += data_val_lanes_size[iter];
 	}
 
@@ -1198,10 +1198,10 @@ decompress_and_compute_kernel_div_base(unsigned char * restrict buf, ValueType *
 			// len_bits = len << 3ULL;
 			vec_t(VTI, VEC_LEN) len_bits = vec_slli(VTI, VEC_LEN, len, 3ULL);
 
-			diff.u = vec_set_iter(VTI, VEC_LEN, iter, *((ValueTypeI *) vec_array(i64, VEC_LEN, data_val_lanes)[iter]));
+			diff.u = vec_set_iter(VTI, VEC_LEN, iter, *((ValueTypeI *) data_val_lanes.s[iter]));
 
 			// data_val_lanes = data_val_lanes + len_64;
-			len_64 = vec_set_iter(i64, VEC_LEN, iter, vec_array(VTI, VEC_LEN, len)[iter]);
+			len_64 = vec_set_iter(i64, VEC_LEN, iter, len.s[iter]);
 			data_val_lanes = vec_add(i64, VEC_LEN, data_val_lanes, len_64);
 
 			// vec_t(VTI, VEC_LEN) mask = (1ULL << len_bits) - 1ULL;
@@ -1242,15 +1242,15 @@ decompress_and_compute_kernel_div_base(unsigned char * restrict buf, ValueType *
 			len &= 15ULL;
 			uint64_t len_bits = len << 3ULL;
 
-			diff.u = *((ValueTypeI *) vec_array(i64, VEC_LEN, data_val_lanes)[lane_id]);
+			diff.u = *((ValueTypeI *) data_val_lanes.s[lane_id]);
 
-			vec_array(i64, VEC_LEN, data_val_lanes)[lane_id] = vec_array(i64, VEC_LEN, data_val_lanes)[lane_id] + len;
+			data_val_lanes.s[lane_id] = data_val_lanes.s[lane_id] + len;
 
 			ValueTypeI mask = (len == 8) ? -1ULL : (1ULL << len_bits) - 1ULL;
 			diff.u &= mask;
 			diff.u <<= tz;
 
-			vec_array(VTI, VEC_LEN, val.u)[lane_id] = vec_array(VTI, VEC_LEN, val.u)[lane_id] + diff.u;
+			val.u.s[lane_id] = val.u.s[lane_id] + diff.u;
 
 			long rf_div = rf / VEC_LEN;
 			long rf_multiple = rf_div * VEC_LEN;
@@ -1258,7 +1258,7 @@ decompress_and_compute_kernel_div_base(unsigned char * restrict buf, ValueType *
 			{
 				vec_t(i64, VEC_LEN) row_rel, col_rel;
 				vec_t(i64, VEC_LEN) row, col;
-				vec_t(VTF, VEC_LEN) val_buf = vec_set1(VTF, VEC_LEN, vec_array(VTF, VEC_LEN, val.d)[lane_id]);
+				vec_t(VTF, VEC_LEN) val_buf = vec_set1(VTF, VEC_LEN, val.d.s[lane_id]);
 				k = i*rf + j;
 				gather_coords_v(k, data_coords, coords_bytes, row_bits, col_bits, &row_rel, &col_rel);
 				row = vec_add(i64, VEC_LEN, row_rel, vec_set1(i64, VEC_LEN, row_min));
@@ -1274,7 +1274,7 @@ decompress_and_compute_kernel_div_base(unsigned char * restrict buf, ValueType *
 				gather_coords(k, data_coords, coords_bytes, row_bits, col_bits, &row_rel, &col_rel);
 				row = row_rel + row_min;
 				col = col_rel + col_min;
-				mult_add(x_rel, y_rel, x, y, vec_array(VTF, VEC_LEN, val.d)[lane_id], row_rel, col_rel, row, col, &window, &window_ia, &window_ja, validate);
+				mult_add(x_rel, y_rel, x, y, val.d.s[lane_id], row_rel, col_rel, row, col, &window, &window_ia, &window_ja, validate);
 			}
 		}
 
@@ -1366,7 +1366,7 @@ get_packet_rows(unsigned char * restrict buf, long * i_s_ptr, long * i_e_ptr)
 
 static inline
 long
-decompress_and_compute_kernel_div(unsigned char * restrict buf, ValueType * restrict x, ValueType * restrict y, [[gnu::unused]] long i_t_s, [[gnu::unused]] long i_t_e)
+decompress_and_compute_kernel_div(unsigned char * restrict buf, ValueType * restrict x, ValueType * restrict y, __attribute__((unused)) long i_t_s, __attribute__((unused)) long i_t_e)
 {
 	struct packet_header * header = (typeof(header)) buf;
 	const long symmetric = header->symmetric;
@@ -1406,7 +1406,7 @@ decompress_and_compute_kernel_div(unsigned char * restrict buf, ValueType * rest
 
 static
 long
-decompress_kernel_div(INT_T * ia_out, INT_T * ja_out, ValueType * a_out, long * num_vals_out, unsigned char * restrict buf, [[gnu::unused]] long i_t_s, [[gnu::unused]] long i_t_e)
+decompress_kernel_div(INT_T * ia_out, INT_T * ja_out, ValueType * a_out, long * num_vals_out, unsigned char * restrict buf, __attribute__((unused)) long i_t_s, __attribute__((unused)) long i_t_e)
 {
 	long num_vals = 0;
 	// long num_vals_sym = 0;

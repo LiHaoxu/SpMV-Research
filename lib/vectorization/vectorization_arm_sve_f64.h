@@ -42,7 +42,7 @@
 	#error "__ARM_FEATURE_SVE_BITS not defined"
 #endif
 
-typedef double  vec_f64_t [[gnu::may_alias]];
+typedef double  vec_f64_t __attribute__((may_alias));
 
 
 #define vec_array_f64_8(val)                     ({vec_f64_8_t  * _tmp = &val; (vec_f64_t *) _tmp;})

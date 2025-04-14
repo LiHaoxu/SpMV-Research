@@ -162,7 +162,7 @@ void display_error(int do_exit, int exit_status, const char *file_name, const ch
 
 
 /* Use like:
- *    [[gnu::cleanup(cleanup_free)]] type * var = malloc();
+ *    __attribute__((cleanup(cleanup_free))) type * var = malloc();
  */
 static inline
 void

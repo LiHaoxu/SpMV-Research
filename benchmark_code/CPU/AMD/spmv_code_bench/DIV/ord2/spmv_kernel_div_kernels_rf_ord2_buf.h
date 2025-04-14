@@ -113,7 +113,7 @@ quicksort_cmp(int a, int b, struct cmp_data * aux)
 #include "sort/bucketsort/bucketsort_gen.c"
 static inline
 int
-bucketsort_find_bucket(int * A, long i, [[gnu::unused]] void * unused)
+bucketsort_find_bucket(int * A, long i, __attribute__((unused)) void * unused)
 {
 		return A[i];
 }
@@ -292,7 +292,7 @@ test_permutation(long num_vals, ValueType * vals, ValueType * window, int * rev_
  */
 static inline
 long
-compress_kernel_sort_diff(INT_T * row_ptr, INT_T * ja, ValueType * vals, long i_s, [[gnu::unused]] long i_t_s, [[gnu::unused]] long i_t_e, long j_s, unsigned char * buf, long num_vals, long * num_vals_out)
+compress_kernel_sort_diff(INT_T * row_ptr, INT_T * ja, ValueType * vals, long i_s, __attribute__((unused)) long i_t_s, __attribute__((unused)) long i_t_e, long j_s, unsigned char * buf, long num_vals, long * num_vals_out)
 {
 	int tnum = omp_get_thread_num();
 	long num_vals_unique;
@@ -751,7 +751,7 @@ decompress_and_compute_kernel_sort_diff_base(unsigned char * restrict buf, Value
 	long num_vals;
 	long num_vals_unique;
 	uint64_t row_min, col_min;
-	[[gnu::unused]] long num_rows;
+	__attribute__((unused)) long num_rows;
 	uint64_t row_bits, col_bits;
 	long i, j, k, l;
 
@@ -1037,7 +1037,7 @@ decompress_and_compute_kernel_sort_diff_select(unsigned char * restrict buf, Val
 
 static inline
 long
-decompress_and_compute_kernel_sort_diff(unsigned char * restrict buf, ValueType * restrict x, ValueType * restrict y, [[gnu::unused]] long i_t_s, [[gnu::unused]] long i_t_e)
+decompress_and_compute_kernel_sort_diff(unsigned char * restrict buf, ValueType * restrict x, ValueType * restrict y, __attribute__((unused)) long i_t_s, __attribute__((unused)) long i_t_e)
 {
 	return decompress_and_compute_kernel_sort_diff_select(buf, x, y, NULL, 0);
 }
@@ -1045,7 +1045,7 @@ decompress_and_compute_kernel_sort_diff(unsigned char * restrict buf, ValueType 
 
 static
 long
-decompress_kernel_sort_diff(ValueType * vals, unsigned char * restrict buf, [[gnu::unused]] long i_t_s, [[gnu::unused]] long i_t_e)
+decompress_kernel_sort_diff(ValueType * vals, unsigned char * restrict buf, __attribute__((unused)) long i_t_s, __attribute__((unused)) long i_t_e)
 {
 	long num_vals;
 	int tnum = omp_get_thread_num();

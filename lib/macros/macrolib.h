@@ -1,7 +1,9 @@
 #ifndef MACROLIB_H
 #define MACROLIB_H
 
-#include "malloc.h"
+#include <stdlib.h>
+#include <stdint.h>
+#include <malloc.h>
 
 #include "macros/cpp_defines.h"
 #include "macros/count_macro_arguments.h"
@@ -190,8 +192,12 @@
 //- Foreach Base
 //------------------------------------------------------------------------------------------------------------------------------------------
 
-/* Iterates over 'tpl_arg_vals'.
- * Calls 'fun' foreach arg in 'tpl_arg_vals' as: fun(tpl_prefix, arg, tpl_suffix).
+/* Calls 'fun' foreach 'arg' in 'tpl_arg_vals' as:
+ *     fun( UNPACK(tpl_prefix), arg, UNPACK(tpl_suffix) ).
+ *
+ *     'tpl_arg_vals' : A tuple with the list of arguments to iterate over.
+ *     'tpl_prefix'   : A tuple with static arguments that are inserted  BEFORE  each argument in 'tpl_arg_vals' in the function call.
+ *     'tpl_suffix'   : A tuple with static arguments that are inserted  AFTER   each argument in 'tpl_arg_vals' in the function call.
  */
 
 #define _FOREACH_EXPAND_0(i, fun, ...)  fun(__VA_ARGS__)
@@ -381,31 +387,41 @@ do {                                                                            
 }) */
 
 
-#define malloc(_size)                        \
-({                                           \
-	RENAME((_size, size));               \
-	void * ptr;                          \
-	ptr = (typeof(ptr)) malloc(size);    \
-	if (ptr == NULL)                     \
-	{                                    \
-		malloc_stats();              \
-		error("malloc failed");      \
-	}                                    \
-	ptr;                                 \
+#define malloc(_size)                                                                                                    \
+({                                                                                                                       \
+	RENAME((_size, size, size_t));                                                                                   \
+	void * ptr;                                                                                                      \
+	if (size > PTRDIFF_MAX)                                                                                          \
+	{                                                                                                                \
+		error("malloc: size (%ld) larger than PTRDIFF_MAX (%ld)", size, PTRDIFF_MAX);                            \
+		size = PTRDIFF_MAX;  /* To suppress -Walloc-size-larger-than= warning, even though we error above. */    \
+	}                                                                                                                \
+	ptr = (typeof(ptr)) malloc((size));                                                                              \
+	if (ptr == NULL)                                                                                                 \
+	{                                                                                                                \
+		malloc_stats();                                                                                          \
+		error("malloc failed");                                                                                  \
+	}                                                                                                                \
+	ptr;                                                                                                             \
 })
 
 
-#define aligned_alloc(_alignment, _size)                       \
-({                                                             \
-	RENAME((_alignment, alignment), (_size, size));        \
-	void * ptr;                                            \
-	ptr = (typeof(ptr)) aligned_alloc(alignment, size);    \
-	if (ptr == NULL)                                       \
-	{                                                      \
-		malloc_stats();                                \
-		error("aligned_alloc failed");                 \
-	}                                                      \
-	ptr;                                                   \
+#define aligned_alloc(_alignment, _size)                                                                                 \
+({                                                                                                                       \
+	RENAME((_alignment, alignment), (_size, size, size_t));                                                          \
+	void * ptr;                                                                                                      \
+	if (size > PTRDIFF_MAX)                                                                                          \
+	{                                                                                                                \
+		error("aligned_alloc: size (%ld) larger than PTRDIFF_MAX (%ld)", size, PTRDIFF_MAX);                     \
+		size = PTRDIFF_MAX;  /* To suppress -Walloc-size-larger-than= warning, even though we error above. */    \
+	}                                                                                                                \
+	ptr = (typeof(ptr)) aligned_alloc(alignment, size);                                                              \
+	if (ptr == NULL)                                                                                                 \
+	{                                                                                                                \
+		malloc_stats();                                                                                          \
+		error("aligned_alloc failed");                                                                           \
+	}                                                                                                                \
+	ptr;                                                                                                             \
 })
 
 

@@ -69,7 +69,7 @@ struct thread_data_kernel {
 static struct thread_data_kernel ** tdks;
 
 
-// struct [[gnu::packed]] packet_header {
+// struct __attribute__((packed)) packet_header {
 struct packet_header {
 	uint32_t num_vals;
 	uint32_t num_vals_unique;
@@ -137,7 +137,7 @@ extern "C"{
 
 static inline
 int
-quicksort_cmp(struct cmp_data_packed_t a, struct cmp_data_packed_t b, [[gnu::unused]] void * unused)
+quicksort_cmp(struct cmp_data_packed_t a, struct cmp_data_packed_t b, __attribute__((unused)) void * unused)
 {
 	unsigned __int128 va, vb;
 	va = a.u128;
@@ -154,116 +154,95 @@ quicksort_cmp(struct cmp_data_packed_t a, struct cmp_data_packed_t b, [[gnu::unu
 #define QUICKSORT_BLOCKED_GEN_VECTOR_LEN  VEC_LEN
 #define QUICKSORT_BLOCKED_GEN_SUFFIX  _packed
 #include "sort/quicksort_blocked/quicksort_blocked_gen.c"
-long permutation_table_n;
-uint64_t * permutation_table;
-long permutation_table_avx2_n;
-uint32_t * permutation_table_avx2;
+long quicksort_permutation_table_i64_n;
+vec_perm_t(p64, VEC_LEN) * quicksort_permutation_table_i64;
 void
 create_permutation_table()
 {
+	uint64_t permutation[VEC_LEN];
 	uint64_t mask;
-	long i, j, k, l, r;
-	permutation_table_n = VEC_LEN * (1ULL << VEC_LEN);
-	permutation_table = (typeof(permutation_table)) malloc(permutation_table_n * sizeof(*permutation_table));
-	permutation_table_avx2_n = 2 * VEC_LEN * (1ULL << VEC_LEN);
-	permutation_table_avx2 = (typeof(permutation_table_avx2)) malloc(permutation_table_avx2_n * sizeof(*permutation_table_avx2));
+	long i, j, l, r;
+	quicksort_permutation_table_i64_n = VEC_LEN * (1ULL << VEC_LEN);
+	quicksort_permutation_table_i64 = (typeof(quicksort_permutation_table_i64)) malloc(quicksort_permutation_table_i64_n * sizeof(*quicksort_permutation_table_i64));
 	for (i=0;i<1LL << VEC_LEN;i++)
 	{
-		j = VEC_LEN * i;
 		l = 0;
 		r = VEC_LEN - 1;
 		mask = 1;
-		for (k=0;k<VEC_LEN;k++)
+		for (j=0;j<VEC_LEN;j++)
 		{
 			if (i & mask)
-			{
-				permutation_table[j + r] = k;
-				permutation_table_avx2[2*j + 2*r] = 2*k;   // Little-endian
-				permutation_table_avx2[2*j + 2*r+1] = 2*k+1;
-				r--;
-			}
+				permutation[r--] = j;
 			else
-			{
-				permutation_table[j + l] = k;
-				permutation_table_avx2[2*j + 2*l] = 2*k;
-				permutation_table_avx2[2*j + 2*l+1] = 2*k+1;
-				l++;
-			}
+				permutation[l++] = j;
 			mask <<= 1;
 		}
+		quicksort_permutation_table_i64[i] = vec_set_iter(p64, VEC_LEN, iter, permutation[iter]);
 	}
 }
 static inline
 int
-quicksort_blocked_cmp(struct cmp_data_packed_t a, struct cmp_data_packed_t b, [[gnu::unused]] void * unused)
+quicksort_blocked_cmp(struct cmp_data_packed_t a, struct cmp_data_packed_t b, __attribute__((unused)) void * unused)
 {
 	return (a.u128 > b.u128) ? 1 : (a.u128 < b.u128) ? -1 : 0;
 }
 static inline
 void
-quicksort_blocked_buffer_and_partition_block(struct cmp_data_packed_t pivot_scalar, struct cmp_data_packed_t * A, long i_start, [[gnu::unused]] void * aux_data, const long place_equal_right,
+quicksort_blocked_buffer_and_partition_block(struct cmp_data_packed_t pivot_scalar, struct cmp_data_packed_t * A, long i_start, __attribute__((unused)) void * aux_data, const long place_equal_right,
 		struct cmp_data_packed_t * buf_out, long * i_buf_l_ptr, long * i_buf_r_ptr)
 {
-	__m256i pivot0 = _mm256_set1_epi64x(pivot_scalar.u64[0]);
-	__m256i pivot1 = _mm256_set1_epi64x(pivot_scalar.u64[1]);
+	vec_t(i64, VEC_LEN) pivot0 = vec_set1(i64, VEC_LEN, pivot_scalar.u64[0]);
+	vec_t(i64, VEC_LEN) pivot1 = vec_set1(i64, VEC_LEN, pivot_scalar.u64[1]);
 
-	__m256i val0 = _mm256_set_epi64x(A[i_start+3].u64[0], A[i_start+2].u64[0], A[i_start+1].u64[0], A[i_start].u64[0]);
-	__m256i val1 = _mm256_set_epi64x(A[i_start+3].u64[1], A[i_start+2].u64[1], A[i_start+1].u64[1], A[i_start].u64[1]);
+	vec_t(i64, VEC_LEN) val0 = vec_set_iter(i64, VEC_LEN, iter, A[i_start+iter].u64[0]);
+	vec_t(i64, VEC_LEN) val1 = vec_set_iter(i64, VEC_LEN, iter, A[i_start+iter].u64[1]);
 
-	__m256i cmp_flag;
+	vec_mask_t(m64, VEC_LEN) cmpgt_flag0, cmpgt_flag1, cmpeq_flag1;
+	vec_mask_t(m64, VEC_LEN) cmp_flag;
+	uint32_t mask;
+	long j;
+
 	if (place_equal_right)
 	{
-		__m256i cmpgt_flag0 = _mm256_cmpgt_epi64(pivot0, val0);
-		__m256i cmpgt_flag1 = _mm256_cmpgt_epi64(pivot1, val1);
-		__m256i cmpeq_flag1 = _mm256_cmpeq_epi64(pivot1, val1);
-		cmp_flag = _mm256_or_si256(cmpgt_flag1, _mm256_and_si256(cmpeq_flag1, cmpgt_flag0));
-
-		cmp_flag = _mm256_xor_si256(cmp_flag, _mm256_set1_epi64x(-1LL));
+		cmpgt_flag0 = vec_cmpgt(i64, VEC_LEN, pivot0, val0);
+		cmpgt_flag1 = vec_cmpgt(i64, VEC_LEN, pivot1, val1);
+		cmpeq_flag1 = vec_cmpeq(i64, VEC_LEN, pivot1, val1);
+		cmp_flag = vec_or(m64, VEC_LEN, cmpgt_flag1, vec_and(m64, VEC_LEN, cmpeq_flag1, cmpgt_flag0));
+		cmp_flag = vec_not(m64, VEC_LEN, cmp_flag);
 	}
 	else
 	{
-		__m256i cmpgt_flag0 = _mm256_cmpgt_epi64(val0, pivot0);
-		__m256i cmpgt_flag1 = _mm256_cmpgt_epi64(val1, pivot1);
-		__m256i cmpeq_flag1 = _mm256_cmpeq_epi64(val1, pivot1);
-		cmp_flag = _mm256_or_si256(cmpgt_flag1, _mm256_and_si256(cmpeq_flag1, cmpgt_flag0));
+		cmpgt_flag0 = vec_cmpgt(i64, VEC_LEN, val0, pivot0);
+		cmpgt_flag1 = vec_cmpgt(i64, VEC_LEN, val1, pivot1);
+		cmpeq_flag1 = vec_cmpeq(i64, VEC_LEN, val1, pivot1);
+		cmp_flag = vec_or(m64, VEC_LEN, cmpgt_flag1, vec_and(m64, VEC_LEN, cmpeq_flag1, cmpgt_flag0));
 	}
+	mask = vec_mask_pack(m64, VEC_LEN, cmp_flag);
 
-	uint32_t mask = _mm256_movemask_pd((__m256d) cmp_flag);
+	vec_perm_t(p64, VEC_LEN) perm = quicksort_permutation_table_i64[mask];
+	val0 = vec_permutexvar(i64, VEC_LEN, val0, perm);
+	val1 = vec_permutexvar(i64, VEC_LEN, val1, perm);
 
-	__m256i permute = _mm256_loadu_si256((__m256i *) &permutation_table_avx2[2*mask * VEC_LEN]);
+	PRAGMA(GCC unroll(VEC_LEN))
+	for (j=0;j<VEC_LEN;j++)
+		buf_out[*i_buf_l_ptr+j].u64[0] = val0.s[j];
 
-	val0 = (__m256i) _mm256_permutevar8x32_ps((__m256) val0, permute);
-	val1 = (__m256i) _mm256_permutevar8x32_ps((__m256) val1, permute);
+	PRAGMA(GCC unroll(VEC_LEN))
+	for (j=0;j<VEC_LEN;j++)
+		buf_out[*i_buf_l_ptr+j].u64[1] = val1.s[j];
 
-	buf_out[*i_buf_l_ptr+0].u64[0] = val0[0];
-	buf_out[*i_buf_l_ptr+1].u64[0] = val0[1];
-	buf_out[*i_buf_l_ptr+2].u64[0] = val0[2];
-	buf_out[*i_buf_l_ptr+3].u64[0] = val0[3];
+	PRAGMA(GCC unroll(VEC_LEN))
+	for (j=0;j<VEC_LEN;j++)
+		buf_out[*i_buf_r_ptr - VEC_LEN + 1 + j].u64[0] = val0.s[j];
 
-	buf_out[*i_buf_l_ptr+0].u64[1] = val1[0];
-	buf_out[*i_buf_l_ptr+1].u64[1] = val1[1];
-	buf_out[*i_buf_l_ptr+2].u64[1] = val1[2];
-	buf_out[*i_buf_l_ptr+3].u64[1] = val1[3];
-
-	buf_out[*i_buf_r_ptr - VEC_LEN + 1+0].u64[0] = val0[0];
-	buf_out[*i_buf_r_ptr - VEC_LEN + 1+1].u64[0] = val0[1];
-	buf_out[*i_buf_r_ptr - VEC_LEN + 1+2].u64[0] = val0[2];
-	buf_out[*i_buf_r_ptr - VEC_LEN + 1+3].u64[0] = val0[3];
-
-	buf_out[*i_buf_r_ptr - VEC_LEN + 1+0].u64[1] = val1[0];
-	buf_out[*i_buf_r_ptr - VEC_LEN + 1+1].u64[1] = val1[1];
-	buf_out[*i_buf_r_ptr - VEC_LEN + 1+2].u64[1] = val1[2];
-	buf_out[*i_buf_r_ptr - VEC_LEN + 1+3].u64[1] = val1[3];
+	PRAGMA(GCC unroll(VEC_LEN))
+	for (j=0;j<VEC_LEN;j++)
+		buf_out[*i_buf_r_ptr - VEC_LEN + 1 + j].u64[1] = val1.s[j];
 
 	long num_gt = bits_u32_popcnt(mask);
 	*i_buf_r_ptr -= num_gt;
 	*i_buf_l_ptr += VEC_LEN - num_gt;
 }
-
-
-
-
-
 
 
 // #ifdef __cplusplus
@@ -283,7 +262,7 @@ quicksort_blocked_buffer_and_partition_block(struct cmp_data_packed_t pivot_scal
 // int
 // quicksort_cmp(int a, int b, struct cmp_data_t * aux)
 // {
-	// [[gnu::unused]] unsigned int * rows = aux->rows;
+	// __attribute__((unused)) unsigned int * rows = aux->rows;
 	// unsigned int * cols = aux->cols;
 	// ValueType * vals = aux->vals;
 	// int ca=cols[a], cb=cols[b];
@@ -302,13 +281,13 @@ quicksort_blocked_buffer_and_partition_block(struct cmp_data_packed_t pivot_scal
 int
 quicksort_cmp(int a, int b, struct cmp_data_t * aux)
 {
-	[[gnu::unused]] unsigned int * rows = aux->rows;
+	__attribute__((unused)) unsigned int * rows = aux->rows;
 	unsigned int * cols = aux->cols;
 	ValueType * vals = aux->vals;
 	int ra=rows[a], rb=rows[b];
 	int ca=cols[a], cb=cols[b];
-	[[gnu::unused]] int ra_mul = ra / 8, rb_mul = rb / 8;
-	[[gnu::unused]] int ca_mul = ca / 256, cb_mul = cb / 256;
+	__attribute__((unused)) int ra_mul = ra / 8, rb_mul = rb / 8;
+	__attribute__((unused)) int ca_mul = ca / 256, cb_mul = cb / 256;
 	ValueType va=vals[a], vb=vals[b];
 	int ret = 0;
 	// ret = (ra_mul > rb_mul) ? 1 : (ra_mul < rb_mul) ? -1 : 0;
@@ -342,7 +321,7 @@ quicksort_cmp(int a, int b, struct cmp_data_t * aux)
 #include "sort/bucketsort/bucketsort_gen.c"
 static inline
 int
-bucketsort_find_bucket(int * A, long i, [[gnu::unused]] void * unused)
+bucketsort_find_bucket(int * A, long i, __attribute__((unused)) void * unused)
 {
 		return A[i];
 }
@@ -547,8 +526,8 @@ test_permutation(long num_vals, ValueTypeReference * vals, ValueType * window, i
 
 static inline
 void
-compress_kernel_div(INT_T * row_ptr, INT_T * ja, ValueTypeReference * vals, [[gnu::unused]] long symmetric, long i_s, [[gnu::unused]] long i_t_s, [[gnu::unused]] long i_t_e, long j_s,
-		unsigned char * buf_stealable, [[gnu::unused]] unsigned char * buf_protected, long num_vals, long * num_vals_out, long * size_stealable_out, long * size_protected_out)
+compress_kernel_div(INT_T * row_ptr, INT_T * ja, ValueTypeReference * vals, __attribute__((unused)) long symmetric, long i_s, __attribute__((unused)) long i_t_s, __attribute__((unused)) long i_t_e, long j_s,
+		unsigned char * buf_stealable, __attribute__((unused)) unsigned char * buf_protected, long num_vals, long * num_vals_out, long * size_stealable_out, long * size_protected_out)
 {
 	long tnum = omp_get_thread_num();
 	struct thread_data * td = tds[tnum];
@@ -945,7 +924,7 @@ void
 mult_add_serial(ValueType * x_rel, ValueType * y_rel, vec_t(VTF, VEC_LEN) val, vec_t(i64, VEC_LEN) row_rel, vec_t(i64, VEC_LEN) col_rel)
 {
 	for (long iter=0;iter<VEC_LEN;iter++)
-		y_rel[vec_array(i64, VEC_LEN, row_rel)[iter]] += vec_array(VTF, VEC_LEN, val)[iter] * x_rel[vec_array(i64, VEC_LEN, col_rel)[iter]];
+		y_rel[row_rel.s[iter]] += val.s[iter] * x_rel[col_rel.s[iter]];
 }
 
 
@@ -972,7 +951,7 @@ decompress_and_compute_kernel_div_base(unsigned char * restrict buf, ValueType *
 	long num_vals;
 	long num_vals_unique;
 	uint64_t row_min, col_min;
-	[[gnu::unused]] long num_rows;
+	__attribute__((unused)) long num_rows;
 	uint64_t row_bits, col_bits;
 	long num_rfs;
 	uint32_t * data_val_lanes_size;
@@ -1011,11 +990,11 @@ decompress_and_compute_kernel_div_base(unsigned char * restrict buf, ValueType *
 	const uint64_t data_val_lens_bytes = num_vals_unique;
 
 	vec_t(i64, VEC_LEN) data_val_lanes;
-	vec_array(i64, VEC_LEN, data_val_lanes)[0] = (long long) &data_val_lens[data_val_lens_bytes];
+	data_val_lanes.s[0] = (long long) &data_val_lens[data_val_lens_bytes];
 	uint64_t data_val_lanes_bytes = data_val_lanes_size[0];
 	for (long iter=1;iter<VEC_LEN;iter++)
 	{
-		vec_array(i64, VEC_LEN, data_val_lanes)[iter] = vec_array(i64, VEC_LEN, data_val_lanes)[iter-1] + data_val_lanes_size[iter-1];
+		data_val_lanes.s[iter] = data_val_lanes.s[iter-1] + data_val_lanes_size[iter-1];
 		data_val_lanes_bytes += data_val_lanes_size[iter];
 	}
 
@@ -1049,10 +1028,10 @@ decompress_and_compute_kernel_div_base(unsigned char * restrict buf, ValueType *
 			// len_bits = len << 3ULL;
 			vec_t(VTI, VEC_LEN) len_bits = vec_slli(VTI, VEC_LEN, len, 3ULL);
 
-			diff.u = vec_set_iter(VTI, VEC_LEN, iter, *((ValueTypeI *) vec_array(i64, VEC_LEN, data_val_lanes)[iter]));
+			diff.u = vec_set_iter(VTI, VEC_LEN, iter, *((ValueTypeI *) data_val_lanes.s[iter]));
 
 			// data_val_lanes = data_val_lanes + len_64;
-			len_64 = vec_set_iter(i64, VEC_LEN, iter, vec_array(VTI, VEC_LEN, len)[iter]);
+			len_64 = vec_set_iter(i64, VEC_LEN, iter, len.s[iter]);
 			data_val_lanes = vec_add(i64, VEC_LEN, data_val_lanes, len_64);
 
 			// vec_t(VTI, VEC_LEN) mask = (1ULL << len_bits) - 1ULL;
@@ -1078,8 +1057,8 @@ decompress_and_compute_kernel_div_base(unsigned char * restrict buf, ValueType *
 					col = vec_add(i64, VEC_LEN, col_rel, vec_set1(i64, VEC_LEN, col_min));
 					for (r=0;r<VEC_LEN;r++)
 					{
-						window_ia[k+r] = vec_array(i64, VEC_LEN, row)[r];
-						window_ja[k+r] = vec_array(i64, VEC_LEN, col)[r];
+						window_ia[k+r] = row.s[r];
+						window_ja[k+r] = col.s[r];
 					}
 				}
 				else
@@ -1104,22 +1083,22 @@ decompress_and_compute_kernel_div_base(unsigned char * restrict buf, ValueType *
 			len &= 15ULL;
 			uint64_t len_bits = len << 3ULL;
 
-			diff.u = *((ValueTypeI *) vec_array(i64, VEC_LEN, data_val_lanes)[lane_id]);
+			diff.u = *((ValueTypeI *) data_val_lanes.s[lane_id]);
 
-			vec_array(i64, VEC_LEN, data_val_lanes)[lane_id] = vec_array(i64, VEC_LEN, data_val_lanes)[lane_id] + len;
+			data_val_lanes.s[lane_id] = data_val_lanes.s[lane_id] + len;
 
 			ValueTypeI mask = (len == 8) ? -1ULL : (1ULL << len_bits) - 1ULL;
 			diff.u &= mask;
 			diff.u <<= tz;
 
-			vec_array(VTI, VEC_LEN, val.u)[lane_id] = vec_array(VTI, VEC_LEN, val.u)[lane_id] + diff.u;
+			val.u.s[lane_id] = val.u.s[lane_id] + diff.u;
 
 			long rf_div = rf / VEC_LEN;
 			long rf_multiple = rf_div * VEC_LEN;
 			for (j=0;j<rf_multiple;j+=VEC_LEN)
 			{
 				vec_t(i64, VEC_LEN) row_rel, col_rel;
-				vec_t(VTF, VEC_LEN) val_buf = vec_set1(VTF, VEC_LEN, vec_array(VTF, VEC_LEN, val.d)[lane_id]);
+				vec_t(VTF, VEC_LEN) val_buf = vec_set1(VTF, VEC_LEN, val.d.s[lane_id]);
 				k = i*rf + j;
 				gather_coords_v(k, data_coords, coords_bytes, row_bits, col_bits, &row_rel, &col_rel);
 				if (validate)
@@ -1130,8 +1109,8 @@ decompress_and_compute_kernel_div_base(unsigned char * restrict buf, ValueType *
 					col = vec_add(i64, VEC_LEN, col_rel, vec_set1(i64, VEC_LEN, col_min));
 					for (r=0;r<VEC_LEN;r++)
 					{
-						window_ia[k+r] = vec_array(i64, VEC_LEN, row)[r];
-						window_ja[k+r] = vec_array(i64, VEC_LEN, col)[r];
+						window_ia[k+r] = row.s[r];
+						window_ja[k+r] = col.s[r];
 					}
 				}
 				else
@@ -1147,7 +1126,7 @@ decompress_and_compute_kernel_div_base(unsigned char * restrict buf, ValueType *
 				gather_coords(k, data_coords, coords_bytes, row_bits, col_bits, &row_rel, &col_rel);
 				if (validate)
 				{
-					window[k] = vec_array(VTF, VEC_LEN, val.d)[lane_id];
+					window[k] = val.d.s[lane_id];
 					uint64_t row, col;
 					row = row_rel + row_min;
 					col = col_rel + col_min;
@@ -1156,7 +1135,7 @@ decompress_and_compute_kernel_div_base(unsigned char * restrict buf, ValueType *
 				}
 				else
 				{
-					y_rel[row_rel] += vec_array(VTF, VEC_LEN, val.d)[lane_id] * x_rel[col_rel];
+					y_rel[row_rel] += val.d.s[lane_id] * x_rel[col_rel];
 				}
 			}
 		}
@@ -1250,7 +1229,7 @@ get_packet_rows(unsigned char * restrict buf, long * i_s_ptr, long * i_e_ptr)
 
 static inline
 long
-decompress_and_compute_kernel_div(unsigned char * restrict buf, ValueType * restrict x, ValueType * restrict y, [[gnu::unused]] long i_t_s, [[gnu::unused]] long i_t_e)
+decompress_and_compute_kernel_div(unsigned char * restrict buf, ValueType * restrict x, ValueType * restrict y, __attribute__((unused)) long i_t_s, __attribute__((unused)) long i_t_e)
 {
 	return decompress_and_compute_kernel_div_select(buf, x, y, NULL, 0);
 }
@@ -1258,7 +1237,7 @@ decompress_and_compute_kernel_div(unsigned char * restrict buf, ValueType * rest
 
 static
 long
-decompress_kernel_div(INT_T * ia_out, INT_T * ja_out, ValueType * a_out, long * num_vals_out, unsigned char * restrict buf, [[gnu::unused]] long i_t_s, [[gnu::unused]] long i_t_e)
+decompress_kernel_div(INT_T * ia_out, INT_T * ja_out, ValueType * a_out, long * num_vals_out, unsigned char * restrict buf, __attribute__((unused)) long i_t_s, __attribute__((unused)) long i_t_e)
 {
 	long num_vals;
 	int tnum = omp_get_thread_num();

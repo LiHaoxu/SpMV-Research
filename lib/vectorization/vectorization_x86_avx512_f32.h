@@ -10,91 +10,131 @@
 #include "macros/macrolib.h"
 
 #include "vectorization/vectorization_util.h"
+#include "vectorization/vectorization_x86_avx512_m32.h"
 
 
-typedef struct [[gnu::packed]] { __m512 v[2]; }  __m512_f32_2;
-#define vec_f32_32_t  __m512_f32_2
-#define vec_f32_16_t  __m512
-#define vec_f32_8_t   __m256
-#define vec_f32_4_t   __m128
-#define vec_f32_1_t   float
+typedef union __attribute__((packed, aligned(4))) { float  v;    double  vf64;    int64_t vi;     float s[1];  int32_t si[1];  uint32_t su[1];  float sf[1];  }  vec_f32_1_t;
+typedef union __attribute__((packed, aligned(4))) { __m128 v;    __m128d vf64;    __m128i vi;     float s[4];  int32_t si[4];  uint32_t su[4];  float sf[4];  }  vec_f32_4_t;
+typedef union __attribute__((packed, aligned(4))) { __m256 v;    __m256d vf64;    __m256i vi;     float s[8];  int32_t si[8];  uint32_t su[8];  float sf[8];  }  vec_f32_8_t;
+typedef union __attribute__((packed, aligned(4))) { __m512 v;    __m512d vf64;    __m512i vi;     float s[16]; int32_t si[16]; uint32_t su[16]; float sf[16]; }  vec_f32_16_t;
+typedef union __attribute__((packed, aligned(4))) { __m512 v[2]; __m512d vf64[2]; __m512i vi[2];  float s[32]; int32_t si[32]; uint32_t su[32]; float sf[32]; }  vec_f32_32_t;
 
 #define vec_len_default_f32  16
 
-typedef float  vec_f32_t [[gnu::may_alias]];
+
+#define vec_f32_16(val)                                    ( (vec_f32_16_t) { .v = val } )
+#define vec_f32_8(val)                                     ( (vec_f32_8_t)  { .v = val } )
+#define vec_f32_4(val)                                     ( (vec_f32_4_t)  { .v = val } )
+#define vec_f32_1(val)                                     ( (vec_f32_1_t)  { .v = val } )
 
 
-#define vec_array_f32_32(val)                    ({vec_f32_32_t * _tmp = &val; (vec_f32_t *) _tmp;})
-#define vec_array_f32_16(val)                    ({vec_f32_16_t * _tmp = &val; (vec_f32_t *) _tmp;})
-#define vec_array_f32_8(val)                     ({vec_f32_8_t  * _tmp = &val; (vec_f32_t *) _tmp;})
-#define vec_array_f32_4(val)                     ({vec_f32_4_t  * _tmp = &val; (vec_f32_t *) _tmp;})
-#define vec_array_f32_1(val)                     ({vec_f32_1_t  * _tmp = &val; (vec_f32_t *) _tmp;})
+//------------------------------------------------------------------------------------------------------------------------------------------
+//- Cast
+//------------------------------------------------------------------------------------------------------------------------------------------
 
-#define vec_set1_f32_32(val)                     vec_loop_expr(__m512_f32_2, 2, _tmp, _i, _tmp.v[_i] = vec_set1_f32_16(val);)
-#define vec_set1_f32_16(val)                     _mm512_set1_ps(val)
-#define vec_set1_f32_8(val)                      _mm256_set1_ps(val)
-#define vec_set1_f32_4(val)                      _mm_set1_ps(val)
-#define vec_set1_f32_1(val)                      val
+#define vec_cast_to_i32_f32_32(val)                        vec_loop_expr(vec_i32_32_t, 2, _tmp, _i, _tmp.v[_i] = val.vi[_i];)
+#define vec_cast_to_i32_f32_16(val)                        ( (vec_i32_16_t)  { .v = val.v } )
+#define vec_cast_to_i32_f32_8(val)                         ( (vec_i32_8_t)  { .v = val.v } )
+#define vec_cast_to_i32_f32_4(val)                         ( (vec_i32_4_t)  { .v = val.v } )
+#define vec_cast_to_i32_f32_1(val)                         ( (vec_i32_1_t)  { .v = val.v } )
 
-#define vec_set_iter_f32_32(iter, expr)          vec_loop_expr(__m512_f32_2, 2, _tmp, _i, _tmp.v[_i] = _mm512_set_ps(vec_iter_expr_16(iter, 16*_i, expr));)
-#define vec_set_iter_f32_16(iter, expr)          _mm512_set_ps(vec_iter_expr_16(iter, 0, expr))
-#define vec_set_iter_f32_8(iter, expr)           _mm256_set_ps(vec_iter_expr_8(iter, 0, expr))
-#define vec_set_iter_f32_4(iter, expr)           _mm_set_ps(vec_iter_expr_4(iter, 0, expr))
-#define vec_set_iter_f32_1(iter, expr)           vec_iter_expr_1(iter, 0, expr)
+#define vec_cast_to_i64_f32_32(val)                        vec_loop_expr(vec_i64_16_t, 2, _tmp, _i, _tmp.v[_i] = val.vi[_i];)
+#define vec_cast_to_i64_f32_16(val)                        ( (vec_i64_8_t)  { .v = val.vi } )
+#define vec_cast_to_i64_f32_8(val)                         ( (vec_i64_4_t)  { .v = val.vi } )
+#define vec_cast_to_i64_f32_4(val)                         ( (vec_i64_2_t)  { .v = val.vi } )
+#define vec_cast_to_i64_f32_1(val)                         ( (vec_i64_1_t)  { .v = val.vi } )
 
+#define vec_cast_to_f32_f32_32(val)                        val
+#define vec_cast_to_f32_f32_16(val)                        val
+#define vec_cast_to_f32_f32_8(val)                         val
+#define vec_cast_to_f32_f32_4(val)                         val
+#define vec_cast_to_f32_f32_1(val)                         val
 
-#define vec_loadu_f32_32(ptr)                    vec_loop_expr(__m512_f32_2, 2, _tmp, _i, _tmp.v[_i] = vec_loadu_f32_16(((float*)(ptr)) + _i*16);)
-#define vec_loadu_f32_16(ptr)                    _mm512_loadu_ps((float*)(ptr))
-#define vec_loadu_f32_8(ptr)                     _mm256_loadu_ps((float*)(ptr))
-#define vec_loadu_f32_4(ptr)                     _mm_loadu_ps((float*)(ptr))
-#define vec_loadu_f32_1(ptr)                     (*((vec_f32_1_t*)(ptr)))
-
-#define vec_storeu_f32_32(ptr, vec)              vec_loop_stmt(2, _i, vec_storeu_f32_16(((float*)(ptr)) + _i*16, (vec).v[_i]);)
-#define vec_storeu_f32_16(ptr, vec)              _mm512_storeu_ps((float*)(ptr), vec)
-#define vec_storeu_f32_8(ptr, vec)               _mm256_storeu_ps((float*)(ptr), vec)
-#define vec_storeu_f32_4(ptr, vec)               _mm_storeu_ps((float*)(ptr), vec)
-#define vec_storeu_f32_1(ptr, vec)               do { (*((vec_f32_1_t*)(ptr))) = (vec); } while (0)
+#define vec_cast_to_f64_f32_32(val)                        vec_loop_expr(vec_f64_16_t, 2, _tmp, _i, _tmp.v[_i] = val.vf64[_i];)
+#define vec_cast_to_f64_f32_16(val)                        ( (vec_f64_8_t)  { .v = val.vf64 } )
+#define vec_cast_to_f64_f32_8(val)                         ( (vec_f64_4_t)  { .v = val.vf64 } )
+#define vec_cast_to_f64_f32_4(val)                         ( (vec_f64_2_t)  { .v = val.vf64 } )
+#define vec_cast_to_f64_f32_1(val)                         ( (vec_f64_1_t)  { .v = val.vf64 } )
 
 
-#define vec_add_f32_32(a, b)                     vec_loop_expr(__m512_f32_2, 2, _tmp, _i, _tmp.v[_i] = vec_add_f32_16(a.v[_i], b.v[_i]);)
-#define vec_add_f32_16(a, b)                     _mm512_add_ps(a, b)
-#define vec_add_f32_8(a, b)                      _mm256_add_ps(a, b)
-#define vec_add_f32_4(a, b)                      _mm_add_ps(a, b)
-#define vec_add_f32_1(a, b)                      (a + b)
+//------------------------------------------------------------------------------------------------------------------------------------------
+//- Set - Load - Store
+//------------------------------------------------------------------------------------------------------------------------------------------
 
-#define vec_sub_f32_32(a, b)                     vec_loop_expr(__m512_f32_2, 2, _tmp, _i, _tmp.v[_i] = vec_sub_f32_16(a.v[_i], b.v[_i]);)
-#define vec_sub_f32_16(a, b)                     _mm512_sub_ps(a, b)
-#define vec_sub_f32_8(a, b)                      _mm256_sub_ps(a, b)
-#define vec_sub_f32_4(a, b)                      _mm_sub_ps(a, b)
-#define vec_sub_f32_1(a, b)                      (a - b)
+#define vec_array_f32_32(val)                              val.s
+#define vec_array_f32_16(val)                              val.s
+#define vec_array_f32_8(val)                               val.s
+#define vec_array_f32_4(val)                               val.s
+#define vec_array_f32_1(val)                               val.s
 
-#define vec_mul_f32_32(a, b)                     vec_loop_expr(__m512_f32_2, 2, _tmp, _i, _tmp.v[_i] = vec_mul_f32_16(a.v[_i], b.v[_i]);)
-#define vec_mul_f32_16(a, b)                     _mm512_mul_ps(a, b)
-#define vec_mul_f32_8(a, b)                      _mm256_mul_ps(a, b)
-#define vec_mul_f32_4(a, b)                      _mm_mul_ps(a, b)
-#define vec_mul_f32_1(a, b)                      (a * b)
+#define vec_set1_f32_32(val)                               vec_loop_expr(vec_f32_32_t, 2, _tmp, _i, _tmp.v[_i] = _mm512_set1_ps(val);)
+#define vec_set1_f32_16(val)                               vec_f32_16( _mm512_set1_ps(val) )
+#define vec_set1_f32_8(val)                                vec_f32_8( _mm256_set1_ps(val) )
+#define vec_set1_f32_4(val)                                vec_f32_4( _mm_set1_ps(val) )
+#define vec_set1_f32_1(val)                                vec_f32_1( val )
 
-#define vec_div_f32_32(a, b)                     vec_loop_expr(__m512_f32_2, 2, _tmp, _i, _tmp.v[_i] = vec_div_f32_16(a.v[_i], b.v[_i]);)
-#define vec_div_f32_16(a, b)                     _mm512_div_ps(a, b)
-#define vec_div_f32_8(a, b)                      _mm256_div_ps(a, b)
-#define vec_div_f32_4(a, b)                      _mm_div_ps(a, b)
-#define vec_div_f32_1(a, b)                      (a / b)
+#define vec_set_iter_f32_32(iter, expr)                    vec_loop_expr(vec_f32_32_t, 2, _tmp, _i, _tmp.v[_i] = _mm512_set_ps(vec_iter_expr_16(iter, 16*_i, expr));)
+#define vec_set_iter_f32_16(iter, expr)                    vec_f32_16( _mm512_set_ps(vec_iter_expr_16(iter, 0, expr)) )
+#define vec_set_iter_f32_8(iter, expr)                     vec_f32_8( _mm256_set_ps(vec_iter_expr_8(iter, 0, expr)) )
+#define vec_set_iter_f32_4(iter, expr)                     vec_f32_4( _mm_set_ps(vec_iter_expr_4(iter, 0, expr)) )
+#define vec_set_iter_f32_1(iter, expr)                     vec_f32_1( vec_iter_expr_1(iter, 0, expr) )
 
-#define vec_fmadd_f32_32(a, b, c)                vec_loop_expr(__m512_f32_2, 2, _tmp, _i, _tmp.v[_i] = vec_fmadd_f32_16(a.v[_i], b.v[_i], c.v[_i]);)
-#define vec_fmadd_f32_16(a, b, c)                _mm512_fmadd_ps(a, b, c)
-#define vec_fmadd_f32_8(a, b, c)                 _mm256_fmadd_ps(a, b, c)
-#define vec_fmadd_f32_4(a, b, c)                 _mm_fmadd_ps(a, b, c)
-#define vec_fmadd_f32_1(a, b, c)                 (a * b + c)
+#define vec_loadu_f32_32(ptr)                              vec_loop_expr(vec_f32_32_t, 2, _tmp, _i, _tmp.v[_i] = _mm512_loadu_ps(((float *)(ptr)) + 16*_i);)
+#define vec_loadu_f32_16(ptr)                              vec_f32_16( _mm512_loadu_ps((float *) ptr) )
+#define vec_loadu_f32_8(ptr)                               vec_f32_8( _mm256_loadu_ps((float *) ptr) )
+#define vec_loadu_f32_4(ptr)                               vec_f32_4( _mm_loadu_ps((float *) ptr) )
+#define vec_loadu_f32_1(ptr)                               vec_f32_1( (*((float *) ptr)) )
+
+#define vec_storeu_f32_32(ptr, vec)                        vec_loop_stmt(2, _i, _mm512_storeu_ps(((float *)(ptr)) + 16*_i, vec.v[_i]);)
+#define vec_storeu_f32_16(ptr, vec)                        _mm512_storeu_ps((float *) ptr, vec.v)
+#define vec_storeu_f32_8(ptr, vec)                         _mm256_storeu_ps((float *) ptr, vec.v)
+#define vec_storeu_f32_4(ptr, vec)                         _mm_storeu_ps((float *) ptr, vec.v)
+#define vec_storeu_f32_1(ptr, vec)                         do { (*((float *) ptr)) = (vec.v); } while (0)
 
 
-#define vec_reduce_add_f32_32(a)                 vec_reduce_expr(float, 2, 0, _tmp, _i, _tmp += vec_reduce_add_f32_16(a.v[_i]);)
+//------------------------------------------------------------------------------------------------------------------------------------------
+//- Operations
+//------------------------------------------------------------------------------------------------------------------------------------------
 
-#define vec_reduce_add_f32_16(a)                 _mm512_reduce_add_ps(a);
+#define vec_add_f32_32(a, b)                               vec_loop_expr(vec_f32_32_t, 2, _tmp, _i, _tmp.v[_i] = _mm512_add_ps(a.v[_i], b.v[_i]);)
+#define vec_add_f32_16(a, b)                               vec_f32_16( _mm512_add_ps(a.v, b.v) )
+#define vec_add_f32_8(a, b)                                vec_f32_8( _mm256_add_ps(a.v, b.v) )
+#define vec_add_f32_4(a, b)                                vec_f32_4( _mm_add_ps(a.v, b.v) )
+#define vec_add_f32_1(a, b)                                vec_f32_1( (a.v + b.v) )
+
+#define vec_sub_f32_32(a, b)                               vec_loop_expr(vec_f32_32_t, 2, _tmp, _i, _tmp.v[_i] = _mm512_sub_ps(a.v[_i], b.v[_i]);)
+#define vec_sub_f32_16(a, b)                               vec_f32_16( _mm512_sub_ps(a.v, b.v) )
+#define vec_sub_f32_8(a, b)                                vec_f32_8( _mm256_sub_ps(a.v, b.v) )
+#define vec_sub_f32_4(a, b)                                vec_f32_4( _mm_sub_ps(a.v, b.v) )
+#define vec_sub_f32_1(a, b)                                vec_f32_1( (a.v - b.v) )
+
+#define vec_mul_f32_32(a, b)                               vec_loop_expr(vec_f32_32_t, 2, _tmp, _i, _tmp.v[_i] = _mm512_mul_ps(a.v[_i], b.v[_i]);)
+#define vec_mul_f32_16(a, b)                               vec_f32_16( _mm512_mul_ps(a.v, b.v) )
+#define vec_mul_f32_8(a, b)                                vec_f32_8( _mm256_mul_ps(a.v, b.v) )
+#define vec_mul_f32_4(a, b)                                vec_f32_4( _mm_mul_ps(a.v, b.v) )
+#define vec_mul_f32_1(a, b)                                vec_f32_1( (a.v * b.v) )
+
+#define vec_div_f32_32(a, b)                               vec_loop_expr(vec_f32_32_t, 2, _tmp, _i, _tmp.v[_i] = _mm512_div_ps(a.v[_i], b.v[_i]);)
+#define vec_div_f32_16(a, b)                               vec_f32_16( _mm512_div_ps(a.v, b.v) )
+#define vec_div_f32_8(a, b)                                vec_f32_8( _mm256_div_ps(a.v, b.v) )
+#define vec_div_f32_4(a, b)                                vec_f32_4( _mm_div_ps(a.v, b.v) )
+#define vec_div_f32_1(a, b)                                vec_f32_1( (a.v / b.v) )
+
+#define vec_fmadd_f32_32(a, b, c)                          vec_loop_expr(vec_f32_32_t, 2, _tmp, _i, _tmp.v[_i] = _mm512_fmadd_ps(a.v[_i], b.v[_i], c.v[_i]);)
+#define vec_fmadd_f32_16(a, b, c)                          vec_f32_16( _mm512_fmadd_ps(a.v, b.v, c.v) )
+#define vec_fmadd_f32_8(a, b, c)                           vec_f32_8( _mm256_fmadd_ps(a.v, b.v, c.v) )
+#define vec_fmadd_f32_4(a, b, c)                           vec_f32_4( _mm_fmadd_ps(a.v, b.v, c.v) )
+#define vec_fmadd_f32_1(a, b, c)                           vec_f32_1( ((a.v * b.v + c.v)) )
+
+
+#define vec_reduce_add_f32_32(a)                           vec_reduce_expr(float, 2, 0, _tmp, _i, _tmp += vec_reduce_add_f32_16(vec_f32_16(a.v[_i]));)
+
+#define vec_reduce_add_f32_16(a)                           _mm512_reduce_add_ps(a.v);
 
 #define vec_reduce_add_f32_8(a)                                          \
 ({                                                                       \
-	const __m128 low_128  = _mm256_castps256_ps128(a);               \
-	const __m128 high_128 = _mm256_extractf128_ps(a, 1);             \
+	const __m128 low_128  = _mm256_castps256_ps128(a.v);             \
+	const __m128 high_128 = _mm256_extractf128_ps(a.v, 1);           \
 	const __m128 low_64   = _mm_add_ps(low_128, high_128);           \
 	const __m128 high_64  = _mm_movehl_ps(low_64, low_64);           \
 	const __m128 low_32   = _mm_add_ps(low_64, high_64);             \
@@ -105,7 +145,7 @@ typedef float  vec_f32_t [[gnu::may_alias]];
 
 #define vec_reduce_add_f32_4(a)                                          \
 ({                                                                       \
-	const __m128 low_64   = a;                                       \
+	const __m128 low_64   = a.v;                                     \
 	const __m128 high_64  = _mm_movehl_ps(low_64, low_64);           \
 	const __m128 low_32   = _mm_add_ps(low_64, high_64);             \
 	const __m128 high_32  = _mm_shuffle_ps(low_32, low_32, 0x01);    \
@@ -113,8 +153,26 @@ typedef float  vec_f32_t [[gnu::may_alias]];
 	_mm_cvtss_f32(x32);                                              \
 })
 
-#define vec_reduce_add_f32_1(a)                  (a)
+#define vec_reduce_add_f32_1(a)                            (a.v)
+
+
+//------------------------------------------------------------------------------------------------------------------------------------------
+//- Compare
+//------------------------------------------------------------------------------------------------------------------------------------------
+
+#define vec_cmpeq_f32_32(a, b)                             vec_loop_expr(vec_mask_m32_32_t, 2, _tmp, _i, _tmp.v[_i] = _mm512_cmp_ps_mask(a.v[_i], b.v[_i], _CMP_EQ_OS);)
+#define vec_cmpeq_f32_16(a, b)                             vec_mask_m32_16( _mm512_cmp_ps_mask(a.v, b.v, _CMP_EQ_OS) )
+#define vec_cmpeq_f32_8(a, b)                              vec_mask_m32_8( _mm256_cmp_ps_mask(a.v, b.v, _CMP_EQ_OS) )
+#define vec_cmpeq_f32_4(a, b)                              vec_mask_m32_4( _mm_cmp_ps_mask(a.v, b.v, _CMP_EQ_OS) )
+#define vec_cmpeq_f32_1(a, b)                              vec_mask_m32_1( (__mmask8) (a.v == b.v) )
+
+#define vec_cmpgt_f32_32(a, b)                             vec_loop_expr(vec_mask_m32_32_t, 2, _tmp, _i, _tmp.v[_i] = _mm512_cmp_ps_mask(a.v[_i], b.v[_i], _CMP_GT_OS);)
+#define vec_cmpgt_f32_16(a, b)                             vec_mask_m32_16( _mm512_cmp_ps_mask(a.v, b.v, _CMP_GT_OS) )
+#define vec_cmpgt_f32_8(a, b)                              vec_mask_m32_8( _mm256_cmp_ps_mask(a.v, b.v, _CMP_GT_OS) )
+#define vec_cmpgt_f32_4(a, b)                              vec_mask_m32_4( _mm_cmp_ps_mask(a.v, b.v, _CMP_GT_OS) )
+#define vec_cmpgt_f32_1(a, b)                              vec_mask_m32_1( (__mmask8) (a.v > b.v) )
 
 
 #endif /* VECTORIZATION_X86_AVX512_F32_H */
+
 

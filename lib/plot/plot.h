@@ -180,15 +180,15 @@ void figure_series_type_bounded_median_curve(struct Figure_Series * s, int axis)
  *     _fig : struct Figure *
  *     _s   : struct Figure_Series *
  */
-#define figure_simple_plot(file_out, x_num_pixels, y_num_pixels, series_args, ...)                       \
-do {                                                                                                     \
-	[[gnu::unused]] struct Figure_Series * _s;                                                       \
-	[[gnu::cleanup(figure_destroy)]] struct Figure * _fig = (typeof(_fig)) malloc(sizeof(*_fig));    \
-	figure_init(_fig, x_num_pixels, y_num_pixels);                                                   \
-	_s = _figure_simple_plot_add_series(_fig, UNPACK(series_args));                                  \
-	__VA_ARGS__                                                                                      \
-	figure_plot(_fig);                                                                               \
-	figure_save(_fig, file_out);                                                                     \
+#define figure_simple_plot(file_out, x_num_pixels, y_num_pixels, series_args, ...)                               \
+do {                                                                                                             \
+	__attribute__((unused)) struct Figure_Series * _s;                                                       \
+	__attribute__((cleanup(figure_destroy))) struct Figure * _fig = (typeof(_fig)) malloc(sizeof(*_fig));    \
+	figure_init(_fig, x_num_pixels, y_num_pixels);                                                           \
+	_s = _figure_simple_plot_add_series(_fig, UNPACK(series_args));                                          \
+	__VA_ARGS__                                                                                              \
+	figure_plot(_fig);                                                                                       \
+	figure_save(_fig, file_out);                                                                             \
 } while (0)
 
 

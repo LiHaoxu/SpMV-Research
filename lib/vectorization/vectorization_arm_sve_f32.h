@@ -45,7 +45,7 @@
 	#error "__ARM_FEATURE_SVE_BITS not defined"
 #endif
 
-typedef float  vec_f32_t [[gnu::may_alias]];
+typedef float  vec_f32_t __attribute__((may_alias));
 
 
 #define vec_array_f32_16(val)                    ({vec_f32_16_t  * _tmp = &val; (vec_f32_t *) _tmp;})

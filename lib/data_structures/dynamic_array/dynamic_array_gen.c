@@ -259,7 +259,6 @@ dynarray_push_back_array(struct dynarray * restrict da, _TYPE * restrict array, 
 
 #undef  dynarray_export_array
 #define dynarray_export_array  DYNAMIC_ARRAY_GEN_EXPAND(dynarray_export_array)
-inline
 long
 dynarray_export_array(struct dynarray * restrict da,
 		_TYPE ** array_ret)

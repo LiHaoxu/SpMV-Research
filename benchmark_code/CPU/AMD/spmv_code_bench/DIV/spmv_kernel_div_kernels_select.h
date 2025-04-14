@@ -131,7 +131,7 @@ quicksort_cmp(int a, int b, struct cmp_data * aux)
 #include "sort/bucketsort/bucketsort_gen.c"
 static inline
 int
-bucketsort_find_bucket(int * A, long i, [[gnu::unused]] void * unused)
+bucketsort_find_bucket(int * A, long i, __attribute__((unused)) void * unused)
 {
 	return A[i];
 }
@@ -1085,8 +1085,8 @@ decompress_and_compute_kernel(unsigned char * restrict buf, ValueType * restrict
 	double * window = t_window[tnum];
 	long num_vals;
 	uint64_t row_min, col_min;
-	[[gnu::unused]] long num_rows;
-	[[gnu::unused]] unsigned char type;
+	__attribute__((unused)) long num_rows;
+	__attribute__((unused)) unsigned char type;
 	uint64_t row_bits, col_bits;
 	long i;
 
@@ -1240,8 +1240,8 @@ decompress_and_compute_kernel_rf(unsigned char * restrict buf, ValueType * restr
 	long num_vals;
 	long num_vals_unique;
 	uint64_t row_min, col_min;
-	[[gnu::unused]] long num_rows;
-	[[gnu::unused]] unsigned char type;
+	__attribute__((unused)) long num_rows;
+	__attribute__((unused)) unsigned char type;
 	uint64_t row_bits, col_bits;
 	long i, j, k, l;
 
@@ -1423,7 +1423,7 @@ static __attribute__((always_inline)) inline
 long
 decompress_and_compute_kernel_sort_diff_base(typeof(decompress_and_compute_kernel) * decompress_fun, unsigned char * restrict buf, ValueType * restrict x, ValueType * restrict y, long * restrict num_vals_out, const int validate)
 {
-	[[gnu::unused]] unsigned char type;
+	__attribute__((unused)) unsigned char type;
 	uint64_t row_bits, col_bits;
 	unsigned char * data_intro = buf;
 	uint64_t data_intro_bytes = 0;

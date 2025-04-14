@@ -42,7 +42,7 @@
 	#error "__ARM_FEATURE_SVE_BITS not defined"
 #endif
 
-typedef uint64_t  vec_i64_t [[gnu::may_alias]];
+typedef uint64_t  vec_i64_t __attribute__((may_alias));
 
 
 #define vec_array_i64_8(val)                     ({vec_i64_8_t  * _tmp = &val; (vec_i64_t *) _tmp;})
@@ -102,6 +102,11 @@ typedef uint64_t  vec_i64_t [[gnu::may_alias]];
 #define vec_or_i64_4(a, b)                       svorr_s64_z(svptrue_b64(), a, b)
 #define vec_or_i64_2(a, b)                       svorr_s64_z(svptrue_b64(), a, b)
 #define vec_or_i64_1(a, b)                       (a | b)
+
+#define vec_xor_i64_8(a, b)                       svxor_s64_z(svptrue_b64(), a, b)
+#define vec_xor_i64_4(a, b)                       svxor_s64_z(svptrue_b64(), a, b)
+#define vec_xor_i64_2(a, b)                       svxor_s64_z(svptrue_b64(), a, b)
+#define vec_xor_i64_1(a, b)                       (a ^ b)
 
 
 #define vec_slli_i64_8(a, imm8)                                        svlsl_n_s64_z(svptrue_b64(),                        a, imm8)
