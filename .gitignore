@@ -107,14 +107,10 @@ results_visualization/validation_real_all-devices_best-of.csv
 results_visualization/validation_real_benchmarks_all-devices_all.csv
 results_visualization/*APE.csv
 
-validation_matrices/trash
-validation_matrices/v2_dgal
-validation_matrices/digital_twins
-validation_matrices/features
+validation_matrices/deprecated
+validation_matrices/images
 validation_matrices/matrix_features/figures
 validation_matrices/matrix_features/matrices
 validation_matrices/dcomex
-validation_matrices/images
 validation_matrices/new_matrices/
 validation_matrices/*.mtx
-validation_matrices/matrix_features/old

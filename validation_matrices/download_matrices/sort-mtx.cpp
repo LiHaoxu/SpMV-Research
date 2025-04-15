@@ -59,7 +59,7 @@ int main(int argc, char **argv)
 	
 	/*************************************/
 	// code segment added to accept % as input too!
-	int flag=0, cnt = 0, matrix_type=0;
+	int flag = 0, matrix_type = 0;
 	char buf[MAX_LINE_LENGTH];
 	do{
 		fgets(buf, MAX_LINE_LENGTH, infile);
@@ -79,7 +79,7 @@ int main(int argc, char **argv)
 					int ret_integer = strcmp(ptr,type_integer);
 					int ret_pattern = strcmp(ptr,type_pattern);
 					int ret_complex = strcmp(ptr,type_complex);
-					// printf("%d %d %d\n", ret_real, ret_pattern, ret_complex);
+					printf("%d %d %d %d\n", ret_real, ret_integer, ret_pattern, ret_complex);
 					if(ret_real == 0){
 						matrix_type = 0;
 					}
@@ -123,8 +123,8 @@ int main(int argc, char **argv)
 	if(matrix_type == 1){
 		while ((ret = fscanf(infile, "%llu %llu\n", &row, &col)) == 2) {
 			csr_elem.col = col;
-			char def_val[50] = "1.0";
-			memcpy(csr_elem.val, def_val, 50);
+			// char def_val[50] = "1.0";
+			// memcpy(csr_elem.val, def_val, 50);
 			elems_list[row].push_back(csr_elem);
 		}
 	}
@@ -156,13 +156,18 @@ int main(int argc, char **argv)
 		for (it=list.begin(); it!=list.end(); ++it) {
 			csr_elem = (csr_elem_t) *it;
 			///////////////////////////////////////////////////////////////////////////////////////////////////////////////
-			fprintf(outfile, "%llu %llu %s\n", r, csr_elem.col, csr_elem.val);
-			
-			// when "pattern" instead of real -> no values exist, write row and column only ///////////////////////////////
-			// fprintf(outfile, "%llu %llu\n", r, csr_elem.col);
-			
-			// when "complex" instead of real -> two values exist, write both of them /////////////////////////////////////
-			// fprintf(outfile, "%llu %llu %s %s\n", r, csr_elem.col, csr_elem.val, csr_elem.val_im);
+			if(matrix_type == 0){
+				// if "real" or "integer" proceed as usual
+				fprintf(outfile, "%llu %llu %s\n", r, csr_elem.col, csr_elem.val);
+			}
+			if(matrix_type == 1){
+				// when "pattern" instead of real -> no values exist, write row and column only ///////////////////////////////
+				fprintf(outfile, "%llu %llu\n", r, csr_elem.col);
+			}
+			if(matrix_type == 2){
+				// when "complex" instead of real -> two values exist, write both of them /////////////////////////////////////
+				fprintf(outfile, "%llu %llu %s %s\n", r, csr_elem.col, csr_elem.val, csr_elem.val_im);
+			}			
 			///////////////////////////////////////////////////////////////////////////////////////////////////////////////
 		}
 	}
