@@ -35,6 +35,8 @@ elif [[ -d "/local/pmpakos/arm-compiler/gcc-13.2.0_Ubuntu-22.04/bin" ]]; then
 else
     # gcc_bin=gcc
     # gpp_bin=g++
+
+    # but this requires having "llvm/EPI-development" (or "llvm/EPI-0.7-development") beforehand! watch out
     gcc_bin=clang
     gpp_bin=clang++
 fi
@@ -113,8 +115,8 @@ elif [[ ${ARCH} == riscv64 ]]; then
     CFLAGS+=" -mepi"
     CFLAGS+=" -mllvm -combiner-store-merging=0"
     CFLAGS+=" -mllvm -disable-loop-idiom-memcpy"
-    CFLAGS+=" -Rpass=loop-vectorize"
-    CFLAGS+=" -Rpass-analysis=loop-vectorize"
+    # CFLAGS+=" -Rpass=loop-vectorize"
+    # CFLAGS+=" -Rpass-analysis=loop-vectorize"
     CFLAGS+=" -fno-slp-vectorize"
 
     # for when it crashes... simply add the function that refuses to compile... in the first case it was sth like "__epi_flog2_nxv1f64"
@@ -130,7 +132,7 @@ elif [[ ${ARCH} == riscv64 ]]; then
         CFLAGS+=" -mllvm -vectorizer-use-vp-strided-load-store"
         CFLAGS+=" -mllvm -disable-loop-idiom-memset"
         CFLAGS+=" -mllvm -riscv-uleb128-reloc=0"
-        CFLAGS+=" -Rpass-missed=loop-vectorize"
+        # CFLAGS+=" -Rpass-missed=loop-vectorize"
         CFLAGS+=" -Xclang -target-feature"
         CFLAGS+=" -Xclang +does-not-implement-vszext"
         CFLAGS+=" -Xclang -target-feature"
@@ -151,9 +153,9 @@ if ((${PRINT_STATISTICS} == 1)); then
     CFLAGS+=" -D'PRINT_STATISTICS'"
 fi
 
-export LEVEL1_DCACHE_LINESIZE="$(read v < /sys/devices/system/cpu/cpu0/cache/index0/coherency_line_size; echo ${v%K})"
-export LEVEL1_DCACHE_SIZE="$(read v < /sys/devices/system/cpu/cpu0/cache/index0/size; echo $((${v%K} * 1024)) )"
-export LEVEL2_CACHE_SIZE="$(read v < /sys/devices/system/cpu/cpu0/cache/index2/size; echo $((${v%K} * 1024)) )"
+export LEVEL1_DCACHE_LINESIZE=0 # "$(read v < /sys/devices/system/cpu/cpu0/cache/index0/coherency_line_size; echo ${v%K})"
+export LEVEL1_DCACHE_SIZE=0 # "$(read v < /sys/devices/system/cpu/cpu0/cache/index0/size; echo $((${v%K} * 1024)) )"
+export LEVEL2_CACHE_SIZE=0 # "$(read v < /sys/devices/system/cpu/cpu0/cache/index2/size; echo $((${v%K} * 1024)) )"
 export LEVEL3_CACHE_SIZE=0 # "$(read v < /sys/devices/system/cpu/cpu0/cache/index3/size; echo $((${v%K} * 1024)) )"
 export NUM_CPUS="$(ls /sys/devices/system/cpu/ | grep -c 'cpu[[:digit:]]\+')"
 export LEVEL3_CACHE_CPUS_PER_NODE=0 # "$(for range in $(cat /sys/devices/system/cpu/cpu0/cache/index3/shared_cpu_list | tr ',' ' '); do mapfile -t -d '-' a < <(printf "$range"); seq "${a[@]}"; done | wc -l)"

@@ -128,7 +128,7 @@ conf_vars=(
     # ['max_cores']=256
     # ['max_cores']=128
     # ['max_cores']=96
-    # ['max_cores']=64
+    ['max_cores']=64
     # ['max_cores']=56
     # ['max_cores']=32
     # ['max_cores']=28
@@ -136,7 +136,7 @@ conf_vars=(
     # ['max_cores']=24
     # ['max_cores']=16
     # ['max_cores']=14
-    ['max_cores']=8
+    # ['max_cores']=8
 
     # Cores / Threads to utilize. Use spaces to define a set of different thread numbers to benchmark.
     # ['cores']=1
@@ -147,7 +147,7 @@ conf_vars=(
     # ['cores']=128
     # ['cores']=112
     # ['cores']=72
-    # ['cores']=64
+    ['cores']=64
     # ['cores']=56
     # ['cores']=48
     # ['cores']=32
@@ -158,7 +158,7 @@ conf_vars=(
     # ['cores']=16
     # ['cores']=14
     # ['cores']=12
-    ['cores']=8
+    # ['cores']=8
     # ['cores']=6
     # ['cores']=4
     # ['cores']=2
@@ -447,13 +447,13 @@ progs=(
 
     # Custom csr
     ['csr_naive_d']="${script_dir}/spmv_code_bench/spmv_csr_naive_d.exe"
-    # ['csr_d']="${script_dir}/spmv_code_bench/spmv_csr_d.exe" # BENCH_AMD, BENCH_INTEL
+    ['csr_d']="${script_dir}/spmv_code_bench/spmv_csr_d.exe" # BENCH_AMD, BENCH_INTEL
     # ['csr_f']="${script_dir}/spmv_code_bench/spmv_csr_f.exe"
     # ['csr_sym_d']="${script_dir}/spmv_code_bench/spmv_csr_sym_d.exe" # BENCH_SYM
     # ['csr_sym_f']="${script_dir}/spmv_code_bench/spmv_csr_sym_f.exe" # BENCH_SYM
     # ['csr_kahan_d']="${script_dir}/spmv_code_bench/spmv_csr_kahan_d.exe"
     # ['csr_prefetch_d']="${script_dir}/spmv_code_bench/spmv_csr_prefetch_d.exe"
-    # ['csr_simd_d']="${script_dir}/spmv_code_bench/spmv_csr_simd_d.exe"
+    ['csr_simd_d']="${script_dir}/spmv_code_bench/spmv_csr_simd_d.exe"
     # ['csr_vector_d']="${script_dir}/spmv_code_bench/spmv_csr_vector_d.exe"
     # ['csr_vector_d']="${script_dir}/spmv_code_bench/spmv_csr_balanced_distribute_early_d.exe"
     # ['csr_vector_perfect_nnz_balance_d']="${script_dir}/spmv_code_bench/spmv_csr_vector_perfect_nnz_balance_d.exe"
@@ -463,161 +463,6 @@ progs=(
     # ['csr_vector_oracle_balance_x86_d']="${script_dir}/spmv_code_bench/spmv_csr_vector_oracle_balance_x86_d.exe"
     # ['csr_vector_queues_x86_d']="${script_dir}/spmv_code_bench/spmv_csr_vector_queues_x86_d.exe"
     # ['csr_vector_perfect_nnz_balance_x86_d']="${script_dir}/spmv_code_bench/spmv_csr_vector_perfect_nnz_balance_x86_d.exe"
-
-    # Custom lut
-    # ['csr_vector_lut_x86_d']="${script_dir}/spmv_code_bench/spmv_csr_vector_lut_x86_d.exe" # BENCH_AMD, BENCH_INTEL
-
-    # Custom compressed values block
-    # ['csr_cv_block_id_d']="${script_dir}/spmv_code_bench/spmv_csr_cv_block_id_d.exe" # BENCH_AMD
-    # ['csr_cv_block_d2f_d']="${script_dir}/spmv_code_bench/spmv_csr_cv_block_d2f_d.exe" # BENCH_AMD
-    # ['csr_cv_block_fpc_d']="${script_dir}/spmv_code_bench/spmv_csr_cv_block_fpc_d.exe" # BENCH_AMD
-    # ['csr_cv_block_zfp_d']="${script_dir}/spmv_code_bench/spmv_csr_cv_block_zfp_d.exe" # BENCH_AMD
-    # ['csr_cv_block_fpzip_d']="${script_dir}/spmv_code_bench/spmv_csr_cv_block_fpzip_d.exe" # BENCH_AMD
-
-    # Custom compressed values stream
-    # ['div_d']="${script_dir}/spmv_code_bench/spmv_div_d.exe" # BENCH_AMD, BENCH_INTEL
-    # ['div_f']="${script_dir}/spmv_code_bench/spmv_div_f.exe" # BENCH_AMD, BENCH_INTEL
-    # ['div_rf_d']="${script_dir}/spmv_code_bench/spmv_div_rf_d.exe" # BENCH_AMD, BENCH_INTEL
-    # ['div_rf_f']="${script_dir}/spmv_code_bench/spmv_div_rf_f.exe" # BENCH_AMD, BENCH_INTEL
-    # ['div_adapt_d']="${script_dir}/spmv_code_bench/spmv_div_adapt_d.exe" # BENCH_AMD, BENCH_INTEL
-    # ['div_adapt_f']="${script_dir}/spmv_code_bench/spmv_div_adapt_f.exe" # BENCH_AMD, BENCH_INTEL
-    # ['div_rf_const_size_row_d']="${script_dir}/spmv_code_bench/spmv_div_rf_const_size_row_d.exe"
-    # ['div_rf_const_size_row_f']="${script_dir}/spmv_code_bench/spmv_div_rf_const_size_row_f.exe"
-    # ['div_select_d']="${script_dir}/spmv_code_bench/spmv_div_select_d.exe"
-    # ['div_cols_sort_d']="${script_dir}/spmv_code_bench/spmv_div_cols_sort_d.exe"
-    # ['div_rf_ord2_d']="${script_dir}/spmv_code_bench/spmv_div_rf_ord2_d.exe"
-    # ['div_sym_rf_local_d']="${script_dir}/spmv_code_bench/spmv_div_sym_rf_local_d.exe" # BENCH_SYM
-    # ['div_sym_rf_local_f']="${script_dir}/spmv_code_bench/spmv_div_sym_rf_local_f.exe" # BENCH_SYM
-    # ['csr_cuda_div_rf_d']="${script_dir}/spmv_code_bench/spmv_cuda_div_rf_d.exe" # BENCH_AMD, BENCH_INTEL
-
-    # MKL IE
-    # ['mkl_ie_d']="${script_dir}/spmv_code_bench/spmv_mkl_ie_d.exe" # BENCH_AMD, BENCH_INTEL
-    # ['mkl_ie_f']="${script_dir}/spmv_code_bench/spmv_mkl_ie_f.exe" # BENCH_AMD, BENCH_INTEL
-    # ['mkl_ie_sym_d']="${script_dir}/spmv_code_bench/spmv_mkl_ie_sym_d.exe" # BENCH_SYM
-    # ['mkl_ie_sym_f']="${script_dir}/spmv_code_bench/spmv_mkl_ie_sym_f.exe" # BENCH_SYM
-
-    # MKL CSR
-    # ['mkl_csr_d']="${script_dir}/spmv_code_bench/spmv_mkl_csr_d.exe"
-
-    # AOCL
-    # ['aocl_optmv_d']="${script_dir}/spmv_code_bench/spmv_aocl_optmv_d.exe"
-
-    # CSR-RV
-    # ['csrrv_d']="${script_dir}/spmv_code_bench/spmv_csrrv_d.exe" # BENCH_INTEL
-
-    # CSR5
-    # ['csr5_d']="${script_dir}/spmv_code_bench/spmv_csr5_d.exe" # BENCH_AMD, BENCH_INTEL
-
-    # merge spmv
-    # ['merge_d']="${script_dir}/spmv_code_bench/spmv_merge_d.exe" # BENCH_AMD, BENCH_INTEL
-
-    # sell C sigma
-    # ['sell_C_s_d']="${script_dir}/spmv_code_sell-C-s/build/spmvbench/spmv_sell-C-s_d.exe"
-    # ['sell_C_s_d']="/various/pmpakos/SpMV-Research/benchmark_code/CPU/AMD/spmv_code_sell-C-s/build/spmvbench/spmv_sell-C-s_d.exe"
-
-    # sparsex
-    # ['sparsex_d']="${script_dir}/spmv_code_bench/spmv_sparsex_d.exe" # BENCH_AMD, BENCH_INTEL
-    # ['sparsex_f']="${script_dir}/spmv_code_bench/spmv_sparsex_f.exe" # This crashes!
-
-    # SpV8
-    # ['spv8_d']="${script_dir}/spmv_code_bench/spmv_spv8_d.exe"
-
-    # LCM - partially strided codelet
-    # ['lcm_d']="${script_dir}/spmv_code_bench/LCM-partially-strided-codelet/spmv_lcm_d.exe" # BENCH_AMD, BENCH_INTEL
-
-    # CFS
-    # ['cfs_d']="${script_dir}/spmv_code_bench/cfs-spmv/build/bench/spmv_cfs_d.exe" # BENCH_SYM
-    # ['cfs_f']="${script_dir}/spmv_code_bench/cfs-spmv/build/bench/spmv_cfs_f.exe" # BENCH_SYM
-
-    # ['ell_d']="${script_dir}/spmv_code_bench/spmv_ell_d.exe"
-    # ['sell_d']="${script_dir}/spmv_code_bench/spmv_sell_d.exe"
-    # ['sell_sorted_d']="${script_dir}/spmv_code_bench/spmv_sell_sorted_d.exe"
-    # ['ldu_d']="${script_dir}/spmv_code_bench/spmv_ldu_d.exe"
-    # ['dia_d']="${script_dir}/spmv_code_bench/spmv_dia_d.exe"
-
-    # ['mkl_csr_d']="${script_dir}/spmv_code_bench/spmv_mkl_csr_d.exe"
-    # ['mkl_dia_d']="${script_dir}/spmv_code_bench/spmv_mkl_dia_d.exe"
-    # ['mkl_bsr_2_d']="${script_dir}/spmv_code_bench/spmv_mkl_bsr_2_d.exe"
-    # ['mkl_bsr_8_d']="${script_dir}/spmv_code_bench/spmv_mkl_bsr_8_d.exe"
-    # ['mkl_coo_d']="${script_dir}/spmv_code_bench/spmv_mkl_coo_d.exe"
-    # ['mkl_csc_d']="${script_dir}/spmv_code_bench/spmv_mkl_csc_d.exe"
-
-
-    # Custom cuda
-    # ['csr_cuda_nv_d']="${script_dir}/spmv_code_bench/spmv_csr_cuda_nv_d.exe"
-    # ['csr_cuda_buffer_nv_d']="${script_dir}/spmv_code_bench/spmv_csr_cuda_buffer_nv_d.exe"
-    # ['csr_cuda_reduce_nv_d']="${script_dir}/spmv_code_bench/spmv_csr_cuda_reduce_nv_d.exe"
-    # ['csr_cuda_const_nnz_per_thread_nv_d']="${script_dir}/spmv_code_bench/spmv_csr_cuda_const_nnz_per_thread_nv_d.exe"
-
-    # ['csr_cuda_const_nnz_per_thread_b1024_nnz2_nv_d']="${script_dir}/spmv_code_bench/spmv_csr_cuda_const_nnz_per_thread_b1024_nnz2_nv_d.exe"
-    # ['csr_cuda_const_nnz_per_thread_b1024_nnz4_nv_d']="${script_dir}/spmv_code_bench/spmv_csr_cuda_const_nnz_per_thread_b1024_nnz4_nv_d.exe"
-    # ['csr_cuda_const_nnz_per_thread_b1024_nnz6_nv_d']="${script_dir}/spmv_code_bench/spmv_csr_cuda_const_nnz_per_thread_b1024_nnz6_nv_d.exe"
-    # ['csr_cuda_const_nnz_per_thread_b1024_nnz6_nv_d']="${script_dir}/spmv_code_bench/spmv_csr_cuda_const_nnz_per_thread_b1024_nnz6_nv_d.exe"
-    # ['csr_cuda_const_nnz_per_thread_b1024_nnz8_nv_d']="${script_dir}/spmv_code_bench/spmv_csr_cuda_const_nnz_per_thread_b1024_nnz8_nv_d.exe"
-
-    # ['csr_cuda_const_nnz_per_thread_s2_b1024_nnz2_nv_d']="${script_dir}/spmv_code_bench/spmv_csr_cuda_const_nnz_per_thread_s2_b1024_nnz2_nv_d.exe"
-    # ['csr_cuda_const_nnz_per_thread_s2_b1024_nnz4_nv_d']="${script_dir}/spmv_code_bench/spmv_csr_cuda_const_nnz_per_thread_s2_b1024_nnz4_nv_d.exe"
-    # ['csr_cuda_const_nnz_per_thread_s4_b1024_nnz4_nv_d']="${script_dir}/spmv_code_bench/spmv_csr_cuda_const_nnz_per_thread_s4_b1024_nnz4_nv_d.exe"
-    # ['csr_cuda_const_nnz_per_thread_s4_b1024_nnz6_nv_d']="${script_dir}/spmv_code_bench/spmv_csr_cuda_const_nnz_per_thread_s4_b1024_nnz6_nv_d.exe"
-    # ['csr_cuda_const_nnz_per_thread_s8_b1024_nnz4_nv_d']="${script_dir}/spmv_code_bench/spmv_csr_cuda_const_nnz_per_thread_s8_b1024_nnz4_nv_d.exe"
-    # ['csr_cuda_const_nnz_per_thread_s32_b1024_nnz4_nv_d']="${script_dir}/spmv_code_bench/spmv_csr_cuda_const_nnz_per_thread_s32_b1024_nnz4_nv_d.exe"
-
-    # ['csr_cuda_const_nnz_per_thread_s2_b1024_nnz8_nv_d']="${script_dir}/spmv_code_bench/spmv_csr_cuda_const_nnz_per_thread_s2_b1024_nnz8_nv_d.exe"
-    #
-    # ['csr_cuda_t1769472_nv_d']="${script_dir}/spmv_code_bench/spmv_csr_cuda_t1769472_nv_d.exe"
-
-    # ['csr_cuda_buffer_t4194304_rc4_nv_d']="${script_dir}/spmv_code_bench/spmv_csr_cuda_buffer_t4194304_rc4_nv_d.exe"
-
-    # ['csr_cuda_vector_b256_nv_d']="${script_dir}/spmv_code_bench/spmv_csr_cuda_vector_b256_nv_d.exe"
-
-    # Cuda Adaptive
-    # ['csr_cuda_adaptive_b256_nv_d']="${script_dir}/spmv_code_bench/spmv_csr_cuda_adaptive_b256_nv_d.exe"
-    # ['csr_cuda_adaptive_b1024_mb2_nv_d']="${script_dir}/spmv_code_bench/spmv_csr_cuda_adaptive_b1024_mb2_nv_d.exe"
-    # ['csr_cuda_adaptive_b256_mb1_nv_d']="${script_dir}/spmv_code_bench/spmv_csr_cuda_adaptive_b256_mb1_nv_d.exe"
-    # ['csr_cuda_adaptive_v3_s4_c16_b256_mb4_nv_d']="${script_dir}/spmv_code_bench/spmv_csr_cuda_adaptive_v3_s4_c16_b256_mb4_nv_d.exe"
-    # ['csr_cuda_adaptive_s16_b256_mb2_nv_d']="${script_dir}/spmv_code_bench/spmv_csr_cuda_adaptive_s16_b256_mb2_nv_d.exe"
-
-    # Research GPU formats
-    # CSR5
-    # ['csr5_cuda_nv_d']="${script_dir}/spmv_code_bench/spmv_csr5_cuda_nv_d.exe"
-
-    # Merge    
-    # ['merge_cuda_nv_d']="${script_dir}/spmv_code_bench/spmv_merge_cuda_nv_d.exe"
-
-    # DASP
-    # ['dasp_cuda_nv_d']="${script_dir}/spmv_code_bench/spmv_dasp_cuda_nv_d.exe"
-
-    # cusparse
-    # ['cusparse_csr_nv_d']="${script_dir}/spmv_code_bench/spmv_cusparse_csr_nv_d.exe"
-    # ['cusparse_csr_s4_nv_d']="${script_dir}/spmv_code_bench/spmv_cusparse_csr_s4_nv_d.exe"
-    # ['cusparse_coo_nv_d']="${script_dir}/spmv_code_bench/spmv_cusparse_coo_nv_d.exe"
-    # ['cusparse_coo_s4_nv_d']="${script_dir}/spmv_code_bench/spmv_cusparse_coo_s4_nv_d.exe"
-    # ['cusparse_csc_nv_d']="${script_dir}/spmv_code_bench/spmv_cusparse_csc_nv_d.exe"
-    # ['cusparse_csc_s4_nv_d']="${script_dir}/spmv_code_bench/spmv_cusparse_csc_s4_nv_d.exe"
-
-    # ROCM
-    # rocm vector
-    # ['csr_rocm_vector_b256_nv_d']="${script_dir}/spmv_code_bench/spmv_csr_rocm_vector_b256_nv_d.exe"
-    # ['csr_rocm_vector_b512_nv_d']="${script_dir}/spmv_code_bench/spmv_csr_rocm_vector_b512_nv_d.exe"
-    # ['csr_rocm_vector_b1024_nv_d']="${script_dir}/spmv_code_bench/spmv_csr_rocm_vector_b1024_nv_d.exe"
-
-    # rocm adaptive
-    # ['csr_rocm_adaptive_b256_mb1_nv_d']="${script_dir}/spmv_code_bench/spmv_csr_rocm_adaptive_b256_mb1_nv_d.exe"
-    # ['csr_rocm_adaptive_b512_mb1_nv_d']="${script_dir}/spmv_code_bench/spmv_csr_rocm_adaptive_b512_mb1_nv_d.exe"
-    # ['csr_rocm_adaptive_b1024_mb1_nv_d']="${script_dir}/spmv_code_bench/spmv_csr_rocm_adaptive_b1024_mb1_nv_d.exe"
-
-    # Custom rocm (dgal implementation)
-    # ['csr_rocm_const_nnz_per_thread_b512_nnz4_nv_d']="${script_dir}/spmv_code_bench/spmv_csr_rocm_const_nnz_per_thread_b512_nnz4_nv_d.exe"
-    # ['csr_rocm_const_nnz_per_thread_b1024_nnz4_nv_d']="${script_dir}/spmv_code_bench/spmv_csr_rocm_const_nnz_per_thread_b1024_nnz4_nv_d.exe"
-
-    # ['csr_rocm_acc_flat_b512_nv_d']="${script_dir}/spmv_code_bench/spmv_csr_rocm_acc_flat_b512_nv_d.exe"
-    # ['csr_rocm_acc_line_enhance_b512_nv_d']="${script_dir}/spmv_code_bench/spmv_csr_rocm_acc_line_enhance_b512_nv_d.exe"
-
-    # rocsparse
-    # ['rocparse_csr_nv_d']="${script_dir}/spmv_code_bench/spmv_rocsparse_csr_nv_d.exe"
-    # ['rocparse_coo_nv_d']="${script_dir}/spmv_code_bench/spmv_rocsparse_coo_nv_d.exe"
-    # ['rocparse_hyb_nv_d']="${script_dir}/spmv_code_bench/spmv_rocsparse_hyb_nv_d.exe"
-
 )
 
 

@@ -170,8 +170,21 @@ parse_cpu_data(long id_sysfs, struct topohw_cpu * cpu)
 		caches_ptrs[i] = (typeof(*caches_ptrs)) malloc(sizeof(**caches_ptrs));
 	cpu->num_caches = num_caches;
 	cpu->caches_ptrs = caches_ptrs;
-	for (i=0;i<num_caches;i++)
-		parse_cache_data(id_sysfs, cache_id_list[i], caches_ptrs[i]);
+	for (i=0;i<num_caches;i++){
+		if(cache_id_list[i] != -1)
+			parse_cache_data(id_sysfs, cache_id_list[i], caches_ptrs[i]);
+		else{ // pioneer riscv cpu...
+			caches_ptrs[i]->level = 0;
+			caches_ptrs[i]->coherency_line_size = 0;
+			caches_ptrs[i]->number_of_sets = 0;
+			caches_ptrs[i]->num_shared_cpus = 0;
+			caches_ptrs[i]->size = 0;
+			caches_ptrs[i]->type_str = "\0";
+			caches_ptrs[i]->type = -1;
+			caches_ptrs[i]->ways_of_associativity = 0;
+			caches_ptrs[i]->representative_cpu_id = 0;
+		}
+	}
 }
 
 
@@ -345,7 +358,10 @@ topohw_get_topology()
 		for (j=0;j<cpu->num_caches;j++)
 		{
 			cache = cpu->caches_ptrs[j];
-			num_cpus_per_cache_class[TOPOHW_NUM_CACHE_TYPES*cache->level + cache->type]++;
+			if(cache->type > -1) // again have to adapt for the pioneer riscv cpu...
+				num_cpus_per_cache_class[TOPOHW_NUM_CACHE_TYPES*cache->level + cache->type]++;
+			else
+				num_cpus_per_cache_class[TOPOHW_NUM_CACHE_TYPES*cache->level]++;
 		}
 	}
 	num_cache_classes = 0;
@@ -400,9 +416,13 @@ topohw_get_topology()
 			cache_class = &tp->cache_classes[0];
 			for (k=0;k<tp->num_cache_classes;k++)
 			{
-				cache_class = &tp->cache_classes[k];
-				if (cache->level == cache_class->level && cache->type == cache_class->type)
+				if(cache->type == -1) // again for pioneer riscv cpu...
 					break;
+				else{
+					cache_class = &tp->cache_classes[k];
+					if (cache->level == cache_class->level && cache->type == cache_class->type)
+						break;					
+				}
 			}
 			cache->cache_class_id = k;
 			dict_cache_class_is_rep_cpu[k][cache->representative_cpu_id] = 1;
@@ -675,12 +695,18 @@ get_cache(long cpu_id, long level, enum cache_types type)
 	for (i=0;i<cpu->num_caches;i++)
 	{
 		cache = cpu->caches_ptrs[i];
-		if (cache->level == level)
-		{
-			if (cache->type == type)
+		if(cache->type != -1){
+			if (cache->level == level)
 			{
-				return cache;
+				if (cache->type == type)
+				{
+					return cache;
+				}
 			}
+		}
+		else{ // yet another exception for the pioneer riscv cpu...
+			cache->size = 32768; // this is the default size for L1 caches
+			return cache;
 		}
 	}
 	return NULL;

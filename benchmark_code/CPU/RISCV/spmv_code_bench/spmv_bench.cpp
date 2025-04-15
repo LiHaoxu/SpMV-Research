@@ -324,7 +324,8 @@ compute(char * matrix_name,
 	{
 		// Warm up cpu.
 		__attribute__((unused)) volatile double warmup_total;
-		long A_warmup_n = (1<<20) * num_threads;
+		// long A_warmup_n = (1<<20) * num_threads;
+		long A_warmup_n = (1<<15) * num_threads;
 		double * A_warmup;
 		time_warm_up = time_it(1,
 			A_warmup = (typeof(A_warmup)) malloc(A_warmup_n * sizeof(*A_warmup));
