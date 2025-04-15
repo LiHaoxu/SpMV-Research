@@ -156,13 +156,16 @@ uint64_t
 bits_u64_extract(uint64_t v, uint64_t start_pos, uint64_t num_bits)
 {
 	#if defined(__x86_64__)
+		// return __builtin_ia32_bextr_u64(v, (num_bits << 8) | start_pos);
 		return _bextr_u64(v, start_pos, num_bits);
-	#elif defined(__ARM_NEON)
-		return _arm_ubfx(v, start_pos, num_bits);
+	// pmpakos note: it did not compile successfully, don't know why it was here tbh...
+	// #elif defined(__ARM_NEON)
+	// 	return _arm_ubfx(v, start_pos, num_bits);
 	#else
 		return bits_u64_unset_high(v >> start_pos, num_bits);
 	#endif
 }
+
 
 
 static inline
@@ -170,9 +173,8 @@ uint32_t
 bits_u32_extract(uint32_t v, uint64_t start_pos, uint64_t num_bits)
 {
 	#ifdef __x86_64__
+		// return __builtin_ia32_bextr_u32(v, (num_bits << 8) | start_pos);
 		return _bextr_u32(v, start_pos, num_bits);
-	#elif defined(__ARM_NEON)
-		return _arm_ubfx(v, start_pos, num_bits);
 	#else
 		return bits_u64_unset_high(v >> start_pos, num_bits);
 	#endif

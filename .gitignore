@@ -30,6 +30,7 @@ benchmark_code/CPU/AMD/*.csv
 benchmark_code/CPU/ARM/*.csv
 benchmark_code/CPU/ARM/spmv_code_bench/merge/*.csv
 benchmark_code/CPU/ARM/spmv_code_bench/*.csv
+benchmark_code/CPU/RISCV/*.csv
 
 benchmark_code/CPU/AMD/*.out
 benchmark_code/CPU/AMD/out_logs
@@ -37,6 +38,8 @@ benchmark_code/CPU/ARM/*.out
 benchmark_code/CPU/ARM/out_logs
 benchmark_code/CPU/ARM/spmv_code_bench/merge/*.out
 benchmark_code/CPU/ARM/spmv_code_bench/*.out
+benchmark_code/CPU/RISCV/*.out
+benchmark_code/CPU/RISCV/out_logs
 
 benchmark_code/FPGA/HiSparse/
 benchmark_code/FPGA/HPCG_FPGA

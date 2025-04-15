@@ -1,0 +1,252 @@
+.PHONY: all clean
+
+SHELL := bash
+.SHELLFLAGS := -eu -o pipefail -c
+.ONESHELL:
+.DELETE_ON_ERROR:
+MAKEFLAGS += --warn-undefined-variables
+MAKECMDGOALS ?=
+
+# Targets that don't generate dependency files.
+NODEPS = clean
+
+DIRS = obj
+
+define Rule_Auto_Dependencies_base =
+    $(1:.o=.d): $(2) | $(DIRS)
+	@echo 'Generating dependencies file:  $(1)'
+	$(CC) $(3) -MT '$(1:.o=.d)' -MM -MG '$(2)' -MF '$(1:.o=.d)'
+    ifeq (0, $(words $(findstring $(MAKECMDGOALS),$(NODEPS))))
+        -include $(1:.o=.d)
+    endif
+    $(1): $(1:.o=.d)
+endef
+
+# 1:object_file 2:source_file 3:compilation_flags
+define Rule_Auto_Dependencies =
+    $(eval $(call Rule_Auto_Dependencies_base,$(1),$(2),$(3)))
+    $(1): $(2)
+endef
+
+
+LIB_SRC = pthread_functions.c omp_functions.c hardware_topology.c task_topology.c hash.c random.c hashtable.c bitstream.c bytestream.c array_metrics.c string_util.c io.c parallel_io.c plot.c matrix_market.c openfoam_matrix.c rapl.c csr_converter.c csc_converter.c csr_converter_reference.c rcm.c kmeans.c kmeans_char.c csr_util.c csc_util.c artificial_matrix_generation.c ordered_set.c dynamic_array.c
+
+LIB_OBJ := $(LIB_SRC)
+LIB_OBJ := $(patsubst %.c,obj/%$(SUFFIX).o,$(LIB_OBJ))
+LIB_OBJ := $(patsubst %.cpp,obj/%$(SUFFIX).o,$(LIB_OBJ))
+
+
+EXE = $(TARGETS)
+
+all: $(EXE) | $(DIRS)
+
+
+# riscv_64 aarch64 ppc64le
+CPPFLAGS_CUSTOM =
+ifeq ($(ARCH), riscv_64)
+    # CPPFLAGS_CUSTOM += -mavx2
+    # CPPFLAGS_CUSTOM += -mavx512f
+else ifeq ($(ARCH), aarch64)
+endif
+
+
+spmv_csr_naive$(SUFFIX).exe: obj/spmv_bench$(SUFFIX).o spmv_kernel_csr.cpp $(LIB_OBJ)
+	$(CPP) $(CPPFLAGS) $(CPPFLAGS_CUSTOM) -D'NAIVE' $^ -o $@ $(LDFLAGS)
+# spmv_csr$(SUFFIX).exe: obj/spmv_bench$(SUFFIX).o spmv_kernel_csr.cpp $(LIB_OBJ)
+# 	$(CPP) $(CPPFLAGS) $(CPPFLAGS_CUSTOM) $^ -o $@ $(LDFLAGS)
+# spmv_csr_sym$(SUFFIX).exe: obj/spmv_bench_sym$(SUFFIX).o spmv_kernel_csr_sym.cpp $(LIB_OBJ)
+# 	$(CPP) $(CPPFLAGS) $(CPPFLAGS_CUSTOM) $^ -o $@ $(LDFLAGS)
+# cg_csr$(SUFFIX).exe: obj/cg_bench$(SUFFIX).o spmv_kernel_csr.cpp $(LIB_OBJ)
+# 	$(CPP) $(CPPFLAGS) $(CPPFLAGS_CUSTOM) $^ -o $@ $(LDFLAGS)
+# cg_csr_sym$(SUFFIX).exe: obj/cg_bench_sym$(SUFFIX).o spmv_kernel_csr_sym.cpp $(LIB_OBJ)
+# 	$(CPP) $(CPPFLAGS) $(CPPFLAGS_CUSTOM) $^ -o $@ $(LDFLAGS)
+# spmv_csr_kahan$(SUFFIX).exe: obj/spmv_bench$(SUFFIX).o spmv_kernel_csr.cpp $(LIB_OBJ)
+# 	$(CPP) $(CPPFLAGS) $(CPPFLAGS_CUSTOM) -D'CUSTOM_KAHAN' $^ -o $@ $(LDFLAGS)
+# spmv_csr_prefetch$(SUFFIX).exe: obj/spmv_bench$(SUFFIX).o spmv_kernel_csr.cpp $(LIB_OBJ)
+# 	$(CPP) $(CPPFLAGS) $(CPPFLAGS_CUSTOM) -D'CUSTOM_PREFETCH' $^ -o $@ $(LDFLAGS)
+# spmv_csr_simd$(SUFFIX).exe: obj/spmv_bench$(SUFFIX).o spmv_kernel_csr.cpp $(LIB_OBJ)
+# 	$(CPP) $(CPPFLAGS) $(CPPFLAGS_CUSTOM) -D'CUSTOM_SIMD' $^ -o $@ $(LDFLAGS)
+# spmv_csr_vector$(SUFFIX).exe: obj/spmv_bench$(SUFFIX).o spmv_kernel_csr.cpp $(LIB_OBJ)
+# 	$(CPP) $(CPPFLAGS) $(CPPFLAGS_CUSTOM) -D'CUSTOM_VECTOR' $^ -o $@ $(LDFLAGS)
+# spmv_csr_vector_perfect_nnz_balance$(SUFFIX).exe: obj/spmv_bench$(SUFFIX).o spmv_kernel_csr.cpp $(LIB_OBJ)
+# 	$(CPP) $(CPPFLAGS) $(CPPFLAGS_CUSTOM) -D'CUSTOM_VECTOR_PERFECT_NNZ_BALANCE' $^ -o $@ $(LDFLAGS)
+
+# CPPFLAGS_CV_BLOCK_ID = -D'COMPRESSION_KERNEL_ID'
+# spmv_csr_cv_block_id$(SUFFIX).exe: obj/spmv_bench$(SUFFIX).o obj/spmv_kernel_csr_cv_block_id$(SUFFIX).o $(LIB_OBJ)
+# 	$(CPP) $(CPPFLAGS) $(CPPFLAGS_CUSTOM) $(CPPFLAGS_CV_BLOCK_ID) $^ -o $@ $(LDFLAGS)
+# CPPFLAGS_CV_BLOCK_D2F = -D'COMPRESSION_KERNEL_D2F'
+# spmv_csr_cv_block_d2f$(SUFFIX).exe: obj/spmv_bench$(SUFFIX).o obj/spmv_kernel_csr_cv_block_d2f$(SUFFIX).o $(LIB_OBJ)
+# 	$(CPP) $(CPPFLAGS) $(CPPFLAGS_CUSTOM) $(CPPFLAGS_CV_BLOCK_ID) $^ -o $@ $(LDFLAGS)
+# CPPFLAGS_CV_BLOCK_FPC = -D'COMPRESSION_KERNEL_FPC'
+# spmv_csr_cv_block_fpc$(SUFFIX).exe: obj/spmv_bench$(SUFFIX).o obj/spmv_kernel_csr_cv_block_fpc$(SUFFIX).o $(LIB_OBJ)
+# 	$(CPP) $(CPPFLAGS) $(CPPFLAGS_CUSTOM) $(CPPFLAGS_CV_BLOCK_FPC) $^ -o $@ $(LDFLAGS)
+# CPPFLAGS_CV_BLOCK_ZFP =
+# CPPFLAGS_CV_BLOCK_ZFP += -D'COMPRESSION_KERNEL_ZFP'
+# CPPFLAGS_CV_BLOCK_ZFP += -I'$(ZFP_ROOT_DIR)/include'
+# LDFLAGS_CV_BLOCK_ZFP =
+# LDFLAGS_CV_BLOCK_ZFP += -L'$(ZFP_ROOT_DIR)/lib'
+# LDFLAGS_CV_BLOCK_ZFP += -lzfp
+# spmv_csr_cv_block_zfp$(SUFFIX).exe: obj/spmv_bench$(SUFFIX).o obj/spmv_kernel_csr_cv_block_zfp$(SUFFIX).o $(LIB_OBJ)
+# 	$(CPP) $(CPPFLAGS) $(CPPFLAGS_CUSTOM) $(CPPFLAGS_CV_BLOCK_ZFP) $^ -o $@ $(LDFLAGS) $(LDFLAGS_CV_BLOCK_ZFP)
+# CPPFLAGS_CV_BLOCK_FPZIP =
+# CPPFLAGS_CV_BLOCK_FPZIP += -D'COMPRESSION_KERNEL_FPZIP'
+# CPPFLAGS_CV_BLOCK_FPZIP += -I'$(FPZIP_ROOT_DIR)/include'
+# LDFLAGS_CV_BLOCK_FPZIP =
+# LDFLAGS_CV_BLOCK_FPZIP += -L'$(FPZIP_ROOT_DIR)/lib'
+# LDFLAGS_CV_BLOCK_FPZIP += -lfpzip
+# spmv_csr_cv_block_fpzip$(SUFFIX).exe: obj/spmv_bench$(SUFFIX).o obj/spmv_kernel_csr_cv_block_fpzip$(SUFFIX).o $(LIB_OBJ)
+# 	$(CPP) $(CPPFLAGS) $(CPPFLAGS_CUSTOM) $(CPPFLAGS_CV_BLOCK_FPZIP) $^ -o $@ $(LDFLAGS) $(LDFLAGS_CV_BLOCK_FPZIP)
+
+
+# spmv_div$(SUFFIX).exe: obj/spmv_bench$(SUFFIX).o obj/spmv_kernel_div$(SUFFIX).o $(LIB_OBJ)
+# 	$(CPP) $(CPPFLAGS) $(CPPFLAGS_CUSTOM) $^ -o $@ $(LDFLAGS)
+# spmv_div_rf$(SUFFIX).exe: obj/spmv_bench$(SUFFIX).o obj/spmv_kernel_div_rf$(SUFFIX).o $(LIB_OBJ)
+# 	$(CPP) $(CPPFLAGS) $(CPPFLAGS_CUSTOM) $^ -o $@ $(LDFLAGS)
+# spmv_div_adapt$(SUFFIX).exe: obj/spmv_bench$(SUFFIX).o obj/spmv_kernel_div_adapt$(SUFFIX).o $(LIB_OBJ)
+# 	$(CPP) $(CPPFLAGS) $(CPPFLAGS_CUSTOM) $^ -o $@ $(LDFLAGS)
+# spmv_div_rf_const_size_row$(SUFFIX).exe: obj/spmv_bench$(SUFFIX).o obj/spmv_kernel_div_rf_const_size_row$(SUFFIX).o $(LIB_OBJ)
+# 	$(CPP) $(CPPFLAGS) $(CPPFLAGS_CUSTOM) $^ -o $@ $(LDFLAGS)
+# spmv_div_sym_rf_local$(SUFFIX).exe: obj/spmv_bench$(SUFFIX).o obj/spmv_kernel_div_sym_rf_local$(SUFFIX).o $(LIB_OBJ)
+# 	$(CPP) $(CPPFLAGS) $(CPPFLAGS_CUSTOM) $^ -o $@ $(LDFLAGS)
+# cg_div$(SUFFIX).exe: obj/cg_bench$(SUFFIX).o obj/spmv_kernel_div_rf$(SUFFIX).o $(LIB_OBJ)
+# 	$(CPP) $(CPPFLAGS) $(CPPFLAGS_CUSTOM) $^ -o $@ $(LDFLAGS)
+# cg_div_sym_local$(SUFFIX).exe: obj/cg_bench$(SUFFIX).o obj/spmv_kernel_div_sym_rf_local$(SUFFIX).o $(LIB_OBJ)
+# 	$(CPP) $(CPPFLAGS) $(CPPFLAGS_CUSTOM) $^ -o $@ $(LDFLAGS)
+# bicg_div$(SUFFIX).exe: obj/bicg_bench$(SUFFIX).o obj/spmv_kernel_div_rf$(SUFFIX).o $(LIB_OBJ)
+# 	$(CPP) $(CPPFLAGS) $(CPPFLAGS_CUSTOM) $^ -o $@ $(LDFLAGS)
+# spmv_div_select$(SUFFIX).exe: obj/spmv_bench$(SUFFIX).o obj/spmv_kernel_div_select$(SUFFIX).o $(LIB_OBJ)
+# 	$(CPP) $(CPPFLAGS) $(CPPFLAGS_CUSTOM) $^ -o $@ $(LDFLAGS)
+# spmv_div_cols_sort$(SUFFIX).exe: obj/spmv_bench$(SUFFIX).o obj/spmv_kernel_div_cols_sort$(SUFFIX).o $(LIB_OBJ)
+# 	$(CPP) $(CPPFLAGS) $(CPPFLAGS_CUSTOM) $^ -o $@ $(LDFLAGS)
+# spmv_div_rf_ord2$(SUFFIX).exe: obj/spmv_bench$(SUFFIX).o obj/spmv_kernel_div_rf_ord2$(SUFFIX).o $(LIB_OBJ)
+# 	$(CPP) $(CPPFLAGS) $(CPPFLAGS_CUSTOM) $^ -o $@ $(LDFLAGS)
+
+# spmv_csr_vector_riscv$(SUFFIX).exe: obj/spmv_bench$(SUFFIX).o spmv_kernel_csr_riscv.cpp $(LIB_OBJ)
+# 	$(CPP) $(CPPFLAGS) $(CPPFLAGS_CUSTOM) -D'CUSTOM_RISCV_VECTOR' $^ -o $@ $(LDFLAGS)
+# spmv_csr_vector_oracle_balance_riscv$(SUFFIX).exe: obj/spmv_bench$(SUFFIX).o spmv_kernel_csr_riscv.cpp $(LIB_OBJ)
+# 	$(CPP) $(CPPFLAGS) $(CPPFLAGS_CUSTOM) -D'CUSTOM_X86_VECTOR' -D'CUSTOM_X86_VECTOR_ORACLE_BALANCE' $^ -o $@ $(LDFLAGS)
+# spmv_csr_vector_perfect_nnz_balance_riscv$(SUFFIX).exe: obj/spmv_bench$(SUFFIX).o spmv_kernel_csr_riscv.cpp $(LIB_OBJ)
+# 	$(CPP) $(CPPFLAGS) $(CPPFLAGS_CUSTOM) -D'CUSTOM_X86_VECTOR_PERFECT_NNZ_BALANCE' $^ -o $@ $(LDFLAGS)
+# spmv_csr_vector_queues_riscv$(SUFFIX).exe: obj/spmv_bench$(SUFFIX).o spmv_kernel_csr_riscv.cpp $(LIB_OBJ)
+# 	$(CPP) $(CPPFLAGS) $(CPPFLAGS_CUSTOM) -D'CUSTOM_X86_VECTOR_QUEUES' $^ -o $@ $(LDFLAGS)
+
+# spmv_csr_vector_lut_riscv$(SUFFIX).exe: obj/spmv_bench$(SUFFIX).o spmv_kernel_csr_lut_riscv.cpp $(LIB_OBJ)
+# 	$(CPP) $(CPPFLAGS) $(CPPFLAGS_CUSTOM) $^ -o $@ $(LDFLAGS)
+
+# spmv_ldu$(SUFFIX).exe: obj/spmv_bench$(SUFFIX).o spmv_kernel_ldu.cpp $(LIB_OBJ)
+# 	$(CPP) $(CPPFLAGS) $(CPPFLAGS_CUSTOM) $^ -o $@ $(LDFLAGS)
+# spmv_ell$(SUFFIX).exe: obj/spmv_bench$(SUFFIX).o spmv_kernel_ell.cpp $(LIB_OBJ)
+# 	$(CPP) $(CPPFLAGS) $(CPPFLAGS_CUSTOM) $^ -o $@ $(LDFLAGS)
+# spmv_sell$(SUFFIX).exe: obj/spmv_bench$(SUFFIX).o spmv_kernel_sell.cpp $(LIB_OBJ)
+# 	$(CPP) $(CPPFLAGS) $(CPPFLAGS_CUSTOM) $^ -o $@ $(LDFLAGS)
+# spmv_sell_sorted$(SUFFIX).exe: obj/spmv_bench$(SUFFIX).o spmv_kernel_sell_sorted.cpp $(LIB_OBJ)
+# 	$(CPP) $(CPPFLAGS) $(CPPFLAGS_CUSTOM) $^ -o $@ $(LDFLAGS)
+
+
+# $(call Rule_Auto_Dependencies,obj/spmv_kernel_csr_cv_block_id$(SUFFIX).o,spmv_kernel_csr_cv_block.cpp,$(CPPFLAGS) $(CPPFLAGS_CUSTOM) $(CPPFLAGS_CV_BLOCK_ID))
+# 	$(CPP) $(CPPFLAGS) $(CPPFLAGS_CV_BLOCK_ID) -c $< -o $@
+# $(call Rule_Auto_Dependencies,obj/spmv_kernel_csr_cv_block_d2f$(SUFFIX).o,spmv_kernel_csr_cv_block.cpp,$(CPPFLAGS) $(CPPFLAGS_CUSTOM) $(CPPFLAGS_CV_BLOCK_D2F))
+# 	$(CPP) $(CPPFLAGS) $(CPPFLAGS_CV_BLOCK_D2F) -c $< -o $@
+# $(call Rule_Auto_Dependencies,obj/spmv_kernel_csr_cv_block_fpc$(SUFFIX).o,spmv_kernel_csr_cv_block.cpp,$(CPPFLAGS) $(CPPFLAGS_CUSTOM) $(CPPFLAGS_CV_BLOCK_FPC))
+# 	$(CPP) $(CPPFLAGS) $(CPPFLAGS_CV_BLOCK_FPC) -c $< -o $@
+# $(call Rule_Auto_Dependencies,obj/spmv_kernel_csr_cv_block_zfp$(SUFFIX).o,spmv_kernel_csr_cv_block.cpp,$(CPPFLAGS) $(CPPFLAGS_CUSTOM) $(CPPFLAGS_CV_BLOCK_ZFP))
+# 	$(CPP) $(CPPFLAGS) $(CPPFLAGS_CV_BLOCK_ZFP) -c $< -o $@
+# $(call Rule_Auto_Dependencies,obj/spmv_kernel_csr_cv_block_fpzip$(SUFFIX).o,spmv_kernel_csr_cv_block.cpp,$(CPPFLAGS) $(CPPFLAGS_CUSTOM) $(CPPFLAGS_CV_BLOCK_FPZIP))
+# 	$(CPP) $(CPPFLAGS) $(CPPFLAGS_CV_BLOCK_FPZIP) -c $< -o $@
+
+$(call Rule_Auto_Dependencies,obj/spmv_kernel_div$(SUFFIX).o,DIV/spmv_kernel_div.cpp,$(CPPFLAGS) $(CPPFLAGS_CUSTOM))
+	$(CPP) $(CPPFLAGS) -c $< -o $@
+$(call Rule_Auto_Dependencies,obj/spmv_kernel_div_rf$(SUFFIX).o,DIV/spmv_kernel_div.cpp,$(CPPFLAGS) $(CPPFLAGS_CUSTOM) -D'DIV_TYPE_RF')
+	$(CPP) $(CPPFLAGS) -D'DIV_TYPE_RF' -c $< -o $@
+$(call Rule_Auto_Dependencies,obj/spmv_kernel_div_adapt$(SUFFIX).o,DIV/spmv_kernel_div.cpp,$(CPPFLAGS) $(CPPFLAGS_CUSTOM) -D'DIV_TYPE_ADAPT')
+	$(CPP) $(CPPFLAGS) -D'DIV_TYPE_ADAPT' -c $< -o $@
+$(call Rule_Auto_Dependencies,obj/spmv_kernel_div_rf_const_size_row$(SUFFIX).o,DIV/spmv_kernel_div.cpp,$(CPPFLAGS) $(CPPFLAGS_CUSTOM) -D'DIV_TYPE_RF_CONST_SIZE_ROW')
+	$(CPP) $(CPPFLAGS) -D'DIV_TYPE_RF_CONST_SIZE_ROW' -c $< -o $@
+$(call Rule_Auto_Dependencies,obj/spmv_kernel_div_sym_rf_local$(SUFFIX).o,DIV/spmv_kernel_div.cpp,$(CPPFLAGS) $(CPPFLAGS_CUSTOM) -D'DIV_TYPE_SYM_RF_LOCAL')
+	$(CPP) $(CPPFLAGS) -D'DIV_TYPE_SYM_RF_LOCAL' -c $< -o $@
+$(call Rule_Auto_Dependencies,obj/spmv_kernel_div_select$(SUFFIX).o,DIV/spmv_kernel_div.cpp,$(CPPFLAGS) $(CPPFLAGS_CUSTOM) -D'DIV_TYPE_SELECT')
+	$(CPP) $(CPPFLAGS) -D'DIV_TYPE_SELECT' -c $< -o $@
+$(call Rule_Auto_Dependencies,obj/spmv_kernel_div_cols_sort$(SUFFIX).o,DIV/spmv_kernel_div.cpp,$(CPPFLAGS) $(CPPFLAGS_CUSTOM) -D'DIV_TYPE_COLS_SORT')
+	$(CPP) $(CPPFLAGS) -D'DIV_TYPE_COLS_SORT' -c $< -o $@
+$(call Rule_Auto_Dependencies,obj/spmv_kernel_div_rf_ord2$(SUFFIX).o,DIV/spmv_kernel_div.cpp,$(CPPFLAGS) $(CPPFLAGS_CUSTOM) -D'DIV_TYPE_ORD2')
+	$(CPP) $(CPPFLAGS) -D'DIV_TYPE_ORD2' -c $< -o $@
+$(call Rule_Auto_Dependencies,obj/spmv_kernel_cuda_div_rf$(SUFFIX).o,DIV/spmv_kernel_div.cpp,$(CPPFLAGS) $(CPPFLAGS_CUSTOM) -D'DIV_TYPE_RF')
+	$(CPP) $(CPPFLAGS) -D'DIV_TYPE_RF' -c $< -o $@
+
+
+$(call Rule_Auto_Dependencies,obj/spmv_bench$(SUFFIX).o,spmv_bench.cpp,$(CPPFLAGS))
+	$(CPP) $(CPPFLAGS) -c $< -o $@
+$(call Rule_Auto_Dependencies,obj/spmv_bench_sym$(SUFFIX).o,spmv_bench.cpp,$(CPPFLAGS))
+	$(CPP) $(CPPFLAGS) -D'KEEP_SYMMETRY' -c $< -o $@
+$(call Rule_Auto_Dependencies,obj/cg_bench$(SUFFIX).o,cg_bench.cpp,$(CPPFLAGS))
+	$(CPP) $(CPPFLAGS) -c $< -o $@
+$(call Rule_Auto_Dependencies,obj/cg_bench_sym$(SUFFIX).o,cg_bench.cpp,$(CPPFLAGS))
+	$(CPP) $(CPPFLAGS) -D'KEEP_SYMMETRY' -c $< -o $@
+$(call Rule_Auto_Dependencies,obj/bicg_bench$(SUFFIX).o,bicg_bench.cpp,$(CPPFLAGS))
+	$(CPP) $(CPPFLAGS) -c $< -o $@
+
+$(call Rule_Auto_Dependencies,obj/artificial_matrix_generation$(SUFFIX).o,$(AMG_PATH)/artificial_matrix_generation.c,$(CFLAGS))
+	$(CC) $(CFLAGS) -c $< -o $@
+$(call Rule_Auto_Dependencies,obj/ordered_set$(SUFFIX).o,$(AMG_PATH)/ordered_set.c,$(CFLAGS))
+	$(CC) $(CFLAGS) -c $< -o $@
+
+$(call Rule_Auto_Dependencies,obj/pthread_functions$(SUFFIX).o,$(library)/pthread_functions.c,$(CFLAGS))
+	$(CC) $(CFLAGS) -c $< -o $@
+$(call Rule_Auto_Dependencies,obj/omp_functions$(SUFFIX).o,$(library)/omp_functions.c,$(CFLAGS))
+	$(CC) $(CFLAGS) -c $< -o $@
+$(call Rule_Auto_Dependencies,obj/hardware_topology$(SUFFIX).o,$(library)/topology/hardware_topology.c,$(CFLAGS))
+	$(CC) $(CFLAGS) -c $< -o $@
+$(call Rule_Auto_Dependencies,obj/task_topology$(SUFFIX).o,$(library)/topology/task_topology.c,$(CFLAGS))
+	$(CC) $(CFLAGS) -c $< -o $@
+$(call Rule_Auto_Dependencies,obj/hash$(SUFFIX).o,$(library)/hash/hash.c,$(CFLAGS))
+	$(CC) $(CFLAGS) -c $< -o $@
+$(call Rule_Auto_Dependencies,obj/random$(SUFFIX).o,$(library)/random.c,$(CFLAGS))
+	$(CC) $(CFLAGS) -c $< -o $@
+$(call Rule_Auto_Dependencies,obj/bitstream$(SUFFIX).o,$(library)/bitstream.c,$(CFLAGS))
+	$(CC) $(CFLAGS) -c $< -o $@
+$(call Rule_Auto_Dependencies,obj/bytestream$(SUFFIX).o,$(library)/bytestream.c,$(CFLAGS))
+	$(CC) $(CFLAGS) -c $< -o $@
+$(call Rule_Auto_Dependencies,obj/array_metrics$(SUFFIX).o,$(library)/array_metrics.c,$(CFLAGS))
+	$(CC) $(CFLAGS) -c $< -o $@
+$(call Rule_Auto_Dependencies,obj/string_util$(SUFFIX).o,$(library)/string_util.c,$(CFLAGS))
+	$(CC) $(CFLAGS) -c $< -o $@
+$(call Rule_Auto_Dependencies,obj/io$(SUFFIX).o,$(library)/io.c,$(CFLAGS))
+	$(CC) $(CFLAGS) -c $< -o $@
+$(call Rule_Auto_Dependencies,obj/parallel_io$(SUFFIX).o,$(library)/parallel_io.c,$(CFLAGS))
+	$(CC) $(CFLAGS) -c $< -o $@
+$(call Rule_Auto_Dependencies,obj/plot$(SUFFIX).o,$(library)/plot/plot.c,$(CFLAGS))
+	$(CC) $(CFLAGS) -c $< -o $@
+$(call Rule_Auto_Dependencies,obj/matrix_market$(SUFFIX).o,$(library)/storage_formats/matrix_market/matrix_market.c,$(CFLAGS))
+	$(CC) $(CFLAGS) -c $< -o $@
+$(call Rule_Auto_Dependencies,obj/openfoam_matrix$(SUFFIX).o,$(library)/storage_formats/openfoam/openfoam_matrix.c,$(CFLAGS))
+	$(CC) $(CFLAGS) -c $< -o $@
+$(call Rule_Auto_Dependencies,obj/rapl$(SUFFIX).o,$(library)/monitoring/power/rapl.c,$(CFLAGS))
+	$(CC) $(CFLAGS) -c $< -o $@
+$(call Rule_Auto_Dependencies,obj/kmeans$(SUFFIX).o,$(library)/kmeans/kmeans.c,$(CFLAGS))
+	$(CC) $(CFLAGS) -c $< -o $@
+$(call Rule_Auto_Dependencies,obj/kmeans_char$(SUFFIX).o,$(library)/kmeans/kmeans_char.c,$(CFLAGS))
+	$(CC) $(CFLAGS) -c $< -o $@
+$(call Rule_Auto_Dependencies,obj/hashtable$(SUFFIX).o,$(library)/aux/hashtable.c,$(CFLAGS))
+	$(CC) $(CFLAGS) -c $< -o $@
+$(call Rule_Auto_Dependencies,obj/dynamic_array$(SUFFIX).o,$(library)/aux/dynamic_array.c,$(CFLAGS))
+	$(CC) $(CFLAGS) -c $< -o $@
+$(call Rule_Auto_Dependencies,obj/csr_converter$(SUFFIX).o,$(library)/aux/csr_converter.c,$(CFLAGS))
+	$(CC) $(CFLAGS) -c $< -o $@
+$(call Rule_Auto_Dependencies,obj/csc_converter$(SUFFIX).o,$(library)/aux/csc_converter.c,$(CFLAGS))
+	$(CC) $(CFLAGS) -c $< -o $@
+$(call Rule_Auto_Dependencies,obj/csr_converter_reference$(SUFFIX).o,$(library)/aux/csr_converter_reference.c,$(CFLAGS))
+	$(CC) $(CFLAGS) -c $< -o $@
+$(call Rule_Auto_Dependencies,obj/csr_util$(SUFFIX).o,$(library)/aux/csr_util.c,$(CFLAGS))
+	$(CC) $(CFLAGS) -c $< -o $@
+$(call Rule_Auto_Dependencies,obj/csc_util$(SUFFIX).o,$(library)/aux/csc_util.c,$(CFLAGS))
+	$(CC) $(CFLAGS) -c $< -o $@
+$(call Rule_Auto_Dependencies,obj/rcm$(SUFFIX).o,$(library)/aux/rcm.c,$(CFLAGS))
+	$(CC) $(CFLAGS) -c $< -o $@
+
+
+$(DIRS): %:
+	mkdir -p $@
+
+clean:
+	$(RM) obj/* *.o *.exe a.out
+
