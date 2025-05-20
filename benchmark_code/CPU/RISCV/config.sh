@@ -60,7 +60,6 @@ calc_numa_nodes()
     printf "${nodes}"
 }
 
-
 # export SPARSEX_ROOT_DIR="${HOME}/lib"
 # export SPARSEX_ROOT_DIR=/various/dgal/epyc1
 # export SPARSEX_ROOT_DIR=/home/pmpakos/sparsex
@@ -77,6 +76,9 @@ conf_vars=(
 
     ['USE_PROCESSES']=0
     # ['USE_PROCESSES']=1
+
+    ['EPI_INTRINSICS']=0
+    # ['EPI_INTRINSICS']=1
 
     ['force_retry_on_error']=0
     # ['force_retry_on_error']=1
@@ -128,7 +130,7 @@ conf_vars=(
     # ['max_cores']=256
     # ['max_cores']=128
     # ['max_cores']=96
-    ['max_cores']=64
+    # ['max_cores']=64
     # ['max_cores']=56
     # ['max_cores']=32
     # ['max_cores']=28
@@ -136,7 +138,7 @@ conf_vars=(
     # ['max_cores']=24
     # ['max_cores']=16
     # ['max_cores']=14
-    # ['max_cores']=8
+    ['max_cores']=8
 
     # Cores / Threads to utilize. Use spaces to define a set of different thread numbers to benchmark.
     # ['cores']=1
@@ -147,7 +149,7 @@ conf_vars=(
     # ['cores']=128
     # ['cores']=112
     # ['cores']=72
-    ['cores']=64
+    # ['cores']=64
     # ['cores']=56
     # ['cores']=48
     # ['cores']=32
@@ -158,7 +160,7 @@ conf_vars=(
     # ['cores']=16
     # ['cores']=14
     # ['cores']=12
-    # ['cores']=8
+    ['cores']=8
     # ['cores']=6
     # ['cores']=4
     # ['cores']=2
@@ -351,8 +353,8 @@ artificial_matrices_files=(
     # "$path_artificial"/validation_matrices_10_samples_30_range_twins.txt
 
     # The synthetic dataset studied in the paper.
-    # "$path_artificial"/synthetic_matrices_medium_dataset.txt
-    "$path_artificial"/synthetic_matrices_medium_dataset2.txt
+    "$path_artificial"/synthetic_matrices_medium_dataset.txt
+    # "$path_artificial"/synthetic_matrices_medium_dataset2.txt
     # "$path_artificial"/test.txt
 )
 
@@ -453,8 +455,9 @@ progs=(
     # ['csr_sym_f']="${script_dir}/spmv_code_bench/spmv_csr_sym_f.exe" # BENCH_SYM
     # ['csr_kahan_d']="${script_dir}/spmv_code_bench/spmv_csr_kahan_d.exe"
     # ['csr_prefetch_d']="${script_dir}/spmv_code_bench/spmv_csr_prefetch_d.exe"
-    ['csr_simd_d']="${script_dir}/spmv_code_bench/spmv_csr_simd_d.exe"
-    # ['csr_vector_d']="${script_dir}/spmv_code_bench/spmv_csr_vector_d.exe"
+    # ['csr_simd_d']="${script_dir}/spmv_code_bench/spmv_csr_simd_d.exe"
+    ['csr_vector_d']="${script_dir}/spmv_code_bench/spmv_csr_vector_d.exe"
+    ['csr_vector_rave_d']="${script_dir}/spmv_code_bench/spmv_csr_vector_rave_d.exe"
     # ['csr_vector_d']="${script_dir}/spmv_code_bench/spmv_csr_balanced_distribute_early_d.exe"
     # ['csr_vector_perfect_nnz_balance_d']="${script_dir}/spmv_code_bench/spmv_csr_vector_perfect_nnz_balance_d.exe"
 
@@ -474,4 +477,3 @@ for index in "${!conf_vars[@]}"; do
     # printf "%s=%s;" "$index"  "${conf_vars["$index"]}"
 done
 printf "%s\n" "$config_str"
-

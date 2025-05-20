@@ -40,7 +40,6 @@ EXE = $(TARGETS)
 
 all: $(EXE) | $(DIRS)
 
-
 # riscv_64 aarch64 ppc64le
 CPPFLAGS_CUSTOM =
 ifeq ($(ARCH), riscv_64)
@@ -64,10 +63,12 @@ spmv_csr$(SUFFIX).exe: obj/spmv_bench$(SUFFIX).o spmv_kernel_csr.cpp $(LIB_OBJ)
 # 	$(CPP) $(CPPFLAGS) $(CPPFLAGS_CUSTOM) -D'CUSTOM_KAHAN' $^ -o $@ $(LDFLAGS)
 # spmv_csr_prefetch$(SUFFIX).exe: obj/spmv_bench$(SUFFIX).o spmv_kernel_csr.cpp $(LIB_OBJ)
 # 	$(CPP) $(CPPFLAGS) $(CPPFLAGS_CUSTOM) -D'CUSTOM_PREFETCH' $^ -o $@ $(LDFLAGS)
-spmv_csr_simd$(SUFFIX).exe: obj/spmv_bench$(SUFFIX).o spmv_kernel_csr.cpp $(LIB_OBJ)
-	$(CPP) $(CPPFLAGS) $(CPPFLAGS_CUSTOM) -D'CUSTOM_SIMD' $^ -o $@ $(LDFLAGS)
-# spmv_csr_vector$(SUFFIX).exe: obj/spmv_bench$(SUFFIX).o spmv_kernel_csr.cpp $(LIB_OBJ)
-# 	$(CPP) $(CPPFLAGS) $(CPPFLAGS_CUSTOM) -D'CUSTOM_VECTOR' $^ -o $@ $(LDFLAGS)
+# spmv_csr_simd$(SUFFIX).exe: obj/spmv_bench$(SUFFIX).o spmv_kernel_csr.cpp $(LIB_OBJ)
+# 	$(CPP) $(CPPFLAGS) $(CPPFLAGS_CUSTOM) -D'CUSTOM_SIMD' $^ -o $@ $(LDFLAGS)
+spmv_csr_vector$(SUFFIX).exe: obj/spmv_bench$(SUFFIX).o spmv_kernel_csr.cpp $(LIB_OBJ)
+	$(CPP) $(CPPFLAGS) $(CPPFLAGS_CUSTOM) -D'CUSTOM_VECTOR' $^ -o $@ $(LDFLAGS)
+spmv_csr_vector_rave$(SUFFIX).exe: obj/spmv_bench_rave$(SUFFIX).o spmv_kernel_csr.cpp $(LIB_OBJ)
+	$(CPP) $(CPPFLAGS) $(CPPFLAGS_CUSTOM) -D'CUSTOM_VECTOR' -D'RAVE_TRACING' -I'/apps/riscv/sdv_trace/include/' -L'/apps/riscv/sdv_trace/lib/' -lsdv_trace_rave -lsdv_trace $^ -o $@ $(LDFLAGS)
 # spmv_csr_vector_perfect_nnz_balance$(SUFFIX).exe: obj/spmv_bench$(SUFFIX).o spmv_kernel_csr.cpp $(LIB_OBJ)
 # 	$(CPP) $(CPPFLAGS) $(CPPFLAGS_CUSTOM) -D'CUSTOM_VECTOR_PERFECT_NNZ_BALANCE' $^ -o $@ $(LDFLAGS)
 
@@ -176,6 +177,8 @@ $(call Rule_Auto_Dependencies,obj/spmv_kernel_cuda_div_rf$(SUFFIX).o,DIV/spmv_ke
 
 $(call Rule_Auto_Dependencies,obj/spmv_bench$(SUFFIX).o,spmv_bench.cpp,$(CPPFLAGS))
 	$(CPP) $(CPPFLAGS) -c $< -o $@
+$(call Rule_Auto_Dependencies,obj/spmv_bench_rave$(SUFFIX).o,spmv_bench.cpp,$(CPPFLAGS))
+	$(CPP) $(CPPFLAGS) -D'RAVE_TRACING' -I'/apps/riscv/sdv_trace/include/' -c $< -o $@
 $(call Rule_Auto_Dependencies,obj/spmv_bench_sym$(SUFFIX).o,spmv_bench.cpp,$(CPPFLAGS))
 	$(CPP) $(CPPFLAGS) -D'KEEP_SYMMETRY' -c $< -o $@
 $(call Rule_Auto_Dependencies,obj/cg_bench$(SUFFIX).o,cg_bench.cpp,$(CPPFLAGS))

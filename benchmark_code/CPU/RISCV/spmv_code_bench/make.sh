@@ -1,5 +1,7 @@
 #!/bin/bash
 
+# module load llvm/cross/EPI-development
+
 shopt -s -o pipefail
 shopt -s extglob globstar dotglob nullglob 2>/dev/null
 export GLOBIGNORE=.:..
@@ -91,16 +93,46 @@ CFLAGS+=" -O3"
 CFLAGS+=" -ffast-math"
 
 # CFLAGS+=" -flto=auto"
+export MACHINE_NAME=$(uname -n)
+echo $MACHINE_NAME
 
 if [[ ${ARCH} == x86_64 ]]; then
-    CFLAGS+=" -mbmi"
-    CFLAGS+=" -mbmi2"
-    CFLAGS+=" -march=native"
-    CFLAGS+=" -mno-avx512fp16"
-    # CFLAGS+=" -mfma"
-    # CFLAGS+=" -mavx"
-    # CFLAGS+=" -mavx2"
-    # CFLAGS+=" -mavx512f"
+    if [[ ${MACHINE_NAME} == synth-hca ]]; then
+    # rvv-1.0 - Banana
+        ARCH="riscv64"
+        CFLAGS+=" -mcpu=avispado"
+        CFLAGS+=" -mepi"
+        CFLAGS+=" -mllvm -combiner-store-merging=0"
+        CFLAGS+=" -mllvm -disable-loop-idiom-memcpy"
+        # CFLAGS+=" -Rpass=loop-vectorize"
+        # CFLAGS+=" -Rpass-analysis=loop-vectorize"
+        CFLAGS+=" -fno-slp-vectorize"
+
+        # for when it crashes... simply add the function that refuses to compile... in the first case it was sth like "__epi_flog2_nxv1f64"
+        CFLAGS+=" -fno-builtin-log2"
+        # CFLAGS+=" -fno-builtin-exp"
+        # CFLAGS+=" -fno-builtin-sin"
+        # CFLAGS+=" -fno-builtin-cos"
+        # CFLAGS+=" -fno-builtin-pow2"
+        CFLAGS+=" -mllvm -vectorizer-use-vp-strided-load-store"
+        CFLAGS+=" -mllvm -disable-loop-idiom-memset"
+        CFLAGS+=" -mllvm -riscv-uleb128-reloc=0"
+        # CFLAGS+=" -Rpass-missed=loop-vectorize"
+        CFLAGS+=" -Xclang -target-feature"
+        CFLAGS+=" -Xclang +does-not-implement-vszext"
+        CFLAGS+=" -Xclang -target-feature"
+        CFLAGS+=" -Xclang +does-not-implement-tu"
+    else
+        CFLAGS+=" -mbmi"
+        CFLAGS+=" -mbmi2"
+        CFLAGS+=" -march=native"
+        CFLAGS+=" -mno-avx512fp16"
+        # CFLAGS+=" -mfma"
+        # CFLAGS+=" -mavx"
+        # CFLAGS+=" -mavx2"
+        # CFLAGS+=" -mavx512f"
+    fi
+    
 elif [[ ${ARCH} == ppc64le ]]; then
     CFLAGS+=" -mcpu=power9"
 elif [[ ${ARCH} == aarch64 ]]; then
@@ -144,10 +176,18 @@ elif [[ ${ARCH} == riscv64 ]]; then
     fi
 fi
 
+echo CFLAGS: "${CFLAGS}"
+
 CFLAGS+=" -I'${library}'"
 CFLAGS+=" -I'${AMG_PATH}'"
 
 CFLAGS+=" -D'INT_T=int32_t'"
+# CFLAGS+=" -D'INT_T=int64_t'"
+
+# Use EPI Intrinsics instead of RVV for Custom Vector implementation
+if [[ ${EPI_INTRINSICS} == 1 ]]; then
+    CFLAGS+=" -D'EPI_INTRINSICS'"
+fi
 
 if ((${PRINT_STATISTICS} == 1)); then
     CFLAGS+=" -D'PRINT_STATISTICS'"

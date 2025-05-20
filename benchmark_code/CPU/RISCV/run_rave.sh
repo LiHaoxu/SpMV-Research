@@ -1,5 +1,9 @@
 #!/bin/bash
 
+# module load rave/EPI
+# module load llvm/cross/EPI-development
+# module load sdv_trace
+
 script_dir="$(dirname "$(readlink -e "${BASH_SOURCE[0]}")")"
 source "$script_dir"/config.sh
 echo
@@ -87,7 +91,6 @@ IFS=$'\n'
 matrices_openFoam_own_neigh=( $(printf "${path_openFoam}/%s\n" ${sorted_text}) )
 IFS="$IFS_buf"
 
-
 mapfile -t -d $'\n' matrices_tamu_real < <(
     awk -F ',' '
     BEGIN { LINT = "fatal" }
@@ -133,64 +136,63 @@ done
 
 
 matrices_validation=(
-    appu
     scircuit
     ldoor
     boneS10
     af_shell10
-    # nv2010
-    # spal_004
-    # olm5000
-    # mac_econ_fwd500
-    # raefsky3
-    # rgg_n_2_17_s0
-    # bbmat
-    # appu
-    # mc2depi
-    # rma10
-    # cop20k_A
-    # thermomech_dK
-    # webbase-1M
-    # cant
-    # ASIC_680k
-    # roadNet-TX
-    # pdb1HYS
-    # TSOPF_RS_b300_c3
-    # Chebyshev4
-    # consph
-    # com-Youtube
-    # rajat30
-    # radiation
-    # Stanford_Berkeley
-    # shipsec1
-    # PR02R
-    # CurlCurl_2
-    # gupta3
-    # mip1
-    # rail4284
-    # pwtk
-    # crankseg_2
-    # Si41Ge41H72
-    # TSOPF_RS_b2383
-    # in-2004
-    # Ga41As41H72
-    # eu-2005
-    # wikipedia-20051105
-    # kron_g500-logn18
-    # rajat31
-    # human_gene1
-    # delaunay_n22
-    # GL7d20
-    # sx-stackoverflow
-    # dgreen
-    # mawi_201512012345
-    # dielFilterV2real
-    # circuit5M
-    # soc-LiveJournal1
-    # bone010
-    # audikw_1
-    # cage15
-    # kmer_V2a
+    nv2010
+    spal_004
+    olm5000
+    mac_econ_fwd500
+    raefsky3
+    rgg_n_2_17_s0
+    bbmat
+    appu
+    mc2depi
+    rma10
+    cop20k_A
+    thermomech_dK
+    webbase-1M
+    cant
+    ASIC_680k
+    roadNet-TX
+    pdb1HYS
+    TSOPF_RS_b300_c3
+    Chebyshev4
+    consph
+    com-Youtube
+    rajat30
+    radiation
+    Stanford_Berkeley
+    shipsec1
+    PR02R
+    CurlCurl_2
+    gupta3
+    mip1
+    rail4284
+    pwtk
+    crankseg_2
+    Si41Ge41H72
+    TSOPF_RS_b2383
+    in-2004
+    Ga41As41H72
+    eu-2005
+    wikipedia-20051105
+    kron_g500-logn18
+    rajat31
+    human_gene1
+    delaunay_n22
+    GL7d20
+    sx-stackoverflow
+    dgreen
+    mawi_201512012345
+    dielFilterV2real
+    circuit5M
+    soc-LiveJournal1
+    bone010
+    audikw_1
+    cage15
+    kmer_V2a
 )
 matrices_validation_tamu=( ${matrices_validation[@]} )
 for ((i=0;i<${#matrices_validation_tamu[@]};i++)); do
@@ -607,9 +609,7 @@ for ((i=0;i<${#matrices_validation[@]};i++)); do
     matrices_validation_loop+=( "${matrices_validation[i]}" )
 done
 
-
-
-bench()
+bench_rave()
 {
     declare args=("$@")
     declare prog="${args[0]}"
@@ -702,7 +702,7 @@ bench()
                 # compute-sanitizer --tool memcheck --print-limit 10000000 "$prog" "${prog_args[@]}"  2>'tmp.err'
                 # ncu -o ./out_logs/reports/ncu_reports/ncu_report_${mtx_name}_${prog_name} -f --print-summary=per-kernel --section={ComputeWorkloadAnalysis,InstructionStats,LaunchStats,MemoryWorkloadAnalysis,MemoryWorkloadAnalysis_Chart,MemoryWorkloadAnalysis_Tables,Occupancy,SchedulerStats,SourceCounters,SpeedOfLight,SpeedOfLight_RooflineChart,WarpStateStats} "$prog" "${prog_args[@]}"  2>'tmp.err'
                 # nsys profile -o ./out_logs/reports/nsys_reports/nsys_report_${mtx_name}_${prog_name} -f true -t cuda,cublas --cuda-memory-usage=true --stats=true -w true "$prog" "${prog_args[@]}"  2>'tmp.err'
-                "$prog" "${prog_args[@]}"  2>'tmp.err'
+                trace_rave_1_0 "$prog" "${prog_args[@]}"  2>"tmp.err"
                 # "$prog" "${prog_args[@]}"
                 ret="$?"
             fi
@@ -717,8 +717,9 @@ bench()
         done
     done
 
-    rm 'tmp.err'
+    # rm 'tmp.err'
 }
+
 
 matrices=(
 
@@ -812,6 +813,10 @@ fi
 temp_labels=( $(printf "%s\n" /sys/class/hwmon/hwmon*/temp*_label | sort) )
 temp_inputs=( ${temp_labels[@]/label/input} )
 
+progs=(
+    ['csr_vector_rave_d']="${script_dir}/spmv_code_bench/spmv_csr_vector_rave_d.exe"
+)
+
 for format_name in "${!progs[@]}"; do
     prog="${progs["$format_name"]}"
 
@@ -857,11 +862,11 @@ for format_name in "${!progs[@]}"; do
 
     ts1="$(date '+%s')"
 
+    rave_output_dir=/home/pmpakos/vvrettos-stuff/rave-outputs
     for ((i=0;i<rep;i++)); do
         for a in "${prog_args[@]}"; do
 
             rep_in=1
-            # rep_in=10
 
             for packet_vals in "${csrcv_num_packet_vals[@]}"; do
                 export CSRCV_NUM_PACKET_VALS="$packet_vals"
@@ -872,8 +877,13 @@ for format_name in "${!progs[@]}"; do
                 done
                 echo >&1
 
-                echo "File: $a"
-                bench "$prog" $a
+                matrix=$(basename $(realpath $a) .mtx)       
+                executable=$(basename $(realpath $prog) .exe)
+                bench_rave "$prog" $a
+
+                # Rave creates a folder named "rave_prv_traces"
+                # Copy rave output files to the output directory. Rename it in the process
+                mv rave_prv_traces "${rave_output_dir}"/"${executable}_${matrix}"
 
             done
         done

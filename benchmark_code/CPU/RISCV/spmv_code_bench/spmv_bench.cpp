@@ -11,6 +11,10 @@
 
 #include "spmv_bench_common.h"
 
+#ifdef RAVE_TRACING
+	#include "sdv_tracing.h"
+#endif
+
 #ifdef __cplusplus
 extern "C"{
 #endif
@@ -177,16 +181,18 @@ check_accuracy(char * buf, long buf_n, INT_T * csr_ia, INT_T * csr_ja, ValueType
 	}
 
 	ValueTypeValidation maxDiff = 0, diff;
-	// long cnt=0;
+	
 	for(i=0;i<csr_m;i++)
 	{
 		diff = Abs(y_gold[i] - y_test[i]);
+
 		// maxDiff = Max(maxDiff, diff);
 		if (y_gold[i] > epsilon)
 		{
 			diff = diff / abs(y_gold[i]);
 			maxDiff = Max(maxDiff, diff);
 		}
+
 		// if (diff > epsilon_relaxed)
 			// printf("error: i=%ld/%ld , a=%.10g f=%.10g\n", i, csr_m-1, (double) y_gold[i], (double) y_test[i]);
 		// if(i<5)
@@ -201,6 +207,7 @@ check_accuracy(char * buf, long buf_n, INT_T * csr_ia, INT_T * csr_ja, ValueType
 			// maxDiff = Max(maxDiff, Abs(y_gold[i]-y_test[i]));
 		// }
 	}
+
 	if(maxDiff > epsilon)
 		printf("Test failed! (%g)\n", reference_to_double(&maxDiff, 0));
 	long len = 0;
@@ -385,8 +392,14 @@ compute(char * matrix_name,
 		int clear_caches = atoi(getenv("CLEAR_CACHES"));
 		time_total = 0;
 		num_loops = 0;
+
 		dynarray_d * da_iter_times = dynarray_new_d(10 * min_num_loops);
-		while (time_total < 2.0 || num_loops < min_num_loops)
+
+		#ifdef RAVE_TRACING
+			while (num_loops < min_num_loops)
+		#else
+			while (time_total < 2.0 || num_loops < min_num_loops)
+		#endif
 		{
 			if (__builtin_expect(clear_caches, 0))
 			{
@@ -402,7 +415,6 @@ compute(char * matrix_name,
 			}
 
 			rapl_read_start(regs, regs_n);
-
 			time_iter = time_it(1,
 				MF->spmv(x, y);
 			);
@@ -642,6 +654,15 @@ main(int argc, char **argv)
 	char matrix_name[1000];
 	__attribute__((unused)) double time;
 	__attribute__((unused)) long i, j;
+
+	#ifdef RAVE_TRACING
+		int values[] = {0, 1};
+		const char* valueNames[] = {"Other", "Kernel"};
+
+		trace_name_event_and_values(1000, "code_region", 2, values, valueNames);
+		trace_init();
+		trace_disable();
+	#endif
 
 	int use_artificial_matrices = atoi(getenv("USE_ARTIFICIAL_MATRICES"));
 
@@ -997,7 +1018,14 @@ child_proc_label:
 	long min_num_loops;
 	min_num_loops = 256;
 
+	/* Start tracing before calling compute */
+	#ifdef RAVE_TRACING
+		min_num_loops = 1;
+		printf("Rave tracing enabled\n");
+		trace_enable(); 
+	#endif
 	prefetch_distance = 1;
+	printf("Min number of loops %d\n", min_num_loops);
 	time = time_it(1,
 		// for (i=0;i<5;i++)
 		{
@@ -1013,6 +1041,7 @@ child_proc_label:
 		printf("time total = %g, sleeping\n", time);
 		usleep((long) (time * 1000000));
 	}
+
 
 	free_csr_matrix(AM);
 	free(x);

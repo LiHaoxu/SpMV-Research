@@ -6,6 +6,17 @@
 
 #include "spmv_bench_common.h"
 #include "spmv_kernel.h"
+#include <riscv_vector.h>
+
+#ifdef CUSTOM_VECTOR
+	/* Include this when using the intrinsics (vector function) */
+	// #include <riscv_vector.h>
+
+	/* Include this if we are running RAVE to simulate vector code */
+	#ifdef RAVE_TRACING
+		#include <sdv_tracing.h>
+	#endif
+#endif
 
 #ifdef __cplusplus
 extern "C"{
@@ -37,6 +48,8 @@ struct CSRArrays : Matrix_Format
 {
 	INT_T * row_ptr;      // the usual rowptr (of size m+1)
 	INT_T * ja;      // the colidx of each NNZ (of size nnz)
+	int64_t* localJa; // vvrettos: For riscv vector intrinsics (unused and uninitialized in all other builds)
+
 	ValueType * a;   // the values (of size NNZ)
 
 	long num_loops;
@@ -49,6 +62,11 @@ struct CSRArrays : Matrix_Format
 		row_ptr = (typeof(row_ptr)) aligned_alloc(64, (m+1) * sizeof(*row_ptr));
 		ja = (typeof(ja)) aligned_alloc(64, nnz * sizeof(*ja));
 		a = (typeof(a)) aligned_alloc(64, nnz * sizeof(*a));
+
+		#ifdef CUSTOM_VECTOR
+			localJa = (typeof(localJa)) aligned_alloc(64, nnz * sizeof(*localJa));
+		#endif
+
 		#pragma omp parallel for
 		for (long i=0;i<m+1;i++)
 			row_ptr[i] = row_ptr_in[i];
@@ -57,6 +75,10 @@ struct CSRArrays : Matrix_Format
 		{
 			a[i]=values[i];
 			ja[i]=col_ind[i];
+
+			#ifdef CUSTOM_VECTOR
+				localJa[i] = (int64_t) ja[i];
+			#endif
 		}
 
 		thread_i_s = (INT_T *) malloc(num_threads * sizeof(*thread_i_s));
@@ -157,12 +179,17 @@ struct CSRArrays : Matrix_Format
 		free(a);
 		free(row_ptr);
 		free(ja);
+		
 		free(thread_i_s);
 		free(thread_i_e);
 		free(thread_j_s);
 		free(thread_j_e);
 		// free(thread_v_s);
 		free(thread_v_e);
+
+		#ifdef CUSTOM_VECTOR
+			free(localJa);
+		#endif
 
 		#ifdef PRINT_STATISTICS
 			free(thread_time_barrier);
@@ -293,7 +320,6 @@ subkernel_row_csr_scalar(CSRArrays * restrict csr, ValueType * restrict x, long 
 //= Subkernels CSR
 //==========================================================================================================================================
 
-
 // void
 // subkernel_csr_scalar(CSRArrays * restrict csr, ValueType * restrict x, ValueType * restrict y, long i_s, long i_e)
 // {
@@ -316,7 +342,6 @@ subkernel_row_csr_scalar(CSRArrays * restrict csr, ValueType * restrict x, long 
 	// }
 // }
 
-
 void
 subkernel_csr_scalar(CSRArrays * restrict csr, ValueType * restrict x, ValueType * restrict y, long i_s, long i_e)
 {
@@ -335,6 +360,119 @@ subkernel_csr_scalar(CSRArrays * restrict csr, ValueType * restrict x, ValueType
 	}
 }
 
+#ifdef EPI_INTRINSICS
+/* EPI Intrinsics */
+void
+subkernel_csr_vector(CSRArrays * restrict csr, ValueType * restrict x, ValueType * restrict y, long i_s, long i_e)
+{
+	#ifdef RAVE_TRACING
+		trace_event_and_value(1000, 1);
+	#endif
+
+	ValueType sum;
+	long i, j;
+	long j_s, j_e; // Column Start, Column End
+
+	/* Main Loop - Thread iterates from rows i_s till i_e */
+	for (i = i_s; i < i_e; i++) {
+		y[i] = 0;
+		j_s = csr->row_ptr[i];
+		j_e = csr->row_ptr[i + 1];
+		if (j_s == j_e)
+			continue;
+		sum = 0;
+
+		long nnz = j_e - j_s;
+
+		/* Inner Loop - Iterate over nnz using vector intrinsics */
+		long colid;
+
+		for (colid = 0; colid < nnz;) {
+			long requestedVectorLength = nnz - colid;
+			long givenVectorLength = __builtin_epi_vsetvl(requestedVectorLength, __epi_e64, __epi_m1);
+
+			__epi_1xf64 va = __builtin_epi_vload_1xf64(&csr->a[j_s + colid], givenVectorLength);
+			__epi_1xi64 v_idx_row = __builtin_epi_vload_1xi64(&csr->localJa[j_s + colid], givenVectorLength);
+
+			__epi_1xi64 vthree = __builtin_epi_vmv_v_x_1xi64(3, givenVectorLength);
+
+			v_idx_row = __builtin_epi_vsll_1xi64(v_idx_row, vthree, givenVectorLength);
+
+			__epi_1xf64 vx = __builtin_epi_vload_indexed_1xf64(x, v_idx_row, givenVectorLength);
+
+			__epi_1xf64 vprod = __builtin_epi_vfmul_1xf64(va, vx, givenVectorLength);
+			__epi_1xf64 partial_res = __builtin_epi_vfmv_v_f_1xf64(0.0, givenVectorLength);
+			partial_res = __builtin_epi_vfredsum_1xf64(vprod, partial_res, givenVectorLength);
+			sum += __builtin_epi_vfmv_f_s_1xf64(partial_res);
+
+			colid += givenVectorLength;
+		}
+
+		y[i] = sum;
+	}
+
+	#ifdef RAVE_TRACING
+		trace_event_and_value(1000, 0);
+	#endif
+
+}
+#else 
+/* Risc-V Vector Instrinsics */
+void
+subkernel_csr_vector(CSRArrays * restrict csr, ValueType * restrict x, ValueType * restrict y, long i_s, long i_e)
+{
+	#ifdef RAVE_TRACING
+		trace_event_and_value(1000, 1);
+	#endif
+
+	ValueType sum;
+	long i, j;
+	long j_s, j_e; // Column Start, Column End
+
+	/* Main Loop - Thread iterates from rows i_s till i_e */
+	for (i = i_s; i < i_e; i++) {
+		y[i] = 0;
+		j_s = csr->row_ptr[i];
+		j_e = csr->row_ptr[i + 1];
+		if (j_s == j_e)
+			continue;
+		sum = 0;
+
+		long nnz = j_e - j_s;
+
+		/* Inner Loop - Iterate over nnz using vector intrinsics */
+		long colid;
+
+		for (colid = 0; colid < nnz;) {
+			long requestedVectorLength = nnz - colid;
+			long givenVectorLength = __riscv_vsetvl_e64m1(requestedVectorLength);
+
+			vfloat64m1_t va = __riscv_vle64_v_f64m1(&csr->a[j_s + colid], givenVectorLength);
+			vuint32mf2_t v_idx_row = __riscv_vle32_v_u32mf2((uint32_t*) &csr->ja[j_s + colid], givenVectorLength);
+
+			vuint32mf2_t vthree = __riscv_vmv_v_x_u32mf2(3, givenVectorLength);
+
+			v_idx_row = __riscv_vsll_vv_u32mf2(v_idx_row, vthree, givenVectorLength);
+
+			vfloat64m1_t vx = __riscv_vluxei32_v_f64m1(x, v_idx_row, givenVectorLength);
+
+			vfloat64m1_t vprod = __riscv_vfmul_vv_f64m1(va, vx, givenVectorLength);
+			vfloat64m1_t partial_res = __riscv_vfmv_v_f_f64m1(0.0, givenVectorLength);
+			partial_res = __riscv_vfredusum_vs_f64m1_f64m1(vprod, partial_res, givenVectorLength);
+			sum += __riscv_vfmv_f_s_f64m1_f64(partial_res);
+
+			colid += givenVectorLength;
+		}
+
+		y[i] = sum;
+	}
+
+	#ifdef RAVE_TRACING
+		trace_event_and_value(1000, 0);
+	#endif
+}
+
+#endif /* EPI_INTRINSICS */
 
 void
 subkernel_csr_scalar_kahan(CSRArrays * restrict csr, ValueType * restrict x, ValueType * restrict y, long i_s, long i_e)
@@ -388,6 +526,37 @@ compute_csr(CSRArrays * restrict csr, ValueType * restrict x, ValueType * restri
 		#endif
 	}
 }
+
+
+//==========================================================================================================================================
+//= CSR Custom Vector (EPI Intrinsics)
+//==========================================================================================================================================
+
+void
+compute_csr_vector(CSRArrays * restrict csr, ValueType * restrict x, ValueType * restrict y)
+{
+	#pragma omp parallel
+	{
+		int tnum = omp_get_thread_num();
+		long i_s, i_e;
+		i_s = thread_i_s[tnum];
+		i_e = thread_i_e[tnum];
+		#ifdef PRINT_STATISTICS
+		double time;
+		time = time_it(1,
+		#endif
+			subkernel_csr_vector(csr, x, y, i_s, i_e);
+		#ifdef PRINT_STATISTICS
+		);
+		thread_time_compute[tnum] += time;
+		time = time_it(1,
+			_Pragma("omp barrier")
+		);
+		thread_time_barrier[tnum] += time;
+		#endif
+	}
+}
+
 
 
 //==========================================================================================================================================
