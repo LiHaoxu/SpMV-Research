@@ -362,10 +362,12 @@ compute(char * matrix_name,
 		}
 		else
 		{
-			// Warm up caches.
-			time_warm_up = time_it(1,
-				MF->spmv(x, y);
-			);			
+			#ifndef RAVE_TRACING
+				// Warm up caches.
+				time_warm_up = time_it(1,
+					MF->spmv(x, y);
+				);
+			#endif
 		}
 
 		if (use_processes)

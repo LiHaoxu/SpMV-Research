@@ -866,11 +866,11 @@ for format_name in "${!progs[@]}"; do
             for packet_vals in "${csrcv_num_packet_vals[@]}"; do
                 export CSRCV_NUM_PACKET_VALS="$packet_vals"
 
-                printf "Temps: " >&1
-                for ((k=0;k<${#temp_labels[@]};k++)); do
-                    printf "%s %s " $(cat ${temp_labels[k]}) $(cat ${temp_inputs[k]}) >&1
-                done
-                echo >&1
+                # printf "Temps: " >&1
+                # for ((k=0;k<${#temp_labels[@]};k++)); do
+                #     printf "%s %s " $(cat ${temp_labels[k]}) $(cat ${temp_inputs[k]}) >&1
+                # done
+                # echo >&1
 
                 echo "File: $a"
                 bench "$prog" $a

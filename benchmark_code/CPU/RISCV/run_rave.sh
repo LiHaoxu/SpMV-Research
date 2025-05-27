@@ -1,8 +1,8 @@
 #!/bin/bash
 
-# module load rave/EPI
-# module load llvm/cross/EPI-development
-# module load sdv_trace
+module load rave/EPI
+module load llvm/cross/EPI-development
+module load sdv_trace
 
 script_dir="$(dirname "$(readlink -e "${BASH_SOURCE[0]}")")"
 source "$script_dir"/config.sh
@@ -136,13 +136,9 @@ done
 
 
 matrices_validation=(
-    scircuit
-    ldoor
-    boneS10
-    af_shell10
-    nv2010
-    spal_004
     olm5000
+    nv2010
+    scircuit
     mac_econ_fwd500
     raefsky3
     rgg_n_2_17_s0
@@ -166,33 +162,63 @@ matrices_validation=(
     Stanford_Berkeley
     shipsec1
     PR02R
-    CurlCurl_2
-    gupta3
-    mip1
-    rail4284
-    pwtk
-    crankseg_2
-    Si41Ge41H72
-    TSOPF_RS_b2383
-    in-2004
-    Ga41As41H72
-    eu-2005
-    wikipedia-20051105
-    kron_g500-logn18
-    rajat31
-    human_gene1
-    delaunay_n22
-    GL7d20
-    sx-stackoverflow
-    dgreen
-    mawi_201512012345
-    dielFilterV2real
-    circuit5M
-    soc-LiveJournal1
-    bone010
-    audikw_1
-    cage15
-    kmer_V2a
+    # scircuit
+    # ldoor
+    # boneS10
+    # af_shell10
+    # nv2010
+    # spal_004
+    # olm5000
+    # mac_econ_fwd500
+    # raefsky3
+    # rgg_n_2_17_s0
+    # bbmat
+    # appu
+    # mc2depi
+    # rma10
+    # cop20k_A
+    # thermomech_dK
+    # webbase-1M
+    # cant
+    # ASIC_680k
+    # roadNet-TX
+    # pdb1HYS
+    # TSOPF_RS_b300_c3
+    # Chebyshev4
+    # consph
+    # com-Youtube
+    # rajat30
+    # radiation
+    # Stanford_Berkeley
+    # shipsec1
+    # PR02R
+    # CurlCurl_2
+    # gupta3
+    # mip1
+    # rail4284
+    # pwtk
+    # crankseg_2
+    # Si41Ge41H72
+    # TSOPF_RS_b2383
+    # in-2004
+    # Ga41As41H72
+    # eu-2005
+    # wikipedia-20051105
+    # kron_g500-logn18
+    # rajat31
+    # human_gene1
+    # delaunay_n22
+    # GL7d20
+    # sx-stackoverflow
+    # dgreen
+    # mawi_201512012345
+    # dielFilterV2real
+    # circuit5M
+    # soc-LiveJournal1
+    # bone010
+    # audikw_1
+    # cage15
+    # kmer_V2a
 )
 matrices_validation_tamu=( ${matrices_validation[@]} )
 for ((i=0;i<${#matrices_validation_tamu[@]};i++)); do
@@ -702,7 +728,7 @@ bench_rave()
                 # compute-sanitizer --tool memcheck --print-limit 10000000 "$prog" "${prog_args[@]}"  2>'tmp.err'
                 # ncu -o ./out_logs/reports/ncu_reports/ncu_report_${mtx_name}_${prog_name} -f --print-summary=per-kernel --section={ComputeWorkloadAnalysis,InstructionStats,LaunchStats,MemoryWorkloadAnalysis,MemoryWorkloadAnalysis_Chart,MemoryWorkloadAnalysis_Tables,Occupancy,SchedulerStats,SourceCounters,SpeedOfLight,SpeedOfLight_RooflineChart,WarpStateStats} "$prog" "${prog_args[@]}"  2>'tmp.err'
                 # nsys profile -o ./out_logs/reports/nsys_reports/nsys_report_${mtx_name}_${prog_name} -f true -t cuda,cublas --cuda-memory-usage=true --stats=true -w true "$prog" "${prog_args[@]}"  2>'tmp.err'
-                trace_rave_1_0 "$prog" "${prog_args[@]}"  2>"tmp.err"
+                trace_rave_1_0 "$prog" "${prog_args[@]}"  2>"tmp.err" # this is located in /apps/riscv/sdv_trace/util
                 # "$prog" "${prog_args[@]}"
                 ret="$?"
             fi
@@ -862,7 +888,8 @@ for format_name in "${!progs[@]}"; do
 
     ts1="$(date '+%s')"
 
-    rave_output_dir=/home/pmpakos/vvrettos-stuff/rave-outputs
+    rave_output_dir=./RAVE/rave-outputs
+    mkdir -p "${rave_output_dir}"
     for ((i=0;i<rep;i++)); do
         for a in "${prog_args[@]}"; do
 
@@ -877,14 +904,17 @@ for format_name in "${!progs[@]}"; do
                 done
                 echo >&1
 
-                matrix=$(basename $(realpath $a) .mtx)       
-                executable=$(basename $(realpath $prog) .exe)
                 bench_rave "$prog" $a
 
                 # Rave creates a folder named "rave_prv_traces"
                 # Copy rave output files to the output directory. Rename it in the process
+                executable=$(basename $(realpath $prog) .exe)
+                if ((!USE_ARTIFICIAL_MATRICES)); then
+                    matrix=$(basename $(realpath $a) .mtx)       
+                else
+                    matrix=$(echo ${a} | awk '{print $1"_"$3"_"$4"_"$7"_"$8"_"$9"_"$10}')
+                fi
                 mv rave_prv_traces "${rave_output_dir}"/"${executable}_${matrix}"
-
             done
         done
     done

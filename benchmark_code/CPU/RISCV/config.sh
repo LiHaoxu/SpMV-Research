@@ -302,10 +302,11 @@ conf_vars=(
     # Path for the validation matrices.
     ['path_validation']="$( options=(
                         # "$HOME/Data/graphs/validation_matrices"
-                        "${script_dir}/../../../validation_matrices"
+                        # "${script_dir}/../../../validation_matrices"
                         # '/various/pmpakos/SpMV-Research/validation_matrices'
                         # '/various/pmpakos/SpMV-Research/validation_matrices/matrix_features/matrices'
                         # '/various/pmpakos/SpMV-Research/validation_matrices/download_matrices'
+                        /home/pmpakos/vvrettos-stuff/SpMV-Research/validation_matrices
                     )
                     find_valid_dir "${options[@]}"
                 )"
@@ -448,15 +449,15 @@ progs=(
     # ['bicg_div_d']="${script_dir}/spmv_code_bench/bicg_div_d.exe"
 
     # Custom csr
-    ['csr_naive_d']="${script_dir}/spmv_code_bench/spmv_csr_naive_d.exe"
-    ['csr_d']="${script_dir}/spmv_code_bench/spmv_csr_d.exe" # BENCH_AMD, BENCH_INTEL
+    # ['csr_naive_d']="${script_dir}/spmv_code_bench/spmv_csr_naive_d.exe"
+    # ['csr_d']="${script_dir}/spmv_code_bench/spmv_csr_d.exe" # BENCH_AMD, BENCH_INTEL
     # ['csr_f']="${script_dir}/spmv_code_bench/spmv_csr_f.exe"
     # ['csr_sym_d']="${script_dir}/spmv_code_bench/spmv_csr_sym_d.exe" # BENCH_SYM
     # ['csr_sym_f']="${script_dir}/spmv_code_bench/spmv_csr_sym_f.exe" # BENCH_SYM
     # ['csr_kahan_d']="${script_dir}/spmv_code_bench/spmv_csr_kahan_d.exe"
     # ['csr_prefetch_d']="${script_dir}/spmv_code_bench/spmv_csr_prefetch_d.exe"
     # ['csr_simd_d']="${script_dir}/spmv_code_bench/spmv_csr_simd_d.exe"
-    ['csr_vector_d']="${script_dir}/spmv_code_bench/spmv_csr_vector_d.exe"
+    # ['csr_vector_d']="${script_dir}/spmv_code_bench/spmv_csr_vector_d.exe"
     ['csr_vector_rave_d']="${script_dir}/spmv_code_bench/spmv_csr_vector_rave_d.exe"
     # ['csr_vector_d']="${script_dir}/spmv_code_bench/spmv_csr_balanced_distribute_early_d.exe"
     # ['csr_vector_perfect_nnz_balance_d']="${script_dir}/spmv_code_bench/spmv_csr_vector_perfect_nnz_balance_d.exe"
