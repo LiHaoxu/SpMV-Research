@@ -8,17 +8,20 @@ analysis has already run. Cleanup of data should be run by a different script. T
 just filters the data (vector length and vector mix) from the Rave output files.
 """
 
-rave_output_dir = "/home/pmpakos/vvrettos-stuff/rave-outputs"
-paraver_dir="/home/pmpakos/vvrettos-stuff/wxparaver-4.12.0"
-paramedir_bin= os.path.join(paraver_dir, "bin", "paramedir")
+cwd = os.getcwd()
+root_dir = os.path.dirname(cwd)
+
+rave_output_dir=root_dir+'/rave-outputs'
+paraver_dir=root_dir+'/wxparaver-4.12.0'
+paramedir_bin = os.path.join(paraver_dir, "bin", "paramedir")
 
 # Check if the executable is in the path
 if not os.path.exists(paramedir_bin):
     print(f"Executable {paramedir_bin} does not exist. Please check the path.")
     sys.exit(1)
 
-paraver_config_dir='/home/pmpakos/vvrettos-stuff/rave-scripts/paraver_cfgs/rave/per_phase_cfgs'
-filtered_dir='/home/pmpakos/vvrettos-stuff/filtered-rave-outputs'
+paraver_config_dir=cwd+'/paraver_cfgs/rave/per_phase_cfgs'
+filtered_dir=root_dir+'/filtered-rave-outputs'
 
 # Find the name of the .prv file
 executable_name = "spmv_csr_vector_rave_d.exe"
@@ -30,9 +33,6 @@ vector_length_config = "table_average_vl_per_instruction_per_phase.cfg"
 vector_mix_config = "tables_vector_mix_per_phase.cfg"
 
 config_files = [vector_length_config, vector_mix_config]
-
-# PWD
-current_working_dir = os.getcwd()
 
 config_command = ""
 for config in config_files:
@@ -80,7 +80,7 @@ for folder in rave_outputs:
     # Move the output files to the filtered folder
     for config in config_files:
         config_type = config.split(".cfg")[0]
-        local_output_file = os.path.join(current_working_dir, config_type)
+        local_output_file = os.path.join(cwd, config_type)
         filtered_output_file = os.path.join(filtered_folder, config_type)
 
         os.rename(local_output_file, filtered_output_file)

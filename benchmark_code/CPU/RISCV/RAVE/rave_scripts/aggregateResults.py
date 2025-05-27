@@ -32,11 +32,13 @@ def aggregate_vl_per_instruction(filename) -> float:
             stripped_line = line.split()
             return round(float(stripped_line[2]) / 8.0, 3)
 
+cwd = os.getcwd()
+root_dir = os.path.dirname(cwd)
+
 # Input path
-filtered_rave_outputs="/home/pmpakos/vvrettos-stuff/filtered-rave-outputs"
+filtered_rave_outputs=root_dir+'/filtered-rave-outputs'
 instruction_mix_output_name="tables_vector_mix_per_phase"
 vector_length_output_name="table_average_vl_per_instruction_per_phase"
-validation_matrices_path="/home/pmpakos/vvrettos-stuff/SpMV-Research/validation_matrices"
 
 output_file_names = [instruction_mix_output_name, vector_length_output_name]
 
@@ -47,21 +49,21 @@ aggregations = {
 }
 
 # Columns: matrix_name, scalar_perc, vectorp_perc, average_vector_length
-header = ['matrix_name', 'scalar_perc', 'vector_perc', 'average_vector_length', 'average_non_zero_per_rows']
+header = ['matrix_name', 'scalar_perc', 'vector_perc', 'average_vector_length', 'average_non_zeros_per_row']
 df = pd.DataFrame(columns=header)
+
+matrix_df = pd.read_csv('matrix_features.csv') # matrix,nr_rows,nr_cols,nr_nzeros
 
 folder_list = os.listdir(filtered_rave_outputs)
 
 for folder in folder_list:
     output_file_path = os.path.join(filtered_rave_outputs, folder)
-    matrix_path = os.path.join(validation_matrices_path, folder + ".mtx")
 
-    # Open file and read up until first line with an integer as first element
-    with open(matrix_path, 'r') as file:
-        for line in file:
-            if line.split()[0].isdigit():
-                break
-        non_zero_per_row = float(line.split()[2]) / float(line.split()[0])
+    # nr_rows = matrix_df[matrix_df['matrix'] == folder]['nr_rows'].values[0]
+    # nr_cols = matrix_df[matrix_df['matrix'] == folder]['nr_cols'].values[0]
+    # nr_nzeros = matrix_df[matrix_df['matrix'] == folder]['nr_nzeros'].values[0]
+    # non_zero_per_row = nr_nzeros / nr_rows
+    non_zero_per_row = matrix_df[matrix_df['matrix'] == folder]['nnz-r-avg'].values[0]
     
     scalar_perc, vector_perc = aggregations[instruction_mix_output_name](os.path.join(output_file_path, instruction_mix_output_name))
     if (scalar_perc == 0):
@@ -71,3 +73,16 @@ for folder in folder_list:
     df.loc[len(df)] = [folder, scalar_perc, vector_perc, average_vector_length, non_zero_per_row]
 
 df.to_csv("AggregatedVectorizationResults.csv", index=False)
+
+# lista = ['olm5000', 'nv2010', 'scircuit', 'mac_econ_fwd500', 'raefsky3', 'rgg_n_2_17_s0', 'bbmat', 'appu', 'mc2depi', 'rma10', 'cop20k_A', 'thermomech_dK', 'webbase-1M', 'cant', 'ASIC_680k', 'roadNet-TX', 'pdb1HYS', 'TSOPF_RS_b300_c3', 'Chebyshev4', 'consph', 'com-Youtube', 'rajat30', 'radiation', 'Stanford_Berkeley', 'shipsec1', 'PR02R', 'CurlCurl_2']
+# for folder in lista:
+#     row = matrix_df[matrix_df['matrix'] == folder]
+#     # print(row[['nr_rows', 'nnz-r-avg', 'nnz-r-std', 'bw-avg', 'skew_coeff', 'num-neigh-avg', 'cross_row_sim-avg']].values[0])
+#     nr_rows = row['nr_rows'].values[0]
+#     nnz_r_avg = row['nnz-r-avg'].values[0]
+#     nnz_r_std = row['nnz-r-std'].values[0]
+#     bw_avg = row['bw-avg'].values[0]
+#     skew_coeff = row['skew_coeff'].values[0]
+#     num_neigh_avg = row['num-neigh-avg'].values[0]
+#     cross_row_sim_avg = row['cross_row_sim-avg'].values[0]
+#     print(f"{folder}: {nr_rows}_{nnz_r_avg}_{nnz_r_std}_{bw_avg}_{skew_coeff}_{num_neigh_avg}_{cross_row_sim_avg}")
