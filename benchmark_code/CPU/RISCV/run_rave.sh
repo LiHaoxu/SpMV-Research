@@ -137,31 +137,32 @@ done
 
 matrices_validation=(
     olm5000
-    nv2010
-    scircuit
-    mac_econ_fwd500
-    raefsky3
-    rgg_n_2_17_s0
-    bbmat
-    appu
-    mc2depi
-    rma10
-    cop20k_A
-    thermomech_dK
-    webbase-1M
-    cant
-    ASIC_680k
-    roadNet-TX
-    pdb1HYS
-    TSOPF_RS_b300_c3
-    Chebyshev4
-    consph
-    com-Youtube
-    rajat30
-    radiation
-    Stanford_Berkeley
-    shipsec1
-    PR02R
+    # nv2010
+    # scircuit
+    # mac_econ_fwd500
+    # raefsky3
+    # rgg_n_2_17_s0
+    # bbmat
+    # appu
+    # mc2depi
+    # rma10
+    # cop20k_A
+    # thermomech_dK
+    # webbase-1M
+    # cant
+    # ASIC_680k
+    # roadNet-TX
+    # pdb1HYS
+    # TSOPF_RS_b300_c3
+    # Chebyshev4
+    # consph
+    # com-Youtube
+    # rajat30
+    # radiation
+    # Stanford_Berkeley
+    # shipsec1
+    # PR02R
+
     # scircuit
     # ldoor
     # boneS10
@@ -839,9 +840,9 @@ fi
 temp_labels=( $(printf "%s\n" /sys/class/hwmon/hwmon*/temp*_label | sort) )
 temp_inputs=( ${temp_labels[@]/label/input} )
 
-progs=(
-    ['csr_vector_rave_d']="${script_dir}/spmv_code_bench/spmv_csr_vector_rave_d.exe"
-)
+# progs=(
+#     ['csr_vector_rave_d']="${script_dir}/spmv_code_bench/spmv_csr_vector_rave_d.exe"
+# )
 
 for format_name in "${!progs[@]}"; do
     prog="${progs["$format_name"]}"

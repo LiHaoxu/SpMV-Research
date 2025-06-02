@@ -458,9 +458,12 @@ progs=(
     # ['csr_prefetch_d']="${script_dir}/spmv_code_bench/spmv_csr_prefetch_d.exe"
     # ['csr_simd_d']="${script_dir}/spmv_code_bench/spmv_csr_simd_d.exe"
     # ['csr_vector_d']="${script_dir}/spmv_code_bench/spmv_csr_vector_d.exe"
-    ['csr_vector_rave_d']="${script_dir}/spmv_code_bench/spmv_csr_vector_rave_d.exe"
+    # ['csr_vector_rave_d']="${script_dir}/spmv_code_bench/spmv_csr_vector_rave_d.exe"
     # ['csr_vector_d']="${script_dir}/spmv_code_bench/spmv_csr_balanced_distribute_early_d.exe"
     # ['csr_vector_perfect_nnz_balance_d']="${script_dir}/spmv_code_bench/spmv_csr_vector_perfect_nnz_balance_d.exe"
+    
+    # ['csr_sell_c_s_d']="${script_dir}/spmv_code_bench/spmv_csr_sell_c_s_d.exe"
+    ['csr_sell_c_s_rave_d']="${script_dir}/spmv_code_bench/spmv_csr_sell_c_s_rave_d.exe"
 
     # Custom csr x86
     # ['csr_vector_x86_d']="${script_dir}/spmv_code_bench/spmv_csr_vector_x86_d.exe" # BENCH_AMD, BENCH_INTEL
