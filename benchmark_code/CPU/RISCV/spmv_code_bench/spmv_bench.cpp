@@ -181,9 +181,17 @@ check_accuracy(char * buf, long buf_n, INT_T * csr_ia, INT_T * csr_ja, ValueType
 	}
 
 	ValueTypeValidation maxDiff = 0, diff;
-	
+	int maxErrorCounter = 0;
 	for(i=0;i<csr_m;i++)
 	{
+		if (y_gold[i] != y_test[i]) {
+			printf("y_gold[%ld] = %.10g, y_test[%ld] = %.10g\n", i, (double)y_gold[i], i, (double)y_test[i]);
+			maxErrorCounter++;
+			if (maxErrorCounter > 20) {
+				exit(-42);
+			}
+		}
+
 		diff = Abs(y_gold[i] - y_test[i]);
 
 		// maxDiff = Max(maxDiff, diff);
@@ -1018,7 +1026,8 @@ child_proc_label:
 	#endif
 
 	long min_num_loops;
-	min_num_loops = 256;
+	// min_num_loops = 256;
+	min_num_loops = 1;
 
 	/* Start tracing before calling compute */
 	#ifdef RAVE_TRACING

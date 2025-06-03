@@ -133,11 +133,11 @@ done
 
 
 matrices_validation=(
-    appu
+    # appu
     scircuit
-    ldoor
-    boneS10
-    af_shell10
+    # ldoor
+    # boneS10
+    # af_shell10
     # nv2010
     # spal_004
     # olm5000

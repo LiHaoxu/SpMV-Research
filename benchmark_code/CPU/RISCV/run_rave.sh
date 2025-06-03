@@ -20,7 +20,6 @@ else
     path_selected_sorted='/home/jim/Data/graphs/selected_matrices_sorted'
 fi
 
-
 ## # GOMP_CPU_AFFINITY pins the threads to specific cpus, even when assigning more cores than threads.
 ## # e.g. with 'GOMP_CPU_AFFINITY=0,1,2,3' and 2 threads, the threads are pinned: t0->core0 and t1->core1.
 ## export GOMP_CPU_AFFINITY="$cpu_affinity"
@@ -133,7 +132,6 @@ done
 
 # printf "%s\n" "${matrices_tamu_real_symmetric[@]}"
 # exit
-
 
 matrices_validation=(
     olm5000
@@ -840,9 +838,11 @@ fi
 temp_labels=( $(printf "%s\n" /sys/class/hwmon/hwmon*/temp*_label | sort) )
 temp_inputs=( ${temp_labels[@]/label/input} )
 
-# progs=(
-#     ['csr_vector_rave_d']="${script_dir}/spmv_code_bench/spmv_csr_vector_rave_d.exe"
-# )
+progs=(
+    # ['csr_vector_rave_d']="${script_dir}/spmv_code_bench/spmv_csr_vector_rave_d.exe"
+    # ['csr_vector_bulk_d']="${script_dir}/spmv_code_bench/spmv_csr_vector_bulk_d.exe"
+    ['csr_vector_bulk_rave_d']="${script_dir}/spmv_code_bench/spmv_csr_vector_bulk_rave_d.exe"
+)
 
 for format_name in "${!progs[@]}"; do
     prog="${progs["$format_name"]}"

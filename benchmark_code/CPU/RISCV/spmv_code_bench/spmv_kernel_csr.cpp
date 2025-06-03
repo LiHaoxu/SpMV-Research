@@ -8,14 +8,13 @@
 #include "spmv_kernel.h"
 #include <riscv_vector.h>
 
+#ifdef RAVE_TRACING
+	#include <sdv_tracing.h>
+#endif
+
 #ifdef CUSTOM_VECTOR
 	/* Include this when using the intrinsics (vector function) */
 	// #include <riscv_vector.h>
-
-	/* Include this if we are running RAVE to simulate vector code */
-	#ifdef RAVE_TRACING
-		#include <sdv_tracing.h>
-	#endif
 #endif
 
 #ifdef __cplusplus
@@ -208,6 +207,7 @@ void compute_csr_kahan(CSRArrays * restrict csr, ValueType * restrict x, ValueTy
 void compute_csr_prefetch(CSRArrays * restrict csr, ValueType * restrict x , ValueType * restrict y);
 void compute_csr_omp_simd(CSRArrays * restrict csr, ValueType * restrict x , ValueType * restrict y);
 void compute_csr_vector(CSRArrays * restrict csr, ValueType * restrict x , ValueType * restrict y);
+void compute_csr_vector_bulk(CSRArrays * restrict csr, ValueType * restrict x , ValueType * restrict y);
 void compute_csr_vector_perfect_nnz_balance(CSRArrays * restrict csr, ValueType * restrict x , ValueType * restrict y);
 
 
@@ -221,6 +221,8 @@ CSRArrays::spmv(ValueType * x, ValueType * y)
 		compute_csr_omp_simd(this, x, y);
 	#elif defined(CUSTOM_VECTOR)
 		compute_csr_vector(this, x, y);
+	#elif defined(CUSTOM_VECTOR_BULK)
+		compute_csr_vector_bulk(this, x, y);
 	#elif defined(CUSTOM_VECTOR_PERFECT_NNZ_BALANCE)
 		compute_csr_vector_perfect_nnz_balance(this, x, y);
 	#elif defined(CUSTOM_KAHAN)
@@ -421,9 +423,9 @@ subkernel_csr_vector(CSRArrays * restrict csr, ValueType * restrict x, ValueType
 void
 subkernel_csr_vector(CSRArrays * restrict csr, ValueType * restrict x, ValueType * restrict y, long i_s, long i_e)
 {
-	#ifdef RAVE_TRACING
-		trace_event_and_value(1000, 1);
-	#endif
+	// #ifdef RAVE_TRACING
+	// 	trace_event_and_value(1000, 1);
+	// #endif
 
 	ValueType sum;
 	long i, j;
@@ -467,12 +469,152 @@ subkernel_csr_vector(CSRArrays * restrict csr, ValueType * restrict x, ValueType
 		y[i] = sum;
 	}
 
-	#ifdef RAVE_TRACING
-		trace_event_and_value(1000, 0);
-	#endif
+	// #ifdef RAVE_TRACING
+	// 	trace_event_and_value(1000, 0);
+	// #endif
 }
 
 #endif /* EPI_INTRINSICS */
+
+void subkernel_csr_vector_bulk(CSRArrays * restrict csr, ValueType * restrict x, ValueType * restrict y, long i_s, long i_e)
+{
+	#ifdef RAVE_TRACING
+		trace_event_and_value(1000, 1);
+	#endif
+
+	int maxNaiveComputations = 5000;
+	int naiveComputationsCounter = 0;
+
+	ValueType sum;
+	long i, j;
+	long j_s, j_e; // Column Start, Column End
+
+	/* Get the max vector length */
+	long maxVectorLength = __riscv_vsetvl_e64m1(0x7FFFFFFF);
+
+	/* Iterate through rows from start to see current step end */
+	long currentRow = i_s;
+	long rowStart = i_s, rowEnd = i_e;
+	long nnz = 0;
+	long rowsToCompute = 0;
+
+	/* While givenVectorLength is less than the maxVectorLength (architecture specific), add more rows to the vector */
+	while (rowStart < rowEnd) {
+		/* Find start and end of current computation part */
+		while (nnz < maxVectorLength || currentRow < rowEnd) {
+			j_s = csr->row_ptr[rowStart];
+			j_e = csr->row_ptr[currentRow + 1];
+
+			if (j_s == j_e) {
+				currentRow++;
+				continue;
+			}
+
+			nnz = j_e - j_s;
+
+			if (nnz >= maxVectorLength) {
+				/* Check if we should calculate using the naive method instead */
+				rowsToCompute = currentRow - rowStart;
+
+				if (rowsToCompute == 1) {
+					/* Non zeroes per row already filled with one row, use naive method instead */					
+					if (naiveComputationsCounter >= maxNaiveComputations) {
+						subkernel_csr_vector(csr, x, y, rowStart, rowEnd);
+						return;
+					}
+					else {
+						subkernel_csr_vector(csr, x, y, rowStart, rowStart+1);
+						naiveComputationsCounter++;
+						rowStart++;
+						currentRow++;
+						continue;
+					}
+				}
+				/* If we ended up here, that means that we can "efficiently" execute using the other method, meaning that
+					multiple rows should be loaded and that we have found our start and end row indices. */
+				else {
+					break;
+				}
+			}
+
+			/* We haven't filled the rows yet */
+			currentRow++;
+		}
+
+		/* I have found that the current j_e - j_s difference is larger than my 
+			maxVectorLength, so the endRow of the comp part should be one less than than the currentRow.
+			Basically I am doing a mini-kernel between rows i_s=rowStart and i_e=currentRow-1.
+		*/
+
+		if (currentRow > rowEnd) {
+			currentRow = rowEnd;
+		}
+		/* Actually Execute Kernel */
+		currentRow -= 1;
+	
+		if (rowStart == currentRow) {
+			break;
+		}
+
+		j_s = csr->row_ptr[rowStart];
+		j_e = csr->row_ptr[currentRow + 1];
+		
+		nnz = j_e - j_s;
+
+		long givenVectorLength = __riscv_vsetvl_e64m1(nnz);
+		if (givenVectorLength != nnz) {
+			/* Create a fail-safe for this one as well. Basically make it run the naive vectorization version */
+			subkernel_csr_vector(csr, x, y, rowStart, currentRow - 1);
+			rowStart = currentRow;
+			continue;
+		}
+
+		vfloat64m1_t va = __riscv_vle64_v_f64m1(&csr->a[j_s], givenVectorLength);
+
+		vuint32mf2_t v_idx_row = __riscv_vle32_v_u32mf2((uint32_t*) &csr->ja[j_s], givenVectorLength);
+
+		vuint32mf2_t vthree = __riscv_vmv_v_x_u32mf2(3, givenVectorLength);
+		v_idx_row = __riscv_vsll_vv_u32mf2(v_idx_row, vthree, givenVectorLength);
+		vfloat64m1_t vx = __riscv_vluxei32_v_f64m1(x, v_idx_row, givenVectorLength);
+
+		/* Debug: store vx to array and print contents */
+		vfloat64m1_t vprod = __riscv_vfmul_vv_f64m1(va, vx, givenVectorLength);
+
+		/* Loop through rows again. Should keep in an array the number of elements per row to handle the shifts */
+		long currentNnz = 0;
+		for (long i_sum = rowStart; i_sum < currentRow; i_sum++) {
+			currentNnz = csr->row_ptr[i_sum + 1] - csr->row_ptr[i_sum];
+
+			#ifndef BULK_VECTOR_STORE
+				if (currentNnz == 0) {
+					y[i_sum] = 0.0;
+					continue;
+				}
+
+				vfloat64m1_t sum = __riscv_vfmv_v_f_f64m1(0.0, currentNnz);
+				sum = __riscv_vfredusum_vs_f64m1_f64m1(vprod, sum, currentNnz);
+				y[i_sum] = __riscv_vfmv_f_s_f64m1_f64(sum);
+
+				/* Shift positions using slidedown */
+				vprod = __riscv_vslidedown_vx_f64m1(vprod, currentNnz, givenVectorLength);
+			#else
+				
+
+			#endif
+	
+		}
+
+		/* Update rowStart */
+		rowStart = currentRow;
+	}
+
+	#ifdef RAVE_TRACING
+		trace_event_and_value(1000, 0);
+	#endif
+
+	return;
+}
+
 
 void
 subkernel_csr_scalar_kahan(CSRArrays * restrict csr, ValueType * restrict x, ValueType * restrict y, long i_s, long i_e)
@@ -556,6 +698,34 @@ compute_csr_vector(CSRArrays * restrict csr, ValueType * restrict x, ValueType *
 		#endif
 	}
 }
+
+
+void
+compute_csr_vector_bulk(CSRArrays * restrict csr, ValueType * restrict x, ValueType * restrict y)
+{
+	#pragma omp parallel
+	{
+		int tnum = omp_get_thread_num();
+		long i_s, i_e;
+		i_s = thread_i_s[tnum];
+		i_e = thread_i_e[tnum];
+		#ifdef PRINT_STATISTICS
+		double time;
+		time = time_it(1,
+		#endif
+			subkernel_csr_vector_bulk(csr, x, y, i_s, i_e);
+		#ifdef PRINT_STATISTICS
+		);
+		thread_time_compute[tnum] += time;
+		time = time_it(1,
+			_Pragma("omp barrier")
+		);
+		thread_time_barrier[tnum] += time;
+		#endif
+	}
+}
+
+
 
 
 
