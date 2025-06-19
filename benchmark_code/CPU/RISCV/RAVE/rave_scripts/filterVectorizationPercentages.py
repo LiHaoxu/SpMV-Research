@@ -24,7 +24,8 @@ paraver_config_dir=cwd+'/paraver_cfgs/rave/per_phase_cfgs'
 filtered_dir=root_dir+'/filtered-rave-outputs'
 
 # Find the name of the .prv file
-executable_name = "spmv_csr_vector_rave_d.exe"
+algorithm_name = "spmv_csr_sell_c_s_rave_d"
+executable_name = algorithm_name+".exe"
 prv_file = f'rave-{executable_name}.prv'
 
 # List rave-outputs dir
@@ -45,15 +46,19 @@ for config in config_files:
 # 3. Move the output files to a filtered folder
 
 for folder in rave_outputs:
+    if not folder.startswith(algorithm_name):
+        print(f"Skipping folder {folder} as it does not start with {algorithm_name}.")
+        continue
     print("Currently processing folder:", folder)
-    print("Matrix Name:", folder.split("spmv_csr_vector_rave_d_")[1])
+    # print(folder.split(algorithm_name+"_"))
+    print("Matrix Name:", folder.split(algorithm_name+"_")[1])
     prv_path=os.path.join(rave_output_dir, folder, prv_file)
     if not os.path.exists(prv_path):
         print(f"File {prv_path} does not exist. Skipping...")
         continue
 
     # Get the matrix name from the folder
-    matrix_name = folder.split("spmv_csr_vector_rave_d_")[1]
+    matrix_name = folder.split(algorithm_name+"_")[1]
     
     # Create folder in filtered dir
     filtered_folder = os.path.join(filtered_dir, matrix_name)

@@ -194,7 +194,7 @@ void sellcs_mv_d(const sellcs_matrix_t* matrix,
 
     /* This can also be achieved by shifting 3 times later??? */
     #ifndef INDEX64
-        vuint32m1_t idxmult = __riscv_vmv_v_x_u32m1(8, vlen);
+        vuint32mf2_t idxmult = __riscv_vmv_v_x_u32mf2(8, vlen);
     #else
         vuint64m1_t idxmult = __riscv_vmv_v_x_u64m1(8, vlen);
 
@@ -225,8 +225,7 @@ void sellcs_mv_d(const sellcs_matrix_t* matrix,
 
     #ifndef INDEX64
         vuint32mf2_t y_sc_idx = __riscv_vle32_v_u32mf2((uint32_t*) &matrix->row_order[row_idx], gvl);
-        // y_sc_idx = __riscv_vmul_vv_u32mf2(y_sc_idx, idxmult, gvl);
-        y_sc_idx = __riscv_vmul_vx_u32mf2(y_sc_idx, 8, gvl);
+        y_sc_idx = __riscv_vmul_vv_u32mf2(y_sc_idx, idxmult, gvl);
     #else
         vuint64m1_t y_sc_idx = __riscv_vle64_v_u64m1((uint64_t*) &matrix->row_order[row_idx], gvl);
         y_sc_idx = __riscv_vmul_vv_u64m1(y_sc_idx, idxmult, gvl);
@@ -238,8 +237,7 @@ void sellcs_mv_d(const sellcs_matrix_t* matrix,
 
         #ifndef INDEX64
             vuint32mf2_t col_index_vblock = __riscv_vle32_v_u32mf2((uint32_t*) colidx_pointer, gvl);
-            // col_index_vblock = __riscv_vmul_vv_u32mf2(col_index_vblock, idxmult, gvl);
-            // col_index_vblock = __riscv_vmul_vx_u32mf2(col_index_vblock, 8, gvl);
+            col_index_vblock = __riscv_vmul_vv_u32mf2(col_index_vblock, idxmult, gvl);
         #else
             vuint64m1_t col_index_vblock = __riscv_vle64_v_u64m1((uint64_t*) colidx_pointer, gvl);
             col_index_vblock = __riscv_vmul_vv_u64m1(col_index_vblock, idxmult, gvl);

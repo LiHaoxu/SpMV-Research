@@ -77,7 +77,7 @@ spmv_csr_vector_rave$(SUFFIX).exe: obj/spmv_bench_rave$(SUFFIX).o spmv_kernel_cs
 # 	$(CPP) $(CPPFLAGS) $(CPPFLAGS_CUSTOM) -D'CUSTOM_VECTOR_PERFECT_NNZ_BALANCE' $^ -o $@ $(LDFLAGS)
 
 SELL_C_S_ROOT=./sell_c_s
-SELL_C_S_CFLAGS=-I'$(SELL_C_S_ROOT)' -D'EPI_EXT=09' -D'INDEX64=1' -D'OMP=1' -D'RAVE_TRACING=1'
+SELL_C_S_CFLAGS=-I'$(SELL_C_S_ROOT)' -D'EPI_EXT=09' -D'OMP=1' -D'RAVE_TRACING=1' -D'INDEX64=1'
 SELL_C_S_LDFLAGS=-L'$(SELL_C_S_ROOT)' -lsellcs-spmv_i64_omp
 
 spmv_csr_sell_c_s$(SUFFIX).exe: obj/spmv_bench$(SUFFIX).o spmv_kernel_sell_c_s.cpp $(LIB_OBJ)

@@ -598,7 +598,6 @@ void subkernel_csr_vector_bulk(CSRArrays * restrict csr, ValueType * restrict x,
 				/* Shift positions using slidedown */
 				vprod = __riscv_vslidedown_vx_f64m1(vprod, currentNnz, givenVectorLength);
 			#else
-				
 
 			#endif
 	

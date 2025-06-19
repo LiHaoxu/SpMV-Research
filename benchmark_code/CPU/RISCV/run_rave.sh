@@ -841,7 +841,8 @@ temp_inputs=( ${temp_labels[@]/label/input} )
 progs=(
     # ['csr_vector_rave_d']="${script_dir}/spmv_code_bench/spmv_csr_vector_rave_d.exe"
     # ['csr_vector_bulk_d']="${script_dir}/spmv_code_bench/spmv_csr_vector_bulk_d.exe"
-    ['csr_vector_bulk_rave_d']="${script_dir}/spmv_code_bench/spmv_csr_vector_bulk_rave_d.exe"
+    # ['csr_vector_bulk_rave_d']="${script_dir}/spmv_code_bench/spmv_csr_vector_bulk_rave_d.exe"
+    ['csr_sell_c_s_rave_d']="${script_dir}/spmv_code_bench/spmv_csr_sell_c_s_rave_d.exe"
 )
 
 for format_name in "${!progs[@]}"; do
