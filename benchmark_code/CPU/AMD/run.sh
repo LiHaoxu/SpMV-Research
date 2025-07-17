@@ -134,58 +134,58 @@ done
 
 matrices_validation=(
 
-    scircuit
-    mac_econ_fwd500
-    raefsky3
-    rgg_n_2_17_s0
+    # scircuit
+    # mac_econ_fwd500
+    # raefsky3
+    # rgg_n_2_17_s0
     bbmat
-    appu
-    mc2depi
-    rma10
-    cop20k_A
-    thermomech_dK
-    webbase-1M
-    cant
-    ASIC_680k
-    roadNet-TX
-    pdb1HYS
-    TSOPF_RS_b300_c3
-    Chebyshev4
-    consph
-    com-Youtube
-    rajat30
-    radiation
-    Stanford_Berkeley
-    shipsec1
-    PR02R
-    CurlCurl_2
-    gupta3
-    mip1
-    rail4284
-    pwtk
-    crankseg_2
-    Si41Ge41H72
-    TSOPF_RS_b2383
-    in-2004
-    Ga41As41H72
-    eu-2005
-    wikipedia-20051105
-    kron_g500-logn18
-    rajat31
-    human_gene1
-    delaunay_n22
-    GL7d20
-    sx-stackoverflow
-    dgreen
-    mawi_201512012345
-    ldoor
-    dielFilterV2real
-    circuit5M
-    soc-LiveJournal1
-    bone010
-    audikw_1
-    cage15
-    kmer_V2a
+    # appu
+    # mc2depi
+    # rma10
+    # cop20k_A
+    # thermomech_dK
+    # webbase-1M
+    # cant
+    # ASIC_680k
+    # roadNet-TX
+    # pdb1HYS
+    # TSOPF_RS_b300_c3
+    # Chebyshev4
+    # consph
+    # com-Youtube
+    # rajat30
+    # radiation
+    # Stanford_Berkeley
+    # shipsec1
+    # PR02R
+    # CurlCurl_2
+    # gupta3
+    # mip1
+    # rail4284
+    # pwtk
+    # crankseg_2
+    # Si41Ge41H72
+    # TSOPF_RS_b2383
+    # in-2004
+    # Ga41As41H72
+    # eu-2005
+    # wikipedia-20051105
+    # kron_g500-logn18
+    # rajat31
+    # human_gene1
+    # delaunay_n22
+    # GL7d20
+    # sx-stackoverflow
+    # dgreen
+    # mawi_201512012345
+    # ldoor
+    # dielFilterV2real
+    # circuit5M
+    # soc-LiveJournal1
+    # bone010
+    # audikw_1
+    # cage15
+    # kmer_V2a
 
 )
 matrices_validation_tamu=( ${matrices_validation[@]} )
@@ -615,14 +615,14 @@ bench()
     declare c
     declare i
 
-    export LEVEL1_DCACHE_LINESIZE="$(read v < /sys/devices/system/cpu/cpu0/cache/index0/coherency_line_size; echo ${v%K})"
-    export LEVEL1_DCACHE_SIZE="$(read v < /sys/devices/system/cpu/cpu0/cache/index0/size; echo $((${v%K} * 1024)) )"
-    export LEVEL2_CACHE_SIZE="$(read v < /sys/devices/system/cpu/cpu0/cache/index2/size; echo $((${v%K} * 1024)) )"
-    export LEVEL3_CACHE_SIZE="$(read v < /sys/devices/system/cpu/cpu0/cache/index3/size; echo $((${v%K} * 1024)) )"
-    export NUM_CPUS="$(ls /sys/devices/system/cpu/ | grep -c 'cpu[[:digit:]]\+')"
-    export LEVEL3_CACHE_CPUS_PER_NODE="$(for range in $(cat /sys/devices/system/cpu/cpu0/cache/index3/shared_cpu_list | tr ',' ' '); do mapfile -t -d '-' a < <(printf "$range"); seq "${a[@]}"; done | wc -l)"
-    export LEVEL3_CACHE_NUM_NODES="$(( NUM_CPUS / LEVEL3_CACHE_CPUS_PER_NODE ))"
-    export LEVEL3_CACHE_SIZE_TOTAL="$(( LEVEL3_CACHE_SIZE * LEVEL3_CACHE_NUM_NODES ))"
+    # export LEVEL1_DCACHE_LINESIZE="$(read v < /sys/devices/system/cpu/cpu0/cache/index0/coherency_line_size; echo ${v%K})"
+    # export LEVEL1_DCACHE_SIZE="$(read v < /sys/devices/system/cpu/cpu0/cache/index0/size; echo $((${v%K} * 1024)) )"
+    # export LEVEL2_CACHE_SIZE="$(read v < /sys/devices/system/cpu/cpu0/cache/index2/size; echo $((${v%K} * 1024)) )"
+    # export LEVEL3_CACHE_SIZE="$(read v < /sys/devices/system/cpu/cpu0/cache/index3/size; echo $((${v%K} * 1024)) )"
+    # export NUM_CPUS="$(ls /sys/devices/system/cpu/ | grep -c 'cpu[[:digit:]]\+')"
+    # export LEVEL3_CACHE_CPUS_PER_NODE="$(for range in $(cat /sys/devices/system/cpu/cpu0/cache/index3/shared_cpu_list | tr ',' ' '); do mapfile -t -d '-' a < <(printf "$range"); seq "${a[@]}"; done | wc -l)"
+    # export LEVEL3_CACHE_NUM_NODES="$(( NUM_CPUS / LEVEL3_CACHE_CPUS_PER_NODE ))"
+    # export LEVEL3_CACHE_SIZE_TOTAL="$(( LEVEL3_CACHE_SIZE * LEVEL3_CACHE_NUM_NODES ))"
 
     mapfile -t -d ':' array_affinities < <(printf "$cpu_affinity")
     for ((i=0;i<${#array_cores[@]};i++)); do
@@ -740,6 +740,8 @@ matrices=(
     # "${matrices_bicg[@]}"
 
     # "${matrices_underperform_gpu[@]}"
+
+    # "../../../../validation_matrices/scircuit.mtx"
 
     # "${path_tamu}/matrices/cop20k_A/cop20k_A.mtx"
     # "${path_tamu}/matrices/circuit204/circuit204.mtx"

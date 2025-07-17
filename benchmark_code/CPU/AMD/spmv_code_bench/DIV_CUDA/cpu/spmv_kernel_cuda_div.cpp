@@ -1,0 +1,622 @@
+#include <stdlib.h>
+#include <stdio.h>
+#include <omp.h>
+
+// #include <cuda.h>
+// #include <cooperative_groups.h>
+
+#include "macros/cpp_defines.h"
+
+#include "../spmv_bench_common.h"
+#include "../spmv_kernel.h"
+
+// #include <x86intrin.h>
+
+#ifdef __cplusplus
+extern "C" {
+#endif
+	#include "macros/macrolib.h"
+	#include "time_it.h"
+	#include "parallel_util.h"
+	#include "array_metrics.h"
+	// #include "x86_util.h"
+
+	#include "lock/lock_util.h"
+
+	#include "aux/csr_converter.h"
+
+	#include "aux/dynamic_array.h"
+
+	// #include "cuda/cuda_util.h"
+#ifdef __cplusplus
+}
+#endif
+
+
+struct __attribute__((aligned(64))) padded_int64_t {
+	int64_t val __attribute__((aligned(64)));
+	char padding[0] __attribute__((aligned(64)));
+};
+
+
+struct __attribute__((aligned(64))) thread_data {
+	long i_s;
+	long i_e;
+
+	long num_vals;
+
+	long num_packets;
+	long compr_data_size;
+	unsigned char * compr_data;
+
+	// Statistics
+
+	double time_compute;
+
+	uint64_t row_bits_accum;
+	uint64_t col_bits_accum;
+	uint64_t row_col_bytes_accum;
+
+	double packet_unique_values_fraction_accum;
+};
+
+static struct thread_data ** tds;
+
+
+static
+void
+init_thread_statistics(struct thread_data * td)
+{
+	td->time_compute = 0;
+	td->row_bits_accum = 0;
+	td->col_bits_accum = 0;
+	td->row_col_bytes_accum = 0;
+	td->packet_unique_values_fraction_accum = 0;
+}
+
+
+#if defined(DIV_TYPE_RF)
+	#include "spmv_kernel_div_kernels_rf.h"
+#elif defined(DIV_TYPE_RF_CONST_SIZE_ROW)
+	#include "spmv_kernel_div_kernels_rf_const_size_row.h"
+#elif defined(DIV_TYPE_SELECT)
+	#include "spmv_kernel_div_kernels_select.h"
+#elif defined(DIV_TYPE_ORD2)
+	// #include "spmv_kernel_div_kernels_rf_ord2_buf.h"
+	#include "ord2/spmv_kernel_div_kernels_rf_ord2.h"
+#elif defined(DIV_TYPE_COLS_SORT)
+	#include "spmv_kernel_div_kernels_cols_sort.h"
+#elif defined(DIV_TYPE_SYM_RF_LOCAL)
+	#include "spmv_kernel_div_sym_kernels_rf_local_split_new_packet.h"
+	// #include "spmv_kernel_div_sym_kernels_rf_local_split_new_packet_accum.h"
+#else
+	#include "spmv_kernel_cuda_div_kernels.h"
+#endif
+
+
+extern int prefetch_distance;
+
+// Statistics
+
+double time_compress;
+extern long num_loops_out;
+
+
+//~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+//------------------------------------------------------------------------------------------------------------------------------------------
+//-                                                                SpMV                                                                    -
+//------------------------------------------------------------------------------------------------------------------------------------------
+//~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+
+long
+reduce_add_long(long a, long b)
+{
+	return a + b;
+}
+
+double
+reduce_add_double(double a, double b)
+{
+	return a + b;
+}
+
+double
+reduce_min_double(double a, double b)
+{
+	return a < b ? a : b;
+}
+
+
+//------------------------------------------------------------------------------------------------------------------------------------------
+//- Bucketsort
+//------------------------------------------------------------------------------------------------------------------------------------------
+
+#include "sort/bucketsort/bucketsort_gen_undef.h"
+#define BUCKETSORT_GEN_TYPE_1  int
+#define BUCKETSORT_GEN_TYPE_2  int
+#define BUCKETSORT_GEN_TYPE_3  int
+#define BUCKETSORT_GEN_TYPE_4  void
+#define BUCKETSORT_GEN_SUFFIX  _packet_type
+#include "sort/bucketsort/bucketsort_gen.c"
+static inline
+int
+bucketsort_find_bucket(int * A, long i, __attribute__((unused)) void * unused)
+{
+		return A[i];
+}
+
+#include "sort/quicksort/quicksort_gen_undef.h"
+#define QUICKSORT_GEN_TYPE_1  int
+#define QUICKSORT_GEN_TYPE_2  int
+#define QUICKSORT_GEN_TYPE_3  int
+#define QUICKSORT_GEN_SUFFIX  _packet_type
+#include "sort/quicksort/quicksort_gen.c"
+static inline
+int
+quicksort_cmp(int a, int b, int * cols)
+{
+	return cols[a] > cols[b] ? 1 : cols[a] < cols[b] ? -1 : 0;
+}
+
+
+struct DIVArray : Matrix_Format
+{
+	INT_T * row_ptr;                             // the usual rowptr (of size m+1)
+	INT_T * ja;                                  // the colidx of each NNZ (of size nnz)
+	ValueTypeReference * a;
+	long symmetric;
+	long symmetry_expanded;
+
+	ValueType * x_bench, * y_bench;
+
+	struct padded_int64_t finished_threads;
+
+	double matrix_mae, matrix_max_ae, matrix_mse, matrix_mape, matrix_smape;
+	double matrix_lnQ_error, matrix_mlare, matrix_gmare;
+
+	void calculate_matrix_compression_error(ValueType * a_conv, INT_T * csr_row_ptr_new, INT_T * csr_ja_new, ValueType * csr_a_new);
+
+	DIVArray(INT_T * row_ptr, INT_T * ja, ValueTypeReference * a, long m, long n, long nnz, long symmetric, long symmetry_expanded) : Matrix_Format(m, n, nnz), row_ptr(row_ptr), ja(ja), a(a), symmetric(symmetric), symmetry_expanded(symmetry_expanded)
+	{
+		long num_threads = omp_get_max_threads();
+		double time_balance;
+		long i;
+
+		tds = (typeof(tds)) aligned_alloc(64, num_threads * sizeof(*tds));
+
+		time_balance = time_it(1,
+			_Pragma("omp parallel")
+			{
+				long tnum = omp_get_thread_num();
+				struct thread_data * td;
+				long i_s, i_e;
+
+				loop_partitioner_balance_prefix_sums(num_threads, tnum, row_ptr, m, nnz, &i_s, &i_e);
+
+				td = (typeof(td)) aligned_alloc(64, sizeof(*td));
+
+				td->i_s = i_s;
+				td->i_e = i_e;
+
+				tds[tnum] = td;
+
+				init_thread_statistics(td);
+			}
+		);
+		printf("balance time = %g\n", time_balance);
+
+		time_compress = time_it(1,
+			const long num_packet_vals = atol(getenv("CSRCV_NUM_PACKET_VALS"));
+			compress_init_div(a, nnz, num_packet_vals);
+
+			_Pragma("omp parallel")
+			{
+				long tnum = omp_get_thread_num();
+				struct thread_data * td = tds[tnum];
+				unsigned char * packet_buf;
+				long t_nnz;
+				long max_packet_size;
+				__attribute__((unused)) long ps, pp, i, i_s, i_e, j, j_s, j_e, k;
+				long num_vals, num_vals_max, num_vals_total=0;
+				long size;
+				dynarray_uc * da_compr_data;
+
+				i_s = td->i_s;
+				i_e = td->i_e;
+				j_s = row_ptr[i_s];
+				j_e = row_ptr[i_e];
+
+				_Pragma("omp single")
+				{
+					printf("Number of packet vals = %ld\n", num_packet_vals);
+				}
+
+				t_nnz = j_e - j_s;
+
+				long da_init_size = t_nnz * (sizeof(*row_ptr) + sizeof(*ja) + sizeof(ValueType));
+				if (symmetric)
+					da_init_size /= 2;
+				da_compr_data= dynarray_new_uc(da_init_size);
+
+				/* We also add 'sizeof(struct packet_header)' for the case of extremely small matrices. */
+				max_packet_size = sizeof(struct packet_header) + num_packet_vals * (sizeof(*row_ptr) + sizeof(*ja) + 8 * sizeof(ValueType));
+				packet_buf= (typeof(packet_buf)) aligned_alloc(64, max_packet_size);
+
+				i = i_s;
+				ps = 0;
+				pp = 0;
+				j = j_s;
+				while (j < j_e)
+				{
+					while (row_ptr[i] < j)
+						i++;
+					if (row_ptr[i] != j)
+						i--;
+					// Remove empty rows.
+					while (row_ptr[i] == row_ptr[i+1])
+						i++;
+
+					num_vals_max = (j + num_packet_vals <= j_e) ? num_packet_vals : j_e - j;
+					compress_kernel_div(row_ptr, ja, &a[j], symmetric, i, i_s, i_e, j, packet_buf, num_vals_max, &num_vals, &size);
+					if (size > max_packet_size)
+						error("data buffer overflow");
+					num_vals_total += num_vals;
+
+					if (size > 0)
+					{
+						dynarray_push_back_array_uc(da_compr_data, packet_buf, size);
+						pp++;
+					}
+
+					j += num_vals;
+				}
+				td->num_vals = num_vals_total;
+
+				td->num_packets = pp;
+				td->compr_data_size = da_compr_data->size;
+				dynarray_export_array_uc(da_compr_data, &td->compr_data);
+				dynarray_destroy_uc(&da_compr_data);
+			}
+		);
+		printf("compression time = %g\n", time_compress);
+
+		long nnz_new= 0;
+		mem_footprint = 0;
+		for (i=0;i<num_threads;i++)
+		{
+			mem_footprint += tds[i]->compr_data_size;
+			nnz_new += tds[i]->num_vals;
+		}
+		if (nnz_new != nnz)
+			error("nnz_new = %ld != nnz = %ld", nnz_new, nnz);
+
+		/* Decompress and calculate compression error. */
+
+		INT_T * coo_ia_new = (typeof(coo_ia_new)) aligned_alloc(64, nnz * sizeof(*coo_ia_new));
+		INT_T * coo_ja_new = (typeof(coo_ja_new)) aligned_alloc(64, nnz * sizeof(*coo_ja_new));
+		ValueType * coo_a_new = (typeof(coo_a_new)) aligned_alloc(64, nnz * sizeof(*coo_a_new));
+
+		INT_T * csr_row_ptr_new= (typeof(csr_row_ptr_new)) aligned_alloc(64, (m+1) * sizeof(*csr_row_ptr_new));
+		INT_T * csr_ja_new = (typeof(csr_ja_new)) aligned_alloc(64, nnz * sizeof(*csr_ja_new));
+		ValueType * csr_a_new = (typeof(csr_a_new)) aligned_alloc(64, nnz * sizeof(*csr_a_new));
+
+		_Pragma("omp parallel")
+		{
+			long tnum = omp_get_thread_num();
+			struct thread_data * td_self = tds[tnum];
+			unsigned char * compr_data = td_self->compr_data;
+			long pos, i, i_s, i_e, j_s;
+			long pos_decompress;
+			long num_vals_total_dc = 0;
+			long num_vals;
+			long size;
+
+			i_s = td_self->i_s;
+			i_e = td_self->i_e;
+			j_s = row_ptr[i_s];
+
+			pos_decompress = j_s;
+			num_vals_total_dc = 0;
+			pos = 0;
+			while (pos < td_self->compr_data_size)
+			{
+				size = decompress_kernel_div(&coo_ia_new[pos_decompress], &coo_ja_new[pos_decompress], &coo_a_new[pos_decompress], &num_vals, &compr_data[pos], i_s, i_e);
+				pos_decompress += num_vals;
+				num_vals_total_dc += num_vals;
+				pos += size;
+			}
+			if (num_vals_total_dc != td_self->num_vals)
+				error("tnum=%d: num_vals_dc = %ld != num_vals = %ld", tnum, num_vals_total_dc, td_self->num_vals);
+
+			#pragma omp barrier
+
+			#pragma omp for
+			for (i=0;i<nnz;i++)
+			{
+				if ((coo_ia_new[i] < 0) || (coo_ia_new[i] >= m))
+					error("coo_ia_new[%ld] = %d", i, coo_ia_new[i]);
+				if ((coo_ja_new[i] < 0) || (coo_ja_new[i] >= n))
+					error("coo_ja_new[%ld] = %d, n=%ld", i, coo_ja_new[i], n);
+			}
+		}
+
+		coo_to_csr(coo_ia_new, coo_ja_new, coo_a_new, m, n, nnz, csr_row_ptr_new, csr_ja_new, csr_a_new, 1, 0);
+
+		ValueType * a_conv;
+		a_conv = (typeof(a_conv)) malloc(nnz * sizeof(*a_conv));
+		#pragma omp parallel for
+		for (long i=0;i<nnz;i++)
+		{
+			a_conv[i] = a[i];
+		}
+		calculate_matrix_compression_error(a_conv, csr_row_ptr_new, csr_ja_new, csr_a_new);
+		free(a_conv);
+
+		free(coo_ia_new);
+		free(coo_ja_new);
+		free(coo_a_new);
+		free(csr_row_ptr_new);
+		free(csr_ja_new);
+		free(csr_a_new);
+		// exit(0);
+	}
+
+
+	~DIVArray()
+	{
+		int num_threads = omp_get_max_threads();
+		long i;
+		for (i=0;i<num_threads;i++)
+		{
+			free(tds[i]);
+		}
+		free(tds);
+		free(row_ptr);
+		free(ja);
+	}
+
+
+	void spmv(ValueType * x, ValueType * y);
+	void statistics_start();
+	int statistics_print_data(__attribute__((unused)) char * buf, __attribute__((unused)) long buf_n);
+};
+
+
+struct Matrix_Format *
+csr_to_format(INT_T * row_ptr, INT_T * col_ind, ValueTypeReference * values, long m, long n, long nnz, long symmetric, long symmetry_expanded)
+{
+	if (symmetric && !symmetry_expanded)
+		error("symmetric matrices have to be expanded to be supported by this format");
+	struct DIVArray * csr = new DIVArray(row_ptr, col_ind, values, m, n, nnz, symmetric, symmetry_expanded);
+	#if defined(DIV_TYPE_RF)
+		csr->format_name = (char *) "DIV_RF";
+	#elif defined(DIV_TYPE_RF_CONST_SIZE_ROW)
+		csr->format_name = (char *) "DIV_RF_CONST_SIZE_ROW";
+	#elif defined(DIV_TYPE_SELECT)
+		csr->format_name = (char *) "DIV_SELECT";
+	#elif defined(DIV_TYPE_ORD2)
+		csr->format_name = (char *) "DIV_RF_ORD2";
+	#elif defined(DIV_TYPE_COLS_SORT)
+		csr->format_name = (char *) "DIV_COLS_SORT";
+	#elif defined(DIV_TYPE_SYM_RF_LOCAL)
+		csr->format_name = (char *) "DIV_RF_SYM";
+	#else
+		csr->format_name = (char *) "DIV";
+	#endif
+	return csr;
+}
+
+
+//==========================================================================================================================================
+//= Method Validation - Errors
+//==========================================================================================================================================
+
+
+void
+DIVArray::calculate_matrix_compression_error(ValueType * a_conv, INT_T * csr_row_ptr_new, INT_T * csr_ja_new, ValueType * csr_a_new)
+{
+	#pragma omp parallel
+	{
+		long i, j;
+
+		#pragma omp for
+		for (i=0;i<m;i++)
+		{
+			if (csr_row_ptr_new[i] != row_ptr[i])
+				error("csr_row_ptr_new[%ld]=%ld , row_ptr[%ld]=%ld", i, csr_row_ptr_new[i], i, row_ptr[i]);
+			if (csr_row_ptr_new[i+1] != row_ptr[i+1])
+				error("csr_row_ptr_new[%ld+1]=%ld , row_ptr[%ld+1]=%ld", i, csr_row_ptr_new[i+1], i, row_ptr[i+1]);
+			for (j=csr_row_ptr_new[i];j<csr_row_ptr_new[i+1];j++)
+			{
+				if (csr_ja_new[j] != ja[j])
+					error("csr_ja_new[%ld]=%ld , ja[%ld]=%ld", j, csr_ja_new[j], j, ja[j]);
+				if (csr_a_new[j] != a_conv[j])
+					printf("csr_a_new[%ld]=%g, a_conv[%ld]=%g   (row=%ld, col=%d)\n", j, csr_a_new[j], j, a_conv[j], i, ja[j]);
+			}
+		}
+
+
+		double mae, max_ae, mse, mape, smape;
+		double lnQ_error, mlare, gmare;
+		array_mae_concurrent(a_conv, csr_a_new, nnz, &mae, val_to_double);
+		array_max_ae_concurrent(a_conv, csr_a_new, nnz, &max_ae, val_to_double);
+		array_mse_concurrent(a_conv, csr_a_new, nnz, &mse, val_to_double);
+		array_mape_concurrent(a_conv, csr_a_new, nnz, &mape, val_to_double);
+		array_smape_concurrent(a_conv, csr_a_new, nnz, &smape, val_to_double);
+		array_lnQ_error_concurrent(a_conv, csr_a_new, nnz, &lnQ_error, val_to_double);
+		array_mlare_concurrent(a_conv, csr_a_new, nnz, &mlare, val_to_double);
+		array_gmare_concurrent(a_conv, csr_a_new, nnz, &gmare, val_to_double);
+		#pragma omp single
+		{
+			matrix_mae = mae;
+			matrix_max_ae = max_ae;
+			matrix_mse = mse;
+			matrix_mape = mape;
+			matrix_smape = smape;
+			matrix_lnQ_error = lnQ_error;
+			matrix_mlare = mlare;
+			matrix_gmare = gmare;
+			printf("errors matrix: mae=%g, max_ae=%g, mse=%g, mape=%g, smape=%g, lnQ_error=%g, mlare=%g, gmare=%g\n", mae, max_ae, mse, mape, smape, lnQ_error, mlare, gmare);
+		}
+	}
+	// for (long z=0;z<nnz;z++)
+	// {
+		// if (a_conv[z] != csr_a_new[z])
+		// {
+			// printf("a_conv[%ld]=%lf , csr_a_new[%ld]=%lf\n", z, a_conv[z], z, csr_a_new[z]);
+			// printf("a_conv[%ld]=%064lb , csr_a_new[%ld]=%064lb\n", z, ((uint64_t *) a_conv)[z], z, ((uint64_t *) csr_a_new)[z]);
+		// }
+	// }
+}
+
+
+//==========================================================================================================================================
+//= SpMV Kernel
+//==========================================================================================================================================
+
+
+void compute_div(DIVArray * restrict csr, ValueType * restrict x , ValueType * restrict y);
+
+
+void
+DIVArray::spmv(ValueType * x, ValueType * y)
+{
+	compute_div(this, x, y);
+}
+
+
+void
+compute_div(DIVArray * restrict csr, ValueType * restrict x, ValueType * restrict y)
+{
+	csr->finished_threads.val = 0;
+	#pragma omp parallel
+	{
+		long tnum = omp_get_thread_num();
+		struct thread_data * td_self = tds[tnum];
+		unsigned char * compr_data = td_self->compr_data;
+		long pos, i, i_s, i_e;
+
+		i_s = td_self->i_s;
+		i_e = td_self->i_e;
+		i = i_s;
+		pos = 0;
+
+		for (i=i_s;i<i_e;i++)
+		{
+			y[i] = 0;
+		}
+
+		td_self->time_compute += time_it(1,
+			pos = 0;
+			while (pos < td_self->compr_data_size)
+			{
+				pos += decompress_and_compute_kernel_div(&(compr_data[pos]), x, y, i_s, i_e);
+			}
+		);
+	}
+}
+
+
+//==========================================================================================================================================
+//= Print Statistics
+//==========================================================================================================================================
+
+
+void
+DIVArray::statistics_start()
+{
+	int num_threads = omp_get_max_threads();
+	long i;
+	for (i=0;i<num_threads;i++)
+	{
+		tds[i]->time_compute = 0;
+	}
+}
+
+
+int
+statistics_print_labels(char * buf, long buf_n)
+{
+	long len = 0;
+	len += snprintf(buf + len, buf_n - len, ",%s", "CSRCV_NUM_PACKET_VALS");
+	len += snprintf(buf + len, buf_n - len, ",%s", "matrix_mae");
+	len += snprintf(buf + len, buf_n - len, ",%s", "matrix_max_ae");
+	len += snprintf(buf + len, buf_n - len, ",%s", "matrix_mse");
+	len += snprintf(buf + len, buf_n - len, ",%s", "matrix_mape");
+	len += snprintf(buf + len, buf_n - len, ",%s", "matrix_smape");
+	len += snprintf(buf + len, buf_n - len, ",%s", "matrix_lnQ_error");
+	len += snprintf(buf + len, buf_n - len, ",%s", "matrix_mlare");
+	len += snprintf(buf + len, buf_n - len, ",%s", "matrix_gmare");
+	len += snprintf(buf + len, buf_n - len, ",%s", "unbalance_time");
+	len += snprintf(buf + len, buf_n - len, ",%s", "unbalance_size");
+	len += snprintf(buf + len, buf_n - len, ",%s", "row_bits_avg");
+	len += snprintf(buf + len, buf_n - len, ",%s", "col_bits_avg");
+	len += snprintf(buf + len, buf_n - len, ",%s", "row_col_bytes_avg");
+	len += snprintf(buf + len, buf_n - len, ",%s", "packet_unique_values_fraction_avg");
+	len += snprintf(buf + len, buf_n - len, ",%s", "compression_time");
+	len += snprintf(buf + len, buf_n - len, ",%s", "compression_spmv_loops");
+	len += snprintf(buf + len, buf_n - len, ",%s", "tolerance");
+	return len;
+}
+
+
+int
+DIVArray::statistics_print_data(char * buf, long buf_n)
+{
+	int num_threads = omp_get_max_threads();
+
+	double time_max = 0, time_avg = 0;
+
+	double data_size_max = 0, data_size_avg = 0;
+
+	double row_bits_avg = 0;
+	double col_bits_avg = 0;
+	double row_col_bytes_avg = 0;
+	double packet_unique_values_fraction_avg = 0;
+
+	long i, len;
+
+	for (i=0;i<num_threads;i++)
+	{
+		time_avg += tds[i]->time_compute;
+		if (tds[i]->time_compute > time_max)
+			time_max = tds[i]->time_compute;
+
+		row_bits_avg += tds[i]->row_bits_accum;
+		col_bits_avg += tds[i]->col_bits_accum;
+		row_col_bytes_avg += tds[i]->row_col_bytes_accum;
+		packet_unique_values_fraction_avg += tds[i]->packet_unique_values_fraction_accum;
+	}
+	time_avg /= num_threads;
+	data_size_avg /= num_threads;
+	row_bits_avg /= nnz;
+	col_bits_avg /= nnz;
+	row_col_bytes_avg /= nnz;
+
+	double compression_spmv_loops = time_compress / (time_max / num_loops_out);
+
+	double tolerance = atof(getenv("DIV_VC_TOLERANCE"));
+
+	len = 0;
+	len += snprintf(buf + len, buf_n - len, ",%ld", atol(getenv("CSRCV_NUM_PACKET_VALS")));
+	len += snprintf(buf + len, buf_n - len, ",%g", matrix_mae);
+	len += snprintf(buf + len, buf_n - len, ",%g", matrix_max_ae);
+	len += snprintf(buf + len, buf_n - len, ",%g", matrix_mse);
+	len += snprintf(buf + len, buf_n - len, ",%g", matrix_mape);
+	len += snprintf(buf + len, buf_n - len, ",%g", matrix_smape);
+	len += snprintf(buf + len, buf_n - len, ",%g", matrix_lnQ_error);
+	len += snprintf(buf + len, buf_n - len, ",%g", matrix_mlare);
+	len += snprintf(buf + len, buf_n - len, ",%g", matrix_gmare);
+	len += snprintf(buf + len, buf_n - len, ",%.2lf", (time_max - time_avg) / time_avg * 100); // unbalance time
+	len += snprintf(buf + len, buf_n - len, ",%.2lf",  (data_size_max - data_size_avg) / data_size_avg * 100); // unbalance size
+	len += snprintf(buf + len, buf_n - len, ",%.4lf",  row_bits_avg);
+	len += snprintf(buf + len, buf_n - len, ",%.4lf",  col_bits_avg);
+	len += snprintf(buf + len, buf_n - len, ",%.4lf",  row_col_bytes_avg);
+	len += snprintf(buf + len, buf_n - len, ",%.4lf",  packet_unique_values_fraction_avg);
+	len += snprintf(buf + len, buf_n - len, ",%.4lf",  time_compress);
+	len += snprintf(buf + len, buf_n - len, ",%.4lf",  compression_spmv_loops);
+	len += snprintf(buf + len, buf_n - len, ",%g",  tolerance);
+	return len;
+}
+

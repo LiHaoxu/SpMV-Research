@@ -10,15 +10,14 @@ MAKECMDGOALS ?=
 # Targets that don't generate dependency files.
 NODEPS = clean
 
-DIRS = obj
+OBJ_DIR = obj
+
+DIRS = $(OBJ_DIR)
 
 define Rule_Auto_Dependencies_base =
     $(1:.o=.d): $(2) | $(DIRS)
 	@echo 'Generating dependencies file:  $(1)'
-	$(CC) $(3) -MT '$(1:.o=.d)' -MM -MG '$(2)' -MF '$(1:.o=.d)'
-    ifeq (0, $(words $(findstring $(MAKECMDGOALS),$(NODEPS))))
-        -include $(1:.o=.d)
-    endif
+	$(CC) $(3) -MT '$(1:.o=.d)' -MM -MG '$(2)' -MF '$(1:.o=.d)' -MP
     $(1): $(1:.o=.d)
 endef
 
@@ -32,8 +31,8 @@ endef
 LIB_SRC = pthread_functions.c omp_functions.c hardware_topology.c task_topology.c hash.c random.c hashtable.c bitstream.c bytestream.c array_metrics.c string_util.c io.c parallel_io.c plot.c matrix_market.c openfoam_matrix.c rapl.c csr_converter.c csc_converter.c csr_converter_reference.c rcm.c kmeans.c kmeans_char.c csr_util.c csc_util.c artificial_matrix_generation.c ordered_set.c dynamic_array.c
 
 LIB_OBJ := $(LIB_SRC)
-LIB_OBJ := $(patsubst %.c,obj/%$(SUFFIX).o,$(LIB_OBJ))
-LIB_OBJ := $(patsubst %.cpp,obj/%$(SUFFIX).o,$(LIB_OBJ))
+LIB_OBJ := $(patsubst %.c,$(OBJ_DIR)/%$(SUFFIX).o,$(LIB_OBJ))
+LIB_OBJ := $(patsubst %.cpp,$(OBJ_DIR)/%$(SUFFIX).o,$(LIB_OBJ))
 
 
 EXE = $(TARGETS)
@@ -50,35 +49,35 @@ else ifeq ($(ARCH), aarch64)
 endif
 
 
-spmv_csr_naive$(SUFFIX).exe: obj/spmv_bench$(SUFFIX).o spmv_kernel_csr.cpp $(LIB_OBJ)
+spmv_csr_naive$(SUFFIX).exe: $(OBJ_DIR)/spmv_bench$(SUFFIX).o spmv_kernel_csr.cpp $(LIB_OBJ)
 	$(CPP) $(CPPFLAGS) $(CPPFLAGS_CUSTOM) -D'NAIVE' $^ -o $@ $(LDFLAGS)
-spmv_csr$(SUFFIX).exe: obj/spmv_bench$(SUFFIX).o spmv_kernel_csr.cpp $(LIB_OBJ)
+spmv_csr$(SUFFIX).exe: $(OBJ_DIR)/spmv_bench$(SUFFIX).o spmv_kernel_csr.cpp $(LIB_OBJ)
 	$(CPP) $(CPPFLAGS) $(CPPFLAGS_CUSTOM) $^ -o $@ $(LDFLAGS)
-spmv_csr_sym$(SUFFIX).exe: obj/spmv_bench_sym$(SUFFIX).o spmv_kernel_csr_sym.cpp $(LIB_OBJ)
+spmv_csr_sym$(SUFFIX).exe: $(OBJ_DIR)/spmv_bench_sym$(SUFFIX).o spmv_kernel_csr_sym.cpp $(LIB_OBJ)
 	$(CPP) $(CPPFLAGS) $(CPPFLAGS_CUSTOM) $^ -o $@ $(LDFLAGS)
-cg_csr$(SUFFIX).exe: obj/cg_bench$(SUFFIX).o spmv_kernel_csr.cpp $(LIB_OBJ)
+cg_csr$(SUFFIX).exe: $(OBJ_DIR)/cg_bench$(SUFFIX).o spmv_kernel_csr.cpp $(LIB_OBJ)
 	$(CPP) $(CPPFLAGS) $(CPPFLAGS_CUSTOM) $^ -o $@ $(LDFLAGS)
-cg_csr_sym$(SUFFIX).exe: obj/cg_bench_sym$(SUFFIX).o spmv_kernel_csr_sym.cpp $(LIB_OBJ)
+cg_csr_sym$(SUFFIX).exe: $(OBJ_DIR)/cg_bench_sym$(SUFFIX).o spmv_kernel_csr_sym.cpp $(LIB_OBJ)
 	$(CPP) $(CPPFLAGS) $(CPPFLAGS_CUSTOM) $^ -o $@ $(LDFLAGS)
-spmv_csr_kahan$(SUFFIX).exe: obj/spmv_bench$(SUFFIX).o spmv_kernel_csr.cpp $(LIB_OBJ)
+spmv_csr_kahan$(SUFFIX).exe: $(OBJ_DIR)/spmv_bench$(SUFFIX).o spmv_kernel_csr.cpp $(LIB_OBJ)
 	$(CPP) $(CPPFLAGS) $(CPPFLAGS_CUSTOM) -D'CUSTOM_KAHAN' $^ -o $@ $(LDFLAGS)
-spmv_csr_prefetch$(SUFFIX).exe: obj/spmv_bench$(SUFFIX).o spmv_kernel_csr.cpp $(LIB_OBJ)
+spmv_csr_prefetch$(SUFFIX).exe: $(OBJ_DIR)/spmv_bench$(SUFFIX).o spmv_kernel_csr.cpp $(LIB_OBJ)
 	$(CPP) $(CPPFLAGS) $(CPPFLAGS_CUSTOM) -D'CUSTOM_PREFETCH' $^ -o $@ $(LDFLAGS)
-spmv_csr_simd$(SUFFIX).exe: obj/spmv_bench$(SUFFIX).o spmv_kernel_csr.cpp $(LIB_OBJ)
+spmv_csr_simd$(SUFFIX).exe: $(OBJ_DIR)/spmv_bench$(SUFFIX).o spmv_kernel_csr.cpp $(LIB_OBJ)
 	$(CPP) $(CPPFLAGS) $(CPPFLAGS_CUSTOM) -D'CUSTOM_SIMD' $^ -o $@ $(LDFLAGS)
-spmv_csr_vector$(SUFFIX).exe: obj/spmv_bench$(SUFFIX).o spmv_kernel_csr.cpp $(LIB_OBJ)
+spmv_csr_vector$(SUFFIX).exe: $(OBJ_DIR)/spmv_bench$(SUFFIX).o spmv_kernel_csr.cpp $(LIB_OBJ)
 	$(CPP) $(CPPFLAGS) $(CPPFLAGS_CUSTOM) -D'CUSTOM_VECTOR' $^ -o $@ $(LDFLAGS)
-spmv_csr_vector_perfect_nnz_balance$(SUFFIX).exe: obj/spmv_bench$(SUFFIX).o spmv_kernel_csr.cpp $(LIB_OBJ)
+spmv_csr_vector_perfect_nnz_balance$(SUFFIX).exe: $(OBJ_DIR)/spmv_bench$(SUFFIX).o spmv_kernel_csr.cpp $(LIB_OBJ)
 	$(CPP) $(CPPFLAGS) $(CPPFLAGS_CUSTOM) -D'CUSTOM_VECTOR_PERFECT_NNZ_BALANCE' $^ -o $@ $(LDFLAGS)
 
 CPPFLAGS_CV_BLOCK_ID = -D'COMPRESSION_KERNEL_ID'
-spmv_csr_cv_block_id$(SUFFIX).exe: obj/spmv_bench$(SUFFIX).o obj/spmv_kernel_csr_cv_block_id$(SUFFIX).o $(LIB_OBJ)
+spmv_csr_cv_block_id$(SUFFIX).exe: $(OBJ_DIR)/spmv_bench$(SUFFIX).o $(OBJ_DIR)/spmv_kernel_csr_cv_block_id$(SUFFIX).o $(LIB_OBJ)
 	$(CPP) $(CPPFLAGS) $(CPPFLAGS_CUSTOM) $(CPPFLAGS_CV_BLOCK_ID) $^ -o $@ $(LDFLAGS)
 CPPFLAGS_CV_BLOCK_D2F = -D'COMPRESSION_KERNEL_D2F'
-spmv_csr_cv_block_d2f$(SUFFIX).exe: obj/spmv_bench$(SUFFIX).o obj/spmv_kernel_csr_cv_block_d2f$(SUFFIX).o $(LIB_OBJ)
+spmv_csr_cv_block_d2f$(SUFFIX).exe: $(OBJ_DIR)/spmv_bench$(SUFFIX).o $(OBJ_DIR)/spmv_kernel_csr_cv_block_d2f$(SUFFIX).o $(LIB_OBJ)
 	$(CPP) $(CPPFLAGS) $(CPPFLAGS_CUSTOM) $(CPPFLAGS_CV_BLOCK_ID) $^ -o $@ $(LDFLAGS)
 CPPFLAGS_CV_BLOCK_FPC = -D'COMPRESSION_KERNEL_FPC'
-spmv_csr_cv_block_fpc$(SUFFIX).exe: obj/spmv_bench$(SUFFIX).o obj/spmv_kernel_csr_cv_block_fpc$(SUFFIX).o $(LIB_OBJ)
+spmv_csr_cv_block_fpc$(SUFFIX).exe: $(OBJ_DIR)/spmv_bench$(SUFFIX).o $(OBJ_DIR)/spmv_kernel_csr_cv_block_fpc$(SUFFIX).o $(LIB_OBJ)
 	$(CPP) $(CPPFLAGS) $(CPPFLAGS_CUSTOM) $(CPPFLAGS_CV_BLOCK_FPC) $^ -o $@ $(LDFLAGS)
 CPPFLAGS_CV_BLOCK_ZFP =
 CPPFLAGS_CV_BLOCK_ZFP += -D'COMPRESSION_KERNEL_ZFP'
@@ -86,7 +85,7 @@ CPPFLAGS_CV_BLOCK_ZFP += -I'$(ZFP_ROOT_DIR)/include'
 LDFLAGS_CV_BLOCK_ZFP =
 LDFLAGS_CV_BLOCK_ZFP += -L'$(ZFP_ROOT_DIR)/lib'
 LDFLAGS_CV_BLOCK_ZFP += -lzfp
-spmv_csr_cv_block_zfp$(SUFFIX).exe: obj/spmv_bench$(SUFFIX).o obj/spmv_kernel_csr_cv_block_zfp$(SUFFIX).o $(LIB_OBJ)
+spmv_csr_cv_block_zfp$(SUFFIX).exe: $(OBJ_DIR)/spmv_bench$(SUFFIX).o $(OBJ_DIR)/spmv_kernel_csr_cv_block_zfp$(SUFFIX).o $(LIB_OBJ)
 	$(CPP) $(CPPFLAGS) $(CPPFLAGS_CUSTOM) $(CPPFLAGS_CV_BLOCK_ZFP) $^ -o $@ $(LDFLAGS) $(LDFLAGS_CV_BLOCK_ZFP)
 CPPFLAGS_CV_BLOCK_FPZIP =
 CPPFLAGS_CV_BLOCK_FPZIP += -D'COMPRESSION_KERNEL_FPZIP'
@@ -94,60 +93,62 @@ CPPFLAGS_CV_BLOCK_FPZIP += -I'$(FPZIP_ROOT_DIR)/include'
 LDFLAGS_CV_BLOCK_FPZIP =
 LDFLAGS_CV_BLOCK_FPZIP += -L'$(FPZIP_ROOT_DIR)/lib'
 LDFLAGS_CV_BLOCK_FPZIP += -lfpzip
-spmv_csr_cv_block_fpzip$(SUFFIX).exe: obj/spmv_bench$(SUFFIX).o obj/spmv_kernel_csr_cv_block_fpzip$(SUFFIX).o $(LIB_OBJ)
+spmv_csr_cv_block_fpzip$(SUFFIX).exe: $(OBJ_DIR)/spmv_bench$(SUFFIX).o $(OBJ_DIR)/spmv_kernel_csr_cv_block_fpzip$(SUFFIX).o $(LIB_OBJ)
 	$(CPP) $(CPPFLAGS) $(CPPFLAGS_CUSTOM) $(CPPFLAGS_CV_BLOCK_FPZIP) $^ -o $@ $(LDFLAGS) $(LDFLAGS_CV_BLOCK_FPZIP)
 
 
-spmv_div$(SUFFIX).exe: obj/spmv_bench$(SUFFIX).o obj/spmv_kernel_div$(SUFFIX).o $(LIB_OBJ)
+spmv_div$(SUFFIX).exe: $(OBJ_DIR)/spmv_bench$(SUFFIX).o $(OBJ_DIR)/spmv_kernel_div$(SUFFIX).o $(LIB_OBJ)
 	$(CPP) $(CPPFLAGS) $(CPPFLAGS_CUSTOM) $^ -o $@ $(LDFLAGS)
-spmv_div_rf$(SUFFIX).exe: obj/spmv_bench$(SUFFIX).o obj/spmv_kernel_div_rf$(SUFFIX).o $(LIB_OBJ)
+spmv_div_rf$(SUFFIX).exe: $(OBJ_DIR)/spmv_bench$(SUFFIX).o $(OBJ_DIR)/spmv_kernel_div_rf$(SUFFIX).o $(LIB_OBJ)
 	$(CPP) $(CPPFLAGS) $(CPPFLAGS_CUSTOM) $^ -o $@ $(LDFLAGS)
-spmv_div_adapt$(SUFFIX).exe: obj/spmv_bench$(SUFFIX).o obj/spmv_kernel_div_adapt$(SUFFIX).o $(LIB_OBJ)
+spmv_div_adapt$(SUFFIX).exe: $(OBJ_DIR)/spmv_bench$(SUFFIX).o $(OBJ_DIR)/spmv_kernel_div_adapt$(SUFFIX).o $(LIB_OBJ)
 	$(CPP) $(CPPFLAGS) $(CPPFLAGS_CUSTOM) $^ -o $@ $(LDFLAGS)
-spmv_div_rf_const_size_row$(SUFFIX).exe: obj/spmv_bench$(SUFFIX).o obj/spmv_kernel_div_rf_const_size_row$(SUFFIX).o $(LIB_OBJ)
+spmv_div_rf_const_size_row$(SUFFIX).exe: $(OBJ_DIR)/spmv_bench$(SUFFIX).o $(OBJ_DIR)/spmv_kernel_div_rf_const_size_row$(SUFFIX).o $(LIB_OBJ)
 	$(CPP) $(CPPFLAGS) $(CPPFLAGS_CUSTOM) $^ -o $@ $(LDFLAGS)
-spmv_div_sym_rf_local$(SUFFIX).exe: obj/spmv_bench$(SUFFIX).o obj/spmv_kernel_div_sym_rf_local$(SUFFIX).o $(LIB_OBJ)
+spmv_div_sym_rf_local$(SUFFIX).exe: $(OBJ_DIR)/spmv_bench$(SUFFIX).o $(OBJ_DIR)/spmv_kernel_div_sym_rf_local$(SUFFIX).o $(LIB_OBJ)
 	$(CPP) $(CPPFLAGS) $(CPPFLAGS_CUSTOM) $^ -o $@ $(LDFLAGS)
-cg_div$(SUFFIX).exe: obj/cg_bench$(SUFFIX).o obj/spmv_kernel_div_rf$(SUFFIX).o $(LIB_OBJ)
+cg_div$(SUFFIX).exe: $(OBJ_DIR)/cg_bench$(SUFFIX).o $(OBJ_DIR)/spmv_kernel_div_rf$(SUFFIX).o $(LIB_OBJ)
 	$(CPP) $(CPPFLAGS) $(CPPFLAGS_CUSTOM) $^ -o $@ $(LDFLAGS)
-cg_div_sym_local$(SUFFIX).exe: obj/cg_bench$(SUFFIX).o obj/spmv_kernel_div_sym_rf_local$(SUFFIX).o $(LIB_OBJ)
+cg_div_sym_local$(SUFFIX).exe: $(OBJ_DIR)/cg_bench$(SUFFIX).o $(OBJ_DIR)/spmv_kernel_div_sym_rf_local$(SUFFIX).o $(LIB_OBJ)
 	$(CPP) $(CPPFLAGS) $(CPPFLAGS_CUSTOM) $^ -o $@ $(LDFLAGS)
-bicg_div$(SUFFIX).exe: obj/bicg_bench$(SUFFIX).o obj/spmv_kernel_div_rf$(SUFFIX).o $(LIB_OBJ)
+bicg_div$(SUFFIX).exe: $(OBJ_DIR)/bicg_bench$(SUFFIX).o $(OBJ_DIR)/spmv_kernel_div_rf$(SUFFIX).o $(LIB_OBJ)
 	$(CPP) $(CPPFLAGS) $(CPPFLAGS_CUSTOM) $^ -o $@ $(LDFLAGS)
-spmv_div_select$(SUFFIX).exe: obj/spmv_bench$(SUFFIX).o obj/spmv_kernel_div_select$(SUFFIX).o $(LIB_OBJ)
+spmv_div_select$(SUFFIX).exe: $(OBJ_DIR)/spmv_bench$(SUFFIX).o $(OBJ_DIR)/spmv_kernel_div_select$(SUFFIX).o $(LIB_OBJ)
 	$(CPP) $(CPPFLAGS) $(CPPFLAGS_CUSTOM) $^ -o $@ $(LDFLAGS)
-spmv_div_cols_sort$(SUFFIX).exe: obj/spmv_bench$(SUFFIX).o obj/spmv_kernel_div_cols_sort$(SUFFIX).o $(LIB_OBJ)
+spmv_div_cols_sort$(SUFFIX).exe: $(OBJ_DIR)/spmv_bench$(SUFFIX).o $(OBJ_DIR)/spmv_kernel_div_cols_sort$(SUFFIX).o $(LIB_OBJ)
 	$(CPP) $(CPPFLAGS) $(CPPFLAGS_CUSTOM) $^ -o $@ $(LDFLAGS)
-spmv_div_rf_ord2$(SUFFIX).exe: obj/spmv_bench$(SUFFIX).o obj/spmv_kernel_div_rf_ord2$(SUFFIX).o $(LIB_OBJ)
+spmv_div_rf_ord2$(SUFFIX).exe: $(OBJ_DIR)/spmv_bench$(SUFFIX).o $(OBJ_DIR)/spmv_kernel_div_rf_ord2$(SUFFIX).o $(LIB_OBJ)
 	$(CPP) $(CPPFLAGS) $(CPPFLAGS_CUSTOM) $^ -o $@ $(LDFLAGS)
 
-LDFLAGS_NV =
-LDFLAGS_NV += -lcuda
-LDFLAGS_NV += -lcudart
-LDFLAGS_NV += -lcublas
-spmv_cuda_div_rf$(SUFFIX).exe: obj/spmv_bench$(SUFFIX).o obj/spmv_kernel_cuda_div_rf$(SUFFIX).o $(LIB_OBJ)
-	$(CPP) $(CPPFLAGS) $(CPPFLAGS_CUSTOM) $^ -o $@ $(LDFLAGS) $(LDFLAGS_NV)
+LDFLAGS_DIV_NV =
+# LDFLAGS_DIV_NV += -lcuda
+# LDFLAGS_DIV_NV += -lcudart
+# LDFLAGS_DIV_NV += -lcublas
+spmv_cuda_div$(SUFFIX).exe: $(OBJ_DIR)/spmv_bench$(SUFFIX).o $(OBJ_DIR)/spmv_kernel_cuda_div$(SUFFIX).o $(LIB_OBJ)
+	$(NVCC) $(NVCCFLAGS) --compiler-options $(CPPFLAGS) $(CPPFLAGS_CUSTOM) $^ -o $@ $(LDFLAGS) $(LDFLAGS_DIV_NV)
 
 
-spmv_csr_vector_x86$(SUFFIX).exe: obj/spmv_bench$(SUFFIX).o spmv_kernel_csr_x86.cpp $(LIB_OBJ)
+spmv_csr_vec$(SUFFIX).exe: $(OBJ_DIR)/spmv_bench$(SUFFIX).o spmv_kernel_csr_vec.cpp $(LIB_OBJ)
+	$(CPP) $(CPPFLAGS) $(CPPFLAGS_CUSTOM) -D'CSR_VECTOR' $^ -o $@ $(LDFLAGS)
+spmv_csr_vector_x86$(SUFFIX).exe: $(OBJ_DIR)/spmv_bench$(SUFFIX).o spmv_kernel_csr_x86.cpp $(LIB_OBJ)
 	$(CPP) $(CPPFLAGS) $(CPPFLAGS_CUSTOM) -D'CUSTOM_X86_VECTOR' $^ -o $@ $(LDFLAGS)
-spmv_csr_vector_oracle_balance_x86$(SUFFIX).exe: obj/spmv_bench$(SUFFIX).o spmv_kernel_csr_x86.cpp $(LIB_OBJ)
+spmv_csr_vector_oracle_balance_x86$(SUFFIX).exe: $(OBJ_DIR)/spmv_bench$(SUFFIX).o spmv_kernel_csr_x86.cpp $(LIB_OBJ)
 	$(CPP) $(CPPFLAGS) $(CPPFLAGS_CUSTOM) -D'CUSTOM_X86_VECTOR' -D'CUSTOM_X86_VECTOR_ORACLE_BALANCE' $^ -o $@ $(LDFLAGS)
-spmv_csr_vector_perfect_nnz_balance_x86$(SUFFIX).exe: obj/spmv_bench$(SUFFIX).o spmv_kernel_csr_x86.cpp $(LIB_OBJ)
+spmv_csr_vector_perfect_nnz_balance_x86$(SUFFIX).exe: $(OBJ_DIR)/spmv_bench$(SUFFIX).o spmv_kernel_csr_x86.cpp $(LIB_OBJ)
 	$(CPP) $(CPPFLAGS) $(CPPFLAGS_CUSTOM) -D'CUSTOM_X86_VECTOR_PERFECT_NNZ_BALANCE' $^ -o $@ $(LDFLAGS)
-spmv_csr_vector_queues_x86$(SUFFIX).exe: obj/spmv_bench$(SUFFIX).o spmv_kernel_csr_x86.cpp $(LIB_OBJ)
+spmv_csr_vector_queues_x86$(SUFFIX).exe: $(OBJ_DIR)/spmv_bench$(SUFFIX).o spmv_kernel_csr_x86.cpp $(LIB_OBJ)
 	$(CPP) $(CPPFLAGS) $(CPPFLAGS_CUSTOM) -D'CUSTOM_X86_VECTOR_QUEUES' $^ -o $@ $(LDFLAGS)
 
-spmv_csr_vector_lut_x86$(SUFFIX).exe: obj/spmv_bench$(SUFFIX).o spmv_kernel_csr_lut_x86.cpp $(LIB_OBJ)
+spmv_csr_vector_lut_x86$(SUFFIX).exe: $(OBJ_DIR)/spmv_bench$(SUFFIX).o spmv_kernel_csr_lut_x86.cpp $(LIB_OBJ)
 	$(CPP) $(CPPFLAGS) $(CPPFLAGS_CUSTOM) $^ -o $@ $(LDFLAGS)
 
-spmv_ldu$(SUFFIX).exe: obj/spmv_bench$(SUFFIX).o spmv_kernel_ldu.cpp $(LIB_OBJ)
+spmv_ldu$(SUFFIX).exe: $(OBJ_DIR)/spmv_bench$(SUFFIX).o spmv_kernel_ldu.cpp $(LIB_OBJ)
 	$(CPP) $(CPPFLAGS) $(CPPFLAGS_CUSTOM) $^ -o $@ $(LDFLAGS)
-spmv_ell$(SUFFIX).exe: obj/spmv_bench$(SUFFIX).o spmv_kernel_ell.cpp $(LIB_OBJ)
+spmv_ell$(SUFFIX).exe: $(OBJ_DIR)/spmv_bench$(SUFFIX).o spmv_kernel_ell.cpp $(LIB_OBJ)
 	$(CPP) $(CPPFLAGS) $(CPPFLAGS_CUSTOM) $^ -o $@ $(LDFLAGS)
-spmv_sell$(SUFFIX).exe: obj/spmv_bench$(SUFFIX).o spmv_kernel_sell.cpp $(LIB_OBJ)
+spmv_sell$(SUFFIX).exe: $(OBJ_DIR)/spmv_bench$(SUFFIX).o spmv_kernel_sell.cpp $(LIB_OBJ)
 	$(CPP) $(CPPFLAGS) $(CPPFLAGS_CUSTOM) $^ -o $@ $(LDFLAGS)
-spmv_sell_sorted$(SUFFIX).exe: obj/spmv_bench$(SUFFIX).o spmv_kernel_sell_sorted.cpp $(LIB_OBJ)
+spmv_sell_sorted$(SUFFIX).exe: $(OBJ_DIR)/spmv_bench$(SUFFIX).o spmv_kernel_sell_sorted.cpp $(LIB_OBJ)
 	$(CPP) $(CPPFLAGS) $(CPPFLAGS_CUSTOM) $^ -o $@ $(LDFLAGS)
 
 
@@ -156,39 +157,39 @@ LDFLAGS_NV += -lcuda
 LDFLAGS_NV += -lcudart
 LDFLAGS_NV += -lcublas
 
-spmv_csr_cuda$(SUFFIX).exe: obj/spmv_bench$(SUFFIX).o GPU/spmv_kernel_cuda_csr.cu $(LIB_OBJ)
+spmv_csr_cuda$(SUFFIX).exe: $(OBJ_DIR)/spmv_bench$(SUFFIX).o GPU/spmv_kernel_cuda_csr.cu $(LIB_OBJ)
 	$(NVCC) $(NVCCFLAGS) --compiler-options "$(CPPFLAGS)" $^ -o $@ $(LDFLAGS) $(LDFLAGS_NV)
-spmv_csr_cuda_buffer$(SUFFIX).exe: obj/spmv_bench$(SUFFIX).o GPU/spmv_kernel_cuda_csr_buffer.cu $(LIB_OBJ)
+spmv_csr_cuda_buffer$(SUFFIX).exe: $(OBJ_DIR)/spmv_bench$(SUFFIX).o GPU/spmv_kernel_cuda_csr_buffer.cu $(LIB_OBJ)
 	$(NVCC) $(NVCCFLAGS) --compiler-options "$(CPPFLAGS)" $^ -o $@ $(LDFLAGS) $(LDFLAGS_NV)
-spmv_csr_cuda_reduce$(SUFFIX).exe: obj/spmv_bench$(SUFFIX).o GPU/spmv_kernel_cuda_csr_reduce.cu $(LIB_OBJ)
+spmv_csr_cuda_reduce$(SUFFIX).exe: $(OBJ_DIR)/spmv_bench$(SUFFIX).o GPU/spmv_kernel_cuda_csr_reduce.cu $(LIB_OBJ)
 	$(NVCC) $(NVCCFLAGS) --compiler-options "$(CPPFLAGS)" $^ -o $@ $(LDFLAGS) $(LDFLAGS_NV)
-spmv_csr_cuda_const_nnz_per_thread$(SUFFIX).exe: obj/spmv_bench$(SUFFIX).o GPU/spmv_kernel_cuda_csr_const_nnz_per_thread.cu $(LIB_OBJ)
+spmv_csr_cuda_const_nnz_per_thread$(SUFFIX).exe: $(OBJ_DIR)/spmv_bench$(SUFFIX).o GPU/spmv_kernel_cuda_csr_const_nnz_per_thread.cu $(LIB_OBJ)
 	$(NVCC) $(NVCCFLAGS) --compiler-options "$(CPPFLAGS)" $^ -o $@ $(LDFLAGS) $(LDFLAGS_NV)
 
-spmv_csr_cuda_t${NUM_THREADS}$(SUFFIX).exe: obj/spmv_bench$(SUFFIX).o GPU/spmv_kernel_cuda_csr.cu $(LIB_OBJ)
+spmv_csr_cuda_t${NUM_THREADS}$(SUFFIX).exe: $(OBJ_DIR)/spmv_bench$(SUFFIX).o GPU/spmv_kernel_cuda_csr.cu $(LIB_OBJ)
 	$(NVCC) $(NVCCFLAGS) -DTIME_IT=$(TIME_IT) -DNUM_THREADS=${NUM_THREADS} --compiler-options "$(CPPFLAGS)" $^ -o $@ $(LDFLAGS) $(LDFLAGS_NV)
-spmv_csr_cuda_s${NUM_STREAMS}_t${NUM_THREADS}$(SUFFIX).exe: obj/spmv_bench$(SUFFIX).o GPU/spmv_kernel_cuda_csr_stream.cu $(LIB_OBJ)
+spmv_csr_cuda_s${NUM_STREAMS}_t${NUM_THREADS}$(SUFFIX).exe: $(OBJ_DIR)/spmv_bench$(SUFFIX).o GPU/spmv_kernel_cuda_csr_stream.cu $(LIB_OBJ)
 	$(NVCC) $(NVCCFLAGS) -DTIME_IT=$(TIME_IT) -DNUM_STREAMS=${NUM_STREAMS} -DNUM_THREADS=${NUM_THREADS} --compiler-options "$(CPPFLAGS)" $^ -o $@ $(LDFLAGS) $(LDFLAGS_NV)
 
-spmv_csr_cuda_buffer_t${NUM_THREADS}_rc${ROW_CLUSTER_SIZE}$(SUFFIX).exe: obj/spmv_bench$(SUFFIX).o GPU/spmv_kernel_cuda_csr_buffer.cu $(LIB_OBJ)
+spmv_csr_cuda_buffer_t${NUM_THREADS}_rc${ROW_CLUSTER_SIZE}$(SUFFIX).exe: $(OBJ_DIR)/spmv_bench$(SUFFIX).o GPU/spmv_kernel_cuda_csr_buffer.cu $(LIB_OBJ)
 	$(NVCC) $(NVCCFLAGS) -DTIME_IT=$(TIME_IT) -DNUM_THREADS=${NUM_THREADS} -DROW_CLUSTER_SIZE=${ROW_CLUSTER_SIZE} --compiler-options "$(CPPFLAGS)" $^ -o $@ $(LDFLAGS) $(LDFLAGS_NV)
-spmv_csr_cuda_buffer_s${NUM_STREAMS}_t${NUM_THREADS}_rc${ROW_CLUSTER_SIZE}$(SUFFIX).exe: obj/spmv_bench$(SUFFIX).o GPU/spmv_kernel_cuda_csr_buffer_stream.cu $(LIB_OBJ)
+spmv_csr_cuda_buffer_s${NUM_STREAMS}_t${NUM_THREADS}_rc${ROW_CLUSTER_SIZE}$(SUFFIX).exe: $(OBJ_DIR)/spmv_bench$(SUFFIX).o GPU/spmv_kernel_cuda_csr_buffer_stream.cu $(LIB_OBJ)
 	$(NVCC) $(NVCCFLAGS) -DTIME_IT=$(TIME_IT) -DNUM_STREAMS=${NUM_STREAMS} -DNUM_THREADS=${NUM_THREADS} -DROW_CLUSTER_SIZE=${ROW_CLUSTER_SIZE} --compiler-options "$(CPPFLAGS)" $^ -o $@ $(LDFLAGS) $(LDFLAGS_NV)
 
-spmv_csr_cuda_const_nnz_per_thread_b${BLOCK_SIZE}_nnz${NNZ_PER_THREAD}$(SUFFIX).exe: obj/spmv_bench$(SUFFIX).o GPU/spmv_kernel_cuda_csr_const_nnz_per_thread.cu $(LIB_OBJ)
+spmv_csr_cuda_const_nnz_per_thread_b${BLOCK_SIZE}_nnz${NNZ_PER_THREAD}$(SUFFIX).exe: $(OBJ_DIR)/spmv_bench$(SUFFIX).o GPU/spmv_kernel_cuda_csr_const_nnz_per_thread.cu $(LIB_OBJ)
 	$(NVCC) $(NVCCFLAGS) -DTIME_IT=$(TIME_IT) -DBLOCK_SIZE=${BLOCK_SIZE} -DNNZ_PER_THREAD=${NNZ_PER_THREAD} --compiler-options "$(CPPFLAGS)" $^ -o $@ $(LDFLAGS) $(LDFLAGS_NV)
-spmv_csr_cuda_const_nnz_per_thread_s${NUM_STREAMS}_b${BLOCK_SIZE}_nnz${NNZ_PER_THREAD}$(SUFFIX).exe: obj/spmv_bench$(SUFFIX).o GPU/spmv_kernel_cuda_csr_const_nnz_per_thread_stream.cu $(LIB_OBJ)
+spmv_csr_cuda_const_nnz_per_thread_s${NUM_STREAMS}_b${BLOCK_SIZE}_nnz${NNZ_PER_THREAD}$(SUFFIX).exe: $(OBJ_DIR)/spmv_bench$(SUFFIX).o GPU/spmv_kernel_cuda_csr_const_nnz_per_thread_stream.cu $(LIB_OBJ)
 	$(NVCC) $(NVCCFLAGS) -DTIME_IT=$(TIME_IT) -DNUM_STREAMS=${NUM_STREAMS} -DBLOCK_SIZE=${BLOCK_SIZE} -DNNZ_PER_THREAD=${NNZ_PER_THREAD} --compiler-options "$(CPPFLAGS)" $^ -o $@ $(LDFLAGS) $(LDFLAGS_NV)
 
 
-spmv_csr_cuda_vector_b${BLOCK_SIZE}$(SUFFIX).exe: obj/spmv_bench$(SUFFIX).o spmv_kernel_csr_cuda_vector.cu $(LIB_OBJ)
+spmv_csr_cuda_vector_b${BLOCK_SIZE}$(SUFFIX).exe: $(OBJ_DIR)/spmv_bench$(SUFFIX).o spmv_kernel_csr_cuda_vector.cu $(LIB_OBJ)
 	$(NVCC) $(NVCCFLAGS) -DTIME_IT=$(TIME_IT) -DBLOCK_SIZE=${BLOCK_SIZE} --compiler-options "$(CPPFLAGS)" $^ -o $@ $(LDFLAGS) $(LDFLAGS_NV)
-spmv_csr_cuda_vector_s${NUM_STREAMS}_b${BLOCK_SIZE}$(SUFFIX).exe: obj/spmv_bench$(SUFFIX).o spmv_kernel_csr_cuda_vector_stream.cu $(LIB_OBJ)
+spmv_csr_cuda_vector_s${NUM_STREAMS}_b${BLOCK_SIZE}$(SUFFIX).exe: $(OBJ_DIR)/spmv_bench$(SUFFIX).o spmv_kernel_csr_cuda_vector_stream.cu $(LIB_OBJ)
 	$(NVCC) $(NVCCFLAGS) -DTIME_IT=$(TIME_IT) -DNUM_STREAMS=${NUM_STREAMS} -DBLOCK_SIZE=${BLOCK_SIZE} --compiler-options "$(CPPFLAGS)" $^ -o $@ $(LDFLAGS) $(LDFLAGS_NV)
 
-spmv_csr_cuda_adaptive_b${BLOCK_SIZE}_mb${MULTIBLOCK_SIZE}$(SUFFIX).exe: obj/spmv_bench$(SUFFIX).o spmv_kernel_csr_cuda_adaptive.cu $(LIB_OBJ)
+spmv_csr_cuda_adaptive_b${BLOCK_SIZE}_mb${MULTIBLOCK_SIZE}$(SUFFIX).exe: $(OBJ_DIR)/spmv_bench$(SUFFIX).o spmv_kernel_csr_cuda_adaptive.cu $(LIB_OBJ)
 	$(NVCC) $(NVCCFLAGS) -DTIME_IT=$(TIME_IT) -DBLOCK_SIZE=${BLOCK_SIZE} -DMULTIBLOCK_SIZE=${MULTIBLOCK_SIZE} --compiler-options "$(CPPFLAGS)" $^ -o $@ $(LDFLAGS) $(LDFLAGS_NV)
-spmv_csr_cuda_adaptive_s${NUM_STREAMS}_b${BLOCK_SIZE}_mb${MULTIBLOCK_SIZE}$(SUFFIX).exe: obj/spmv_bench$(SUFFIX).o spmv_kernel_csr_cuda_adaptive_stream.cu $(LIB_OBJ)
+spmv_csr_cuda_adaptive_s${NUM_STREAMS}_b${BLOCK_SIZE}_mb${MULTIBLOCK_SIZE}$(SUFFIX).exe: $(OBJ_DIR)/spmv_bench$(SUFFIX).o spmv_kernel_csr_cuda_adaptive_stream.cu $(LIB_OBJ)
 	$(NVCC) $(NVCCFLAGS) -DTIME_IT=$(TIME_IT) -DNUM_STREAMS=${NUM_STREAMS} -DBLOCK_SIZE=${BLOCK_SIZE} -DMULTIBLOCK_SIZE=${MULTIBLOCK_SIZE} --compiler-options "$(CPPFLAGS)" $^ -o $@ $(LDFLAGS) $(LDFLAGS_NV)
 
 
@@ -204,10 +205,10 @@ LDFLAGS_CSR5_CUDA += -lcudart
 # diag-suppress is used to suppress warnings
 # warning #68-D  : integer conversion resulted in a change of sign
 # warning #2464-D: conversion from a string literal to "char *" is deprecated
-spmv_csr5_cuda$(SUFFIX).exe: obj/spmv_bench$(SUFFIX).o GPU/spmv_kernel_csr5_cuda.cu $(LIB_OBJ)
+spmv_csr5_cuda$(SUFFIX).exe: $(OBJ_DIR)/spmv_bench$(SUFFIX).o GPU/spmv_kernel_csr5_cuda.cu $(LIB_OBJ)
 	$(NVCC) $(NVCCFLAGS) -DTIME_IT=$(TIME_IT) --compiler-options "$(CPPFLAGS) $(CPPFLAGS_CSR5_CUDA)" -diag-suppress=68,2464 $^ -o $@ $(LDFLAGS) $(LDFLAGS_CSR5_CUDA)
 
-spmv_merge_cuda$(SUFFIX).exe: obj/spmv_bench$(SUFFIX).o GPU/spmv_kernel_merge_cuda.cu $(LIB_OBJ)
+spmv_merge_cuda$(SUFFIX).exe: $(OBJ_DIR)/spmv_bench$(SUFFIX).o GPU/spmv_kernel_merge_cuda.cu $(LIB_OBJ)
 	$(NVCC) $(NVCCFLAGS) -DTIME_IT=$(TIME_IT) --compiler-options "$(CPPFLAGS)" -diag-suppress=2809 $^ -o $@ $(LDFLAGS) $(LDFLAGS_NV)
 
 CPPFLAGS_DASP_CUDA = 
@@ -216,7 +217,7 @@ CPPFLAGS_DASP_CUDA +=
 LDFLAGS_DASP_CUDA =
 LDFLAGS_DASP_CUDA += -lcudart
 
-spmv_dasp_cuda$(SUFFIX).exe: obj/spmv_bench$(SUFFIX).o GPU/spmv_kernel_dasp_cuda.cu $(LIB_OBJ)
+spmv_dasp_cuda$(SUFFIX).exe: $(OBJ_DIR)/spmv_bench$(SUFFIX).o GPU/spmv_kernel_dasp_cuda.cu $(LIB_OBJ)
 	$(NVCC) $(NVCCFLAGS) -DTIME_IT=$(TIME_IT) --compiler-options "$(CPPFLAGS) $(CPPFLAGS_DASP_CUDA)" -D f64 -diag-suppress=550 -Xcompiler -fopenmp-simd $^ -o $@ $(LDFLAGS) $(LDFLAGS_DASP_CUDA)
 
 
@@ -229,17 +230,17 @@ LDFLAGS_CUSPARSE += -lcudart
 LDFLAGS_CUSPARSE += -lcusparse
 LDFLAGS_CUSPARSE += -lcublas
 
-spmv_cusparse_csr$(SUFFIX).exe: obj/spmv_bench$(SUFFIX).o GPU/spmv_kernel_cusparse_csr.cu $(LIB_OBJ)
+spmv_cusparse_csr$(SUFFIX).exe: $(OBJ_DIR)/spmv_bench$(SUFFIX).o GPU/spmv_kernel_cusparse_csr.cu $(LIB_OBJ)
 	$(NVCC) $(NVCCFLAGS) -DTIME_IT=$(TIME_IT) --compiler-options "$(CPPFLAGS) $(CPPFLAGS_CUSPARSE)" $^ -o $@ $(LDFLAGS) $(LDFLAGS_CUSPARSE)
-spmv_cusparse_csr_s${NUM_STREAMS}$(SUFFIX).exe: obj/spmv_bench$(SUFFIX).o GPU/spmv_kernel_cusparse_csr_stream.cu $(LIB_OBJ)
+spmv_cusparse_csr_s${NUM_STREAMS}$(SUFFIX).exe: $(OBJ_DIR)/spmv_bench$(SUFFIX).o GPU/spmv_kernel_cusparse_csr_stream.cu $(LIB_OBJ)
 	$(NVCC) $(NVCCFLAGS) -DTIME_IT=$(TIME_IT) -DNUM_STREAMS=$(NUM_STREAMS) --compiler-options "$(CPPFLAGS) $(CPPFLAGS_CUSPARSE)" $^ -o $@ $(LDFLAGS) $(LDFLAGS_CUSPARSE)
 
-spmv_cusparse_coo$(SUFFIX).exe: obj/spmv_bench$(SUFFIX).o GPU/spmv_kernel_cusparse_coo.cu $(LIB_OBJ)
+spmv_cusparse_coo$(SUFFIX).exe: $(OBJ_DIR)/spmv_bench$(SUFFIX).o GPU/spmv_kernel_cusparse_coo.cu $(LIB_OBJ)
 	$(NVCC) $(NVCCFLAGS) -DTIME_IT=$(TIME_IT) --compiler-options "$(CPPFLAGS) $(CPPFLAGS_CUSPARSE)" $^ -o $@ $(LDFLAGS) $(LDFLAGS_CUSPARSE)
-spmv_cusparse_coo_s${NUM_STREAMS}$(SUFFIX).exe: obj/spmv_bench$(SUFFIX).o GPU/spmv_kernel_cusparse_coo_stream.cu $(LIB_OBJ)
+spmv_cusparse_coo_s${NUM_STREAMS}$(SUFFIX).exe: $(OBJ_DIR)/spmv_bench$(SUFFIX).o GPU/spmv_kernel_cusparse_coo_stream.cu $(LIB_OBJ)
 	$(NVCC) $(NVCCFLAGS) -DTIME_IT=$(TIME_IT) -DNUM_STREAMS=$(NUM_STREAMS) --compiler-options "$(CPPFLAGS) $(CPPFLAGS_CUSPARSE)" $^ -o $@ $(LDFLAGS) $(LDFLAGS_CUSPARSE)
 
-spmv_cusparse_csc$(SUFFIX).exe: obj/spmv_bench$(SUFFIX).o GPU/spmv_kernel_cusparse_csc.cu $(LIB_OBJ)
+spmv_cusparse_csc$(SUFFIX).exe: $(OBJ_DIR)/spmv_bench$(SUFFIX).o GPU/spmv_kernel_cusparse_csc.cu $(LIB_OBJ)
 	$(NVCC) $(NVCCFLAGS) -DTIME_IT=$(TIME_IT) --compiler-options "$(CPPFLAGS) $(CPPFLAGS_CUSPARSE)" $^ -o $@ $(LDFLAGS) $(LDFLAGS_CUSPARSE)
 
 
@@ -253,25 +254,25 @@ LDFLAGS_ROCM =
 LDFLAGS_ROCM += -L'$(ROCM_PATH)/lib64'
 LDFLAGS_ROCM += -lamdhip64
 
-spmv_csr_rocm_vector_b${BLOCK_SIZE}$(SUFFIX).exe: obj/spmv_bench$(SUFFIX).o obj/spmv_kernel_csr_rocm_vector_b${BLOCK_SIZE}$(SUFFIX).o obj/spmv_subkernel_csr_rocm_vector_b${BLOCK_SIZE}$(SUFFIX).o $(LIB_OBJ)
+spmv_csr_rocm_vector_b${BLOCK_SIZE}$(SUFFIX).exe: $(OBJ_DIR)/spmv_bench$(SUFFIX).o $(OBJ_DIR)/spmv_kernel_csr_rocm_vector_b${BLOCK_SIZE}$(SUFFIX).o $(OBJ_DIR)/spmv_subkernel_csr_rocm_vector_b${BLOCK_SIZE}$(SUFFIX).o $(LIB_OBJ)
 	$(CPP) -DTIME_IT=$(TIME_IT) -DBLOCK_SIZE=${BLOCK_SIZE} $(CPPFLAGS) $(CPPFLAGS_ROCM) $^ -o $@ $(LDFLAGS) $(LDFLAGS_ROCM)
-obj/spmv_kernel_csr_rocm_vector_b${BLOCK_SIZE}$(SUFFIX).o: GPU/spmv_kernel_csr_rocm_vector.cpp
+$(OBJ_DIR)/spmv_kernel_csr_rocm_vector_b${BLOCK_SIZE}$(SUFFIX).o: GPU/spmv_kernel_csr_rocm_vector.cpp
 	$(CPP) -DTIME_IT=$(TIME_IT) -DBLOCK_SIZE=${BLOCK_SIZE} $(CPPFLAGS) $(CPPFLAGS_ROCM) -c $^ -o $@
-obj/spmv_subkernel_csr_rocm_vector_b${BLOCK_SIZE}$(SUFFIX).o: GPU/spmv_subkernel_csr_rocm_vector.cpp
+$(OBJ_DIR)/spmv_subkernel_csr_rocm_vector_b${BLOCK_SIZE}$(SUFFIX).o: GPU/spmv_subkernel_csr_rocm_vector.cpp
 	$(HIPCC) $(HIPCCFLAGS) -DBLOCK_SIZE=${BLOCK_SIZE} $(CPPFLAGS) $(CPPFLAGS_ROCM) -c $^ -o $@
 
-spmv_csr_rocm_adaptive_b${BLOCK_SIZE}_mb${MULTIBLOCK_SIZE}$(SUFFIX).exe: obj/spmv_bench$(SUFFIX).o obj/spmv_kernel_csr_rocm_adaptive_b${BLOCK_SIZE}_mb${MULTIBLOCK_SIZE}$(SUFFIX).o obj/spmv_subkernel_csr_rocm_adaptive_b${BLOCK_SIZE}_mb${MULTIBLOCK_SIZE}$(SUFFIX).o $(LIB_OBJ)
+spmv_csr_rocm_adaptive_b${BLOCK_SIZE}_mb${MULTIBLOCK_SIZE}$(SUFFIX).exe: $(OBJ_DIR)/spmv_bench$(SUFFIX).o $(OBJ_DIR)/spmv_kernel_csr_rocm_adaptive_b${BLOCK_SIZE}_mb${MULTIBLOCK_SIZE}$(SUFFIX).o $(OBJ_DIR)/spmv_subkernel_csr_rocm_adaptive_b${BLOCK_SIZE}_mb${MULTIBLOCK_SIZE}$(SUFFIX).o $(LIB_OBJ)
 	$(CPP) -DTIME_IT=$(TIME_IT) -DBLOCK_SIZE=${BLOCK_SIZE} -DMULTIBLOCK_SIZE=${MULTIBLOCK_SIZE} $(CPPFLAGS) $(CPPFLAGS_ROCM) $^ -o $@ $(LDFLAGS) $(LDFLAGS_ROCM)
-obj/spmv_kernel_csr_rocm_adaptive_b${BLOCK_SIZE}_mb${MULTIBLOCK_SIZE}$(SUFFIX).o: GPU/spmv_kernel_csr_rocm_adaptive.cpp
+$(OBJ_DIR)/spmv_kernel_csr_rocm_adaptive_b${BLOCK_SIZE}_mb${MULTIBLOCK_SIZE}$(SUFFIX).o: GPU/spmv_kernel_csr_rocm_adaptive.cpp
 	$(CPP) -DTIME_IT=$(TIME_IT) -DBLOCK_SIZE=${BLOCK_SIZE} -DMULTIBLOCK_SIZE=${MULTIBLOCK_SIZE} $(CPPFLAGS) $(CPPFLAGS_ROCM) -c $^ -o $@
-obj/spmv_subkernel_csr_rocm_adaptive_b${BLOCK_SIZE}_mb${MULTIBLOCK_SIZE}$(SUFFIX).o: GPU/spmv_subkernel_csr_rocm_adaptive.cpp
+$(OBJ_DIR)/spmv_subkernel_csr_rocm_adaptive_b${BLOCK_SIZE}_mb${MULTIBLOCK_SIZE}$(SUFFIX).o: GPU/spmv_subkernel_csr_rocm_adaptive.cpp
 	$(HIPCC) $(HIPCCFLAGS) -DBLOCK_SIZE=${BLOCK_SIZE} -DMULTIBLOCK_SIZE=${MULTIBLOCK_SIZE} $(CPPFLAGS) $(CPPFLAGS_ROCM) -c $^ -o $@
 
-spmv_csr_rocm_const_nnz_per_thread_b${BLOCK_SIZE}_nnz${NNZ_PER_THREAD}$(SUFFIX).exe: obj/spmv_bench$(SUFFIX).o obj/spmv_kernel_csr_rocm_const_nnz_per_thread_b${BLOCK_SIZE}_nnz${NNZ_PER_THREAD}$(SUFFIX).o obj/spmv_subkernel_csr_rocm_const_nnz_per_thread_b${BLOCK_SIZE}_nnz${NNZ_PER_THREAD}$(SUFFIX).o $(LIB_OBJ)
+spmv_csr_rocm_const_nnz_per_thread_b${BLOCK_SIZE}_nnz${NNZ_PER_THREAD}$(SUFFIX).exe: $(OBJ_DIR)/spmv_bench$(SUFFIX).o $(OBJ_DIR)/spmv_kernel_csr_rocm_const_nnz_per_thread_b${BLOCK_SIZE}_nnz${NNZ_PER_THREAD}$(SUFFIX).o $(OBJ_DIR)/spmv_subkernel_csr_rocm_const_nnz_per_thread_b${BLOCK_SIZE}_nnz${NNZ_PER_THREAD}$(SUFFIX).o $(LIB_OBJ)
 	$(CPP) -DTIME_IT=$(TIME_IT) -DBLOCK_SIZE=${BLOCK_SIZE} -DNNZ_PER_THREAD=${NNZ_PER_THREAD} $(CPPFLAGS) $(CPPFLAGS_ROCM) $^ -o $@ $(LDFLAGS) $(LDFLAGS_ROCM)
-obj/spmv_kernel_csr_rocm_const_nnz_per_thread_b${BLOCK_SIZE}_nnz${NNZ_PER_THREAD}$(SUFFIX).o: GPU/spmv_kernel_csr_rocm_const_nnz_per_thread.cpp
+$(OBJ_DIR)/spmv_kernel_csr_rocm_const_nnz_per_thread_b${BLOCK_SIZE}_nnz${NNZ_PER_THREAD}$(SUFFIX).o: GPU/spmv_kernel_csr_rocm_const_nnz_per_thread.cpp
 	$(CPP) -DTIME_IT=$(TIME_IT) -DBLOCK_SIZE=${BLOCK_SIZE} -DNNZ_PER_THREAD=${NNZ_PER_THREAD} $(CPPFLAGS) $(CPPFLAGS_ROCM) -c $^ -o $@
-obj/spmv_subkernel_csr_rocm_const_nnz_per_thread_b${BLOCK_SIZE}_nnz${NNZ_PER_THREAD}$(SUFFIX).o: GPU/spmv_subkernel_csr_rocm_const_nnz_per_thread.cpp
+$(OBJ_DIR)/spmv_subkernel_csr_rocm_const_nnz_per_thread_b${BLOCK_SIZE}_nnz${NNZ_PER_THREAD}$(SUFFIX).o: GPU/spmv_subkernel_csr_rocm_const_nnz_per_thread.cpp
 	$(HIPCC) $(HIPCCFLAGS) -DBLOCK_SIZE=${BLOCK_SIZE} -DNNZ_PER_THREAD=${NNZ_PER_THREAD} $(CPPFLAGS) $(CPPFLAGS_ROCM) -c $^ -o $@
 
 
@@ -280,22 +281,22 @@ obj/spmv_subkernel_csr_rocm_const_nnz_per_thread_b${BLOCK_SIZE}_nnz${NNZ_PER_THR
 ACC_PATH=acc/
 CPPFLAGS_ROCM_ACC = -I$(ACC_PATH) -I$(ACC_PATH)/hip-flat/ -I$(ACC_PATH)/common
 
-spmv_csr_rocm_acc_flat_b${BLOCK_SIZE}$(SUFFIX).exe: obj/spmv_bench$(SUFFIX).o obj/spmv_kernel_csr_rocm_acc_flat_b${BLOCK_SIZE}$(SUFFIX).o obj/spmv_subkernel_csr_rocm_acc_flat_b${BLOCK_SIZE}$(SUFFIX).o $(LIB_OBJ)
+spmv_csr_rocm_acc_flat_b${BLOCK_SIZE}$(SUFFIX).exe: $(OBJ_DIR)/spmv_bench$(SUFFIX).o $(OBJ_DIR)/spmv_kernel_csr_rocm_acc_flat_b${BLOCK_SIZE}$(SUFFIX).o $(OBJ_DIR)/spmv_subkernel_csr_rocm_acc_flat_b${BLOCK_SIZE}$(SUFFIX).o $(LIB_OBJ)
 	$(CPP) -DTIME_IT=$(TIME_IT) -DBLOCK_SIZE=${BLOCK_SIZE} $(CPPFLAGS) $(CPPFLAGS_ROCM) $^ -o $@ $(LDFLAGS) $(LDFLAGS_ROCM)
-obj/spmv_kernel_csr_rocm_acc_flat_b${BLOCK_SIZE}$(SUFFIX).o: GPU/spmv_kernel_csr_rocm_acc_flat.cpp
+$(OBJ_DIR)/spmv_kernel_csr_rocm_acc_flat_b${BLOCK_SIZE}$(SUFFIX).o: GPU/spmv_kernel_csr_rocm_acc_flat.cpp
 	$(CPP) -DTIME_IT=$(TIME_IT) -DBLOCK_SIZE=${BLOCK_SIZE} $(CPPFLAGS) $(CPPFLAGS_ROCM) -c $^ -o $@
 
-obj/spmv_subkernel_csr_rocm_acc_flat_b${BLOCK_SIZE}$(SUFFIX).o: GPU/spmv_subkernel_csr_rocm_acc_flat.cpp
+$(OBJ_DIR)/spmv_subkernel_csr_rocm_acc_flat_b${BLOCK_SIZE}$(SUFFIX).o: GPU/spmv_subkernel_csr_rocm_acc_flat.cpp
 	$(HIPCC) $(HIPCCFLAGS) -DBLOCK_SIZE=${BLOCK_SIZE} $(CPPFLAGS) $(CPPFLAGS_ROCM) $(CPPFLAGS_ROCM_ACC) -c $^ -o $@
 
 CPPFLAGS_ROCM_ACC = -I$(ACC_PATH) -I$(ACC_PATH)/hip-line-enhance/ -I$(ACC_PATH)/common
 
-spmv_csr_rocm_acc_line_enhance_b${BLOCK_SIZE}$(SUFFIX).exe: obj/spmv_bench$(SUFFIX).o obj/spmv_kernel_csr_rocm_acc_line_enhance_b${BLOCK_SIZE}$(SUFFIX).o obj/spmv_subkernel_csr_rocm_acc_line_enhance_b${BLOCK_SIZE}$(SUFFIX).o $(LIB_OBJ)
+spmv_csr_rocm_acc_line_enhance_b${BLOCK_SIZE}$(SUFFIX).exe: $(OBJ_DIR)/spmv_bench$(SUFFIX).o $(OBJ_DIR)/spmv_kernel_csr_rocm_acc_line_enhance_b${BLOCK_SIZE}$(SUFFIX).o $(OBJ_DIR)/spmv_subkernel_csr_rocm_acc_line_enhance_b${BLOCK_SIZE}$(SUFFIX).o $(LIB_OBJ)
 	$(CPP) -DTIME_IT=$(TIME_IT) -DBLOCK_SIZE=${BLOCK_SIZE} $(CPPFLAGS) $(CPPFLAGS_ROCM) $^ -o $@ $(LDFLAGS) $(LDFLAGS_ROCM)
-obj/spmv_kernel_csr_rocm_acc_line_enhance_b${BLOCK_SIZE}$(SUFFIX).o: GPU/spmv_kernel_csr_rocm_acc_line_enhance.cpp
+$(OBJ_DIR)/spmv_kernel_csr_rocm_acc_line_enhance_b${BLOCK_SIZE}$(SUFFIX).o: GPU/spmv_kernel_csr_rocm_acc_line_enhance.cpp
 	$(CPP) -DTIME_IT=$(TIME_IT) -DBLOCK_SIZE=${BLOCK_SIZE} $(CPPFLAGS) $(CPPFLAGS_ROCM) -c $^ -o $@
 
-obj/spmv_subkernel_csr_rocm_acc_line_enhance_b${BLOCK_SIZE}$(SUFFIX).o: GPU/spmv_subkernel_csr_rocm_acc_line_enhance.cpp
+$(OBJ_DIR)/spmv_subkernel_csr_rocm_acc_line_enhance_b${BLOCK_SIZE}$(SUFFIX).o: GPU/spmv_subkernel_csr_rocm_acc_line_enhance.cpp
 	$(HIPCC) $(HIPCCFLAGS) -DBLOCK_SIZE=${BLOCK_SIZE} $(CPPFLAGS) $(CPPFLAGS_ROCM) $(CPPFLAGS_ROCM_ACC) -c $^ -o $@
 
 
@@ -312,13 +313,13 @@ LDFLAGS_ROCSPARSE += -L'$(ROCM_PATH)/lib64'
 LDFLAGS_ROCSPARSE += -lrocsparse
 LDFLAGS_ROCSPARSE += -lamdhip64
 
-spmv_rocsparse_csr$(SUFFIX).exe: obj/spmv_bench$(SUFFIX).o GPU/spmv_kernel_rocsparse_csr.cpp $(LIB_OBJ)
+spmv_rocsparse_csr$(SUFFIX).exe: $(OBJ_DIR)/spmv_bench$(SUFFIX).o GPU/spmv_kernel_rocsparse_csr.cpp $(LIB_OBJ)
 	$(CPP) -DTIME_IT=$(TIME_IT) $(CPPFLAGS) $(CPPFLAGS_ROCSPARSE) $^ -o $@ $(LDFLAGS) $(LDFLAGS_ROCSPARSE)
-# spmv_rocsparse_csr_deprecated$(SUFFIX).exe: obj/spmv_bench$(SUFFIX).o spmv_kernel_rocsparse_csr_deprecated.cpp $(LIB_OBJ)
+# spmv_rocsparse_csr_deprecated$(SUFFIX).exe: $(OBJ_DIR)/spmv_bench$(SUFFIX).o spmv_kernel_rocsparse_csr_deprecated.cpp $(LIB_OBJ)
 # 	$(CPP) -DTIME_IT=$(TIME_IT) $(CPPFLAGS) $(CPPFLAGS_ROCSPARSE) $^ -o $@ $(LDFLAGS) $(LDFLAGS_ROCSPARSE)
-spmv_rocsparse_coo$(SUFFIX).exe: obj/spmv_bench$(SUFFIX).o GPU/spmv_kernel_rocsparse_coo.cpp $(LIB_OBJ)
+spmv_rocsparse_coo$(SUFFIX).exe: $(OBJ_DIR)/spmv_bench$(SUFFIX).o GPU/spmv_kernel_rocsparse_coo.cpp $(LIB_OBJ)
 	$(CPP) -DTIME_IT=$(TIME_IT) $(CPPFLAGS) $(CPPFLAGS_ROCSPARSE) $^ -o $@ $(LDFLAGS) $(LDFLAGS_ROCSPARSE)
-spmv_rocsparse_hyb$(SUFFIX).exe: obj/spmv_bench$(SUFFIX).o GPU/spmv_kernel_rocsparse_hyb.cpp $(LIB_OBJ)
+spmv_rocsparse_hyb$(SUFFIX).exe: $(OBJ_DIR)/spmv_bench$(SUFFIX).o GPU/spmv_kernel_rocsparse_hyb.cpp $(LIB_OBJ)
 	$(CPP) -DTIME_IT=$(TIME_IT) $(CPPFLAGS) $(CPPFLAGS_ROCSPARSE) $^ -o $@ $(LDFLAGS) $(LDFLAGS_ROCSPARSE)
 
 
@@ -330,35 +331,35 @@ LDFLAGS_MKL =
 LDFLAGS_MKL += -L'$(MKL_PATH)/lib/intel64'
 LDFLAGS_MKL += -Wl,--no-as-needed -lmkl_intel_lp64 -lmkl_gnu_thread -lmkl_core -lgomp -lpthread -ldl
 
-spmv_mkl_coo$(SUFFIX).exe: obj/spmv_bench$(SUFFIX).o spmv_kernel_mkl_coo.cpp $(LIB_OBJ)
+spmv_mkl_coo$(SUFFIX).exe: $(OBJ_DIR)/spmv_bench$(SUFFIX).o spmv_kernel_mkl_coo.cpp $(LIB_OBJ)
 	$(CPP) $(CPPFLAGS) $(CPPFLAGS_MKL) $^ -o $@ $(LDFLAGS) $(LDFLAGS_MKL)
-spmv_mkl_dia$(SUFFIX).exe: obj/spmv_bench$(SUFFIX).o spmv_kernel_mkl_dia.cpp $(LIB_OBJ)
+spmv_mkl_dia$(SUFFIX).exe: $(OBJ_DIR)/spmv_bench$(SUFFIX).o spmv_kernel_mkl_dia.cpp $(LIB_OBJ)
 	$(CPP) $(CPPFLAGS) $(CPPFLAGS_MKL) $^ -o $@ $(LDFLAGS) $(LDFLAGS_MKL)
-spmv_dia$(SUFFIX).exe: obj/spmv_bench$(SUFFIX).o spmv_kernel_dia.cpp $(LIB_OBJ)
+spmv_dia$(SUFFIX).exe: $(OBJ_DIR)/spmv_bench$(SUFFIX).o spmv_kernel_dia.cpp $(LIB_OBJ)
 	$(CPP) $(CPPFLAGS) $(CPPFLAGS_MKL) $^ -o $@ $(LDFLAGS_MKL)
-spmv_mkl_csc$(SUFFIX).exe: obj/spmv_bench$(SUFFIX).o spmv_kernel_mkl_csc.cpp $(LIB_OBJ)
+spmv_mkl_csc$(SUFFIX).exe: $(OBJ_DIR)/spmv_bench$(SUFFIX).o spmv_kernel_mkl_csc.cpp $(LIB_OBJ)
 	$(CPP) $(CPPFLAGS) $(CPPFLAGS_MKL) $^ -o $@ $(LDFLAGS) $(LDFLAGS_MKL)
-spmv_mkl_csr$(SUFFIX).exe: obj/spmv_bench$(SUFFIX).o spmv_kernel_mkl_csr.cpp $(LIB_OBJ)
+spmv_mkl_csr$(SUFFIX).exe: $(OBJ_DIR)/spmv_bench$(SUFFIX).o spmv_kernel_mkl_csr.cpp $(LIB_OBJ)
 	$(CPP) $(CPPFLAGS) $(CPPFLAGS_MKL) $^ -o $@ $(LDFLAGS) $(LDFLAGS_MKL)
-spmv_mkl_ie$(SUFFIX).exe: obj/spmv_bench$(SUFFIX).o spmv_kernel_mkl_ie.cpp $(LIB_OBJ)
+spmv_mkl_ie$(SUFFIX).exe: $(OBJ_DIR)/spmv_bench$(SUFFIX).o spmv_kernel_mkl_ie.cpp $(LIB_OBJ)
 	$(CPP) $(CPPFLAGS) $(CPPFLAGS_MKL) $^ -o $@ $(LDFLAGS) $(LDFLAGS_MKL)
-spmv_mkl_ie_sym$(SUFFIX).exe: obj/spmv_bench_sym$(SUFFIX).o spmv_kernel_mkl_ie.cpp $(LIB_OBJ)
+spmv_mkl_ie_sym$(SUFFIX).exe: $(OBJ_DIR)/spmv_bench_sym$(SUFFIX).o spmv_kernel_mkl_ie.cpp $(LIB_OBJ)
 	$(CPP) $(CPPFLAGS) $(CPPFLAGS_MKL) -D'KEEP_SYMMETRY' $^ -o $@ $(LDFLAGS) $(LDFLAGS_MKL)
-cg_mkl_ie$(SUFFIX).exe: obj/cg_bench$(SUFFIX).o spmv_kernel_mkl_ie.cpp $(LIB_OBJ)
+cg_mkl_ie$(SUFFIX).exe: $(OBJ_DIR)/cg_bench$(SUFFIX).o spmv_kernel_mkl_ie.cpp $(LIB_OBJ)
 	$(CPP) $(CPPFLAGS) $(CPPFLAGS_MKL) $^ -o $@ $(LDFLAGS) $(LDFLAGS_MKL)
-bicg_mkl_ie$(SUFFIX).exe: obj/bicg_bench$(SUFFIX).o spmv_kernel_mkl_ie.cpp $(LIB_OBJ)
+bicg_mkl_ie$(SUFFIX).exe: $(OBJ_DIR)/bicg_bench$(SUFFIX).o spmv_kernel_mkl_ie.cpp $(LIB_OBJ)
 	$(CPP) $(CPPFLAGS) $(CPPFLAGS_MKL) $^ -o $@ $(LDFLAGS) $(LDFLAGS_MKL)
-spmv_mkl_bsr_2$(SUFFIX).exe: obj/spmv_bench$(SUFFIX).o spmv_kernel_mkl_bsr.cpp $(LIB_OBJ)
+spmv_mkl_bsr_2$(SUFFIX).exe: $(OBJ_DIR)/spmv_bench$(SUFFIX).o spmv_kernel_mkl_bsr.cpp $(LIB_OBJ)
 	$(CPP) $(CPPFLAGS) $(CPPFLAGS_MKL) -D'BLOCK_SIZE=2' $^ -o $@ $(LDFLAGS) $(LDFLAGS_MKL)
-spmv_mkl_bsr_4$(SUFFIX).exe: obj/spmv_bench$(SUFFIX).o spmv_kernel_mkl_bsr.cpp $(LIB_OBJ)
+spmv_mkl_bsr_4$(SUFFIX).exe: $(OBJ_DIR)/spmv_bench$(SUFFIX).o spmv_kernel_mkl_bsr.cpp $(LIB_OBJ)
 	$(CPP) $(CPPFLAGS) $(CPPFLAGS_MKL) -D'BLOCK_SIZE=4' $^ -o $@ $(LDFLAGS) $(LDFLAGS_MKL)
-spmv_mkl_bsr_8$(SUFFIX).exe: obj/spmv_bench$(SUFFIX).o spmv_kernel_mkl_bsr.cpp $(LIB_OBJ)
+spmv_mkl_bsr_8$(SUFFIX).exe: $(OBJ_DIR)/spmv_bench$(SUFFIX).o spmv_kernel_mkl_bsr.cpp $(LIB_OBJ)
 	$(CPP) $(CPPFLAGS) $(CPPFLAGS_MKL) -D'BLOCK_SIZE=8' $^ -o $@ $(LDFLAGS) $(LDFLAGS_MKL)
-spmv_mkl_bsr_16$(SUFFIX).exe: obj/spmv_bench$(SUFFIX).o spmv_kernel_mkl_bsr.cpp $(LIB_OBJ)
+spmv_mkl_bsr_16$(SUFFIX).exe: $(OBJ_DIR)/spmv_bench$(SUFFIX).o spmv_kernel_mkl_bsr.cpp $(LIB_OBJ)
 	$(CPP) $(CPPFLAGS) $(CPPFLAGS_MKL) -D'BLOCK_SIZE=16' $^ -o $@ $(LDFLAGS) $(LDFLAGS_MKL)
-spmv_mkl_bsr_32$(SUFFIX).exe: obj/spmv_bench$(SUFFIX).o spmv_kernel_mkl_bsr.cpp $(LIB_OBJ)
+spmv_mkl_bsr_32$(SUFFIX).exe: $(OBJ_DIR)/spmv_bench$(SUFFIX).o spmv_kernel_mkl_bsr.cpp $(LIB_OBJ)
 	$(CPP) $(CPPFLAGS) $(CPPFLAGS_MKL) -D'BLOCK_SIZE=32' $^ -o $@ $(LDFLAGS) $(LDFLAGS_MKL)
-spmv_mkl_bsr_64$(SUFFIX).exe: obj/spmv_bench$(SUFFIX).o spmv_kernel_mkl_bsr.cpp $(LIB_OBJ)
+spmv_mkl_bsr_64$(SUFFIX).exe: $(OBJ_DIR)/spmv_bench$(SUFFIX).o spmv_kernel_mkl_bsr.cpp $(LIB_OBJ)
 	$(CPP) $(CPPFLAGS) $(CPPFLAGS_MKL) -D'BLOCK_SIZE=64' $^ -o $@ $(LDFLAGS) $(LDFLAGS_MKL)
 
 
@@ -370,7 +371,7 @@ LDFLAGS_AOCL =
 LDFLAGS_AOCL += -L'$(AOCL_PATH)/lib/'
 LDFLAGS_AOCL += -Wl,--no-as-needed  -laoclsparse -lgomp -lpthread -ldl
 
-spmv_aocl_optmv$(SUFFIX).exe: obj/spmv_bench$(SUFFIX).o spmv_kernel_aocl_optmv.cpp $(LIB_OBJ)
+spmv_aocl_optmv$(SUFFIX).exe: $(OBJ_DIR)/spmv_bench$(SUFFIX).o spmv_kernel_aocl_optmv.cpp $(LIB_OBJ)
 	$(CPP) $(CPPFLAGS) $(CPPFLAGS_AOCL) $^ -o $@ $(LDFLAGS) $(LDFLAGS_AOCL)
 
 
@@ -384,21 +385,21 @@ CPPFLAGS_CSRRV += -mavx512f
 CPPFLAGS_CSRRV += -mavx512vl
 CPPFLAGS_CSRRV += -mavx512bw
 
-spmv_csrrv$(SUFFIX).exe: obj/spmv_bench$(SUFFIX).o spmv_kernel_csrrv.cpp $(LIB_OBJ)
+spmv_csrrv$(SUFFIX).exe: $(OBJ_DIR)/spmv_bench$(SUFFIX).o spmv_kernel_csrrv.cpp $(LIB_OBJ)
 	$(CPP) $(CPPFLAGS) $(CPPFLAGS_CSRRV) $^ -o $@ $(LDFLAGS)
 
 
 CPPFLAGS_CSR5 =
 CPPFLAGS_CSR5 += -Wno-deprecated-writable-strings -Wno-unused-parameter -Wno-unused-but-set-variable -Wno-sign-compare -Wno-unknown-pragmas -Wno-write-strings -Wno-unused-result
 
-spmv_csr5$(SUFFIX).exe: obj/spmv_bench$(SUFFIX).o spmv_kernel_csr5.cpp $(LIB_OBJ)
+spmv_csr5$(SUFFIX).exe: $(OBJ_DIR)/spmv_bench$(SUFFIX).o spmv_kernel_csr5.cpp $(LIB_OBJ)
 	$(CPP) $(CPPFLAGS) $(CPPFLAGS_CSR5) $^ -o $@ $(LDFLAGS)
 
 
 CPPFLAGS_MERGE =
 # CPPFLAGS_MERGE += -D'CUB_MKL'
 ifeq ($(ARCH), x86_64)
-	CPPFLAGS_MERGE += -m64
+    CPPFLAGS_MERGE += -m64
     CPPFLAGS_MERGE += -mavx2
     # CPPFLAGS_MERGE += -mavx512f
 else ifeq ($(ARCH), aarch64)
@@ -414,7 +415,7 @@ LDFLAGS_MERGE =
 LDFLAGS_MERGE += -lrt -Wl,--no-as-needed -lgomp -lpthread -lm -ldl
 # LDFLAGS_MERGE += -lnuma
 
-spmv_merge$(SUFFIX).exe: obj/spmv_bench$(SUFFIX).o spmv_kernel_merge.cpp $(LIB_OBJ)
+spmv_merge$(SUFFIX).exe: $(OBJ_DIR)/spmv_bench$(SUFFIX).o spmv_kernel_merge.cpp $(LIB_OBJ)
 	$(CPP) $(CPPFLAGS) $(CPPFLAGS_MERGE) $^ -o $@ $(LDFLAGS) $(LDFLAGS_MERGE)
 
 
@@ -438,10 +439,10 @@ LDFLAGS_SPARSEX += -lboost_regex -lboost_serialization -lboost_system -lboost_at
 # This needs to be put FIRST.
 LDFLAGS_SPARSEX := -Wl,--no-as-needed $(LDFLAGS_SPARSEX)
 
-spmv_sparsex_d.exe: obj/spmv_bench_d.o obj/spmv_kernel_sparsex_d.o $(LIB_OBJ)
+spmv_sparsex_d.exe: $(OBJ_DIR)/spmv_bench_d.o $(OBJ_DIR)/spmv_kernel_sparsex_d.o $(LIB_OBJ)
 	$(CPP) $(CPPFLAGS) $(CPPFLAGS_SPARSEX) $^ -o $@ $(LDFLAGS) $(LDFLAGS_SPARSEX)
 
-obj/spmv_kernel_sparsex_d.o: spmv_kernel_sparsex.cpp
+$(OBJ_DIR)/spmv_kernel_sparsex_d.o: spmv_kernel_sparsex.cpp
 	$(CPP) $(CPPFLAGS) $(CPPFLAGS_SPARSEX) -c $< -o $@
 
 spmv_sell-C-s$(SUFFIX).exe: sell-C-s/build/spmvbench/spmv_sell-C-s_d.exe
@@ -465,10 +466,10 @@ spmv_sell-C-s$(SUFFIX).exe: sell-C-s/build/spmvbench/spmv_sell-C-s_d.exe
 # This needs to be put FIRST.
 # LDFLAGS_SPARSEX_FLOAT := -Wl,--no-as-needed $(LDFLAGS_SPARSEX_FLOAT)
 
-# spmv_sparsex_f.exe: obj/spmv_bench_f.o obj/spmv_kernel_sparsex_f.o $(LIB_OBJ)
+# spmv_sparsex_f.exe: $(OBJ_DIR)/spmv_bench_f.o $(OBJ_DIR)/spmv_kernel_sparsex_f.o $(LIB_OBJ)
 	# $(CPP) $(CPPFLAGS) $(CPPFLAGS_SPARSEX_FLOAT) $^ -o $@ $(LDFLAGS) $(LDFLAGS_SPARSEX_FLOAT)
 
-# obj/spmv_kernel_sparsex_f.o: spmv_kernel_sparsex.cpp
+# $(OBJ_DIR)/spmv_kernel_sparsex_f.o: spmv_kernel_sparsex.cpp
 	# $(CPP) $(CPPFLAGS) $(CPPFLAGS_SPARSEX_FLOAT) -c $< -o $@
 
 
@@ -481,7 +482,7 @@ LDFLAGS_SPV8 += -L'$(MKL_PATH)/lib/intel64'
 LDFLAGS_SPV8 += -lmkl_intel_lp64
 LDFLAGS_SPV8 += -Wl,--no-as-needed -lmkl_intel_lp64 -lmkl_gnu_thread -lmkl_core -lgomp -lpthread -ldl
 
-spmv_spv8$(SUFFIX).exe: obj/spmv_bench$(SUFFIX).o spmv_kernel_spv8.cpp $(LIB_OBJ)
+spmv_spv8$(SUFFIX).exe: $(OBJ_DIR)/spmv_bench$(SUFFIX).o spmv_kernel_spv8.cpp $(LIB_OBJ)
 	$(CPP) $(CPPFLAGS) $(CPPFLAGS_SPV8) $^ -o $@ $(LDFLAGS) $(LDFLAGS_SPV8)
 
 
@@ -535,104 +536,104 @@ spmv_cfs$(SUFFIX).exe:
 	mv bench/bench_spmv_mmf bench/spmv_cfs${SUFFIX}.exe
 
 
-$(call Rule_Auto_Dependencies,obj/spmv_kernel_csr_cv_block_id$(SUFFIX).o,spmv_kernel_csr_cv_block.cpp,$(CPPFLAGS) $(CPPFLAGS_CUSTOM) $(CPPFLAGS_CV_BLOCK_ID))
+$(call Rule_Auto_Dependencies,$(OBJ_DIR)/spmv_kernel_csr_cv_block_id$(SUFFIX).o,cv_block/spmv_kernel_csr_cv_block.cpp,$(CPPFLAGS) $(CPPFLAGS_CUSTOM) $(CPPFLAGS_CV_BLOCK_ID))
 	$(CPP) $(CPPFLAGS) $(CPPFLAGS_CV_BLOCK_ID) -c $< -o $@
-$(call Rule_Auto_Dependencies,obj/spmv_kernel_csr_cv_block_d2f$(SUFFIX).o,spmv_kernel_csr_cv_block.cpp,$(CPPFLAGS) $(CPPFLAGS_CUSTOM) $(CPPFLAGS_CV_BLOCK_D2F))
+$(call Rule_Auto_Dependencies,$(OBJ_DIR)/spmv_kernel_csr_cv_block_d2f$(SUFFIX).o,cv_block/spmv_kernel_csr_cv_block.cpp,$(CPPFLAGS) $(CPPFLAGS_CUSTOM) $(CPPFLAGS_CV_BLOCK_D2F))
 	$(CPP) $(CPPFLAGS) $(CPPFLAGS_CV_BLOCK_D2F) -c $< -o $@
-$(call Rule_Auto_Dependencies,obj/spmv_kernel_csr_cv_block_fpc$(SUFFIX).o,spmv_kernel_csr_cv_block.cpp,$(CPPFLAGS) $(CPPFLAGS_CUSTOM) $(CPPFLAGS_CV_BLOCK_FPC))
+$(call Rule_Auto_Dependencies,$(OBJ_DIR)/spmv_kernel_csr_cv_block_fpc$(SUFFIX).o,cv_block/spmv_kernel_csr_cv_block.cpp,$(CPPFLAGS) $(CPPFLAGS_CUSTOM) $(CPPFLAGS_CV_BLOCK_FPC))
 	$(CPP) $(CPPFLAGS) $(CPPFLAGS_CV_BLOCK_FPC) -c $< -o $@
-$(call Rule_Auto_Dependencies,obj/spmv_kernel_csr_cv_block_zfp$(SUFFIX).o,spmv_kernel_csr_cv_block.cpp,$(CPPFLAGS) $(CPPFLAGS_CUSTOM) $(CPPFLAGS_CV_BLOCK_ZFP))
+$(call Rule_Auto_Dependencies,$(OBJ_DIR)/spmv_kernel_csr_cv_block_zfp$(SUFFIX).o,cv_block/spmv_kernel_csr_cv_block.cpp,$(CPPFLAGS) $(CPPFLAGS_CUSTOM) $(CPPFLAGS_CV_BLOCK_ZFP))
 	$(CPP) $(CPPFLAGS) $(CPPFLAGS_CV_BLOCK_ZFP) -c $< -o $@
-$(call Rule_Auto_Dependencies,obj/spmv_kernel_csr_cv_block_fpzip$(SUFFIX).o,spmv_kernel_csr_cv_block.cpp,$(CPPFLAGS) $(CPPFLAGS_CUSTOM) $(CPPFLAGS_CV_BLOCK_FPZIP))
+$(call Rule_Auto_Dependencies,$(OBJ_DIR)/spmv_kernel_csr_cv_block_fpzip$(SUFFIX).o,cv_block/spmv_kernel_csr_cv_block.cpp,$(CPPFLAGS) $(CPPFLAGS_CUSTOM) $(CPPFLAGS_CV_BLOCK_FPZIP))
 	$(CPP) $(CPPFLAGS) $(CPPFLAGS_CV_BLOCK_FPZIP) -c $< -o $@
 
-$(call Rule_Auto_Dependencies,obj/spmv_kernel_div$(SUFFIX).o,DIV/spmv_kernel_div.cpp,$(CPPFLAGS) $(CPPFLAGS_CUSTOM))
+$(call Rule_Auto_Dependencies,$(OBJ_DIR)/spmv_kernel_div$(SUFFIX).o,DIV/spmv_kernel_div.cpp,$(CPPFLAGS) $(CPPFLAGS_CUSTOM))
 	$(CPP) $(CPPFLAGS) -c $< -o $@
-$(call Rule_Auto_Dependencies,obj/spmv_kernel_div_rf$(SUFFIX).o,DIV/spmv_kernel_div.cpp,$(CPPFLAGS) $(CPPFLAGS_CUSTOM) -D'DIV_TYPE_RF')
+$(call Rule_Auto_Dependencies,$(OBJ_DIR)/spmv_kernel_div_rf$(SUFFIX).o,DIV/spmv_kernel_div.cpp,$(CPPFLAGS) $(CPPFLAGS_CUSTOM) -D'DIV_TYPE_RF')
 	$(CPP) $(CPPFLAGS) -D'DIV_TYPE_RF' -c $< -o $@
-$(call Rule_Auto_Dependencies,obj/spmv_kernel_div_adapt$(SUFFIX).o,DIV/spmv_kernel_div.cpp,$(CPPFLAGS) $(CPPFLAGS_CUSTOM) -D'DIV_TYPE_ADAPT')
+$(call Rule_Auto_Dependencies,$(OBJ_DIR)/spmv_kernel_div_adapt$(SUFFIX).o,DIV/spmv_kernel_div.cpp,$(CPPFLAGS) $(CPPFLAGS_CUSTOM) -D'DIV_TYPE_ADAPT')
 	$(CPP) $(CPPFLAGS) -D'DIV_TYPE_ADAPT' -c $< -o $@
-$(call Rule_Auto_Dependencies,obj/spmv_kernel_div_rf_const_size_row$(SUFFIX).o,DIV/spmv_kernel_div.cpp,$(CPPFLAGS) $(CPPFLAGS_CUSTOM) -D'DIV_TYPE_RF_CONST_SIZE_ROW')
+$(call Rule_Auto_Dependencies,$(OBJ_DIR)/spmv_kernel_div_rf_const_size_row$(SUFFIX).o,DIV/spmv_kernel_div.cpp,$(CPPFLAGS) $(CPPFLAGS_CUSTOM) -D'DIV_TYPE_RF_CONST_SIZE_ROW')
 	$(CPP) $(CPPFLAGS) -D'DIV_TYPE_RF_CONST_SIZE_ROW' -c $< -o $@
-$(call Rule_Auto_Dependencies,obj/spmv_kernel_div_sym_rf_local$(SUFFIX).o,DIV/spmv_kernel_div.cpp,$(CPPFLAGS) $(CPPFLAGS_CUSTOM) -D'DIV_TYPE_SYM_RF_LOCAL')
+$(call Rule_Auto_Dependencies,$(OBJ_DIR)/spmv_kernel_div_sym_rf_local$(SUFFIX).o,DIV/spmv_kernel_div.cpp,$(CPPFLAGS) $(CPPFLAGS_CUSTOM) -D'DIV_TYPE_SYM_RF_LOCAL')
 	$(CPP) $(CPPFLAGS) -D'DIV_TYPE_SYM_RF_LOCAL' -c $< -o $@
-$(call Rule_Auto_Dependencies,obj/spmv_kernel_div_select$(SUFFIX).o,DIV/spmv_kernel_div.cpp,$(CPPFLAGS) $(CPPFLAGS_CUSTOM) -D'DIV_TYPE_SELECT')
+$(call Rule_Auto_Dependencies,$(OBJ_DIR)/spmv_kernel_div_select$(SUFFIX).o,DIV/spmv_kernel_div.cpp,$(CPPFLAGS) $(CPPFLAGS_CUSTOM) -D'DIV_TYPE_SELECT')
 	$(CPP) $(CPPFLAGS) -D'DIV_TYPE_SELECT' -c $< -o $@
-$(call Rule_Auto_Dependencies,obj/spmv_kernel_div_cols_sort$(SUFFIX).o,DIV/spmv_kernel_div.cpp,$(CPPFLAGS) $(CPPFLAGS_CUSTOM) -D'DIV_TYPE_COLS_SORT')
+$(call Rule_Auto_Dependencies,$(OBJ_DIR)/spmv_kernel_div_cols_sort$(SUFFIX).o,DIV/spmv_kernel_div.cpp,$(CPPFLAGS) $(CPPFLAGS_CUSTOM) -D'DIV_TYPE_COLS_SORT')
 	$(CPP) $(CPPFLAGS) -D'DIV_TYPE_COLS_SORT' -c $< -o $@
-$(call Rule_Auto_Dependencies,obj/spmv_kernel_div_rf_ord2$(SUFFIX).o,DIV/spmv_kernel_div.cpp,$(CPPFLAGS) $(CPPFLAGS_CUSTOM) -D'DIV_TYPE_ORD2')
+$(call Rule_Auto_Dependencies,$(OBJ_DIR)/spmv_kernel_div_rf_ord2$(SUFFIX).o,DIV/spmv_kernel_div.cpp,$(CPPFLAGS) $(CPPFLAGS_CUSTOM) -D'DIV_TYPE_ORD2')
 	$(CPP) $(CPPFLAGS) -D'DIV_TYPE_ORD2' -c $< -o $@
-$(call Rule_Auto_Dependencies,obj/spmv_kernel_cuda_div_rf$(SUFFIX).o,DIV/spmv_kernel_div.cpp,$(CPPFLAGS) $(CPPFLAGS_CUSTOM) -D'DIV_TYPE_RF')
-	$(CPP) $(CPPFLAGS) -D'DIV_TYPE_RF' -c $< -o $@
+$(call Rule_Auto_Dependencies,$(OBJ_DIR)/spmv_kernel_cuda_div$(SUFFIX).o,DIV_CUDA/spmv_kernel_cuda_div.cu,$(CPPFLAGS) $(CPPFLAGS_CUSTOM))
+	$(NVCC) $(NVCCFLAGS) --compiler-options $(CPPFLAGS) -c $< -o $@
 
 
-$(call Rule_Auto_Dependencies,obj/spmv_bench$(SUFFIX).o,spmv_bench.cpp,$(CPPFLAGS))
+$(call Rule_Auto_Dependencies,$(OBJ_DIR)/spmv_bench$(SUFFIX).o,spmv_bench.cpp,$(CPPFLAGS))
 	$(CPP) $(CPPFLAGS) -c $< -o $@
-$(call Rule_Auto_Dependencies,obj/spmv_bench_sym$(SUFFIX).o,spmv_bench.cpp,$(CPPFLAGS))
+$(call Rule_Auto_Dependencies,$(OBJ_DIR)/spmv_bench_sym$(SUFFIX).o,spmv_bench.cpp,$(CPPFLAGS))
 	$(CPP) $(CPPFLAGS) -D'KEEP_SYMMETRY' -c $< -o $@
-$(call Rule_Auto_Dependencies,obj/cg_bench$(SUFFIX).o,cg_bench.cpp,$(CPPFLAGS))
+$(call Rule_Auto_Dependencies,$(OBJ_DIR)/cg_bench$(SUFFIX).o,cg_bench.cpp,$(CPPFLAGS))
 	$(CPP) $(CPPFLAGS) -c $< -o $@
-$(call Rule_Auto_Dependencies,obj/cg_bench_sym$(SUFFIX).o,cg_bench.cpp,$(CPPFLAGS))
+$(call Rule_Auto_Dependencies,$(OBJ_DIR)/cg_bench_sym$(SUFFIX).o,cg_bench.cpp,$(CPPFLAGS))
 	$(CPP) $(CPPFLAGS) -D'KEEP_SYMMETRY' -c $< -o $@
-$(call Rule_Auto_Dependencies,obj/bicg_bench$(SUFFIX).o,bicg_bench.cpp,$(CPPFLAGS))
+$(call Rule_Auto_Dependencies,$(OBJ_DIR)/bicg_bench$(SUFFIX).o,bicg_bench.cpp,$(CPPFLAGS))
 	$(CPP) $(CPPFLAGS) -c $< -o $@
 
-$(call Rule_Auto_Dependencies,obj/artificial_matrix_generation$(SUFFIX).o,$(AMG_PATH)/artificial_matrix_generation.c,$(CFLAGS))
+$(call Rule_Auto_Dependencies,$(OBJ_DIR)/artificial_matrix_generation$(SUFFIX).o,$(AMG_PATH)/artificial_matrix_generation.c,$(CFLAGS))
 	$(CC) $(CFLAGS) -c $< -o $@
-$(call Rule_Auto_Dependencies,obj/ordered_set$(SUFFIX).o,$(AMG_PATH)/ordered_set.c,$(CFLAGS))
+$(call Rule_Auto_Dependencies,$(OBJ_DIR)/ordered_set$(SUFFIX).o,$(AMG_PATH)/ordered_set.c,$(CFLAGS))
 	$(CC) $(CFLAGS) -c $< -o $@
 
-$(call Rule_Auto_Dependencies,obj/pthread_functions$(SUFFIX).o,$(library)/pthread_functions.c,$(CFLAGS))
+$(call Rule_Auto_Dependencies,$(OBJ_DIR)/pthread_functions$(SUFFIX).o,$(library)/pthread_functions.c,$(CFLAGS))
 	$(CC) $(CFLAGS) -c $< -o $@
-$(call Rule_Auto_Dependencies,obj/omp_functions$(SUFFIX).o,$(library)/omp_functions.c,$(CFLAGS))
+$(call Rule_Auto_Dependencies,$(OBJ_DIR)/omp_functions$(SUFFIX).o,$(library)/omp_functions.c,$(CFLAGS))
 	$(CC) $(CFLAGS) -c $< -o $@
-$(call Rule_Auto_Dependencies,obj/hardware_topology$(SUFFIX).o,$(library)/topology/hardware_topology.c,$(CFLAGS))
+$(call Rule_Auto_Dependencies,$(OBJ_DIR)/hardware_topology$(SUFFIX).o,$(library)/topology/hardware_topology.c,$(CFLAGS))
 	$(CC) $(CFLAGS) -c $< -o $@
-$(call Rule_Auto_Dependencies,obj/task_topology$(SUFFIX).o,$(library)/topology/task_topology.c,$(CFLAGS))
+$(call Rule_Auto_Dependencies,$(OBJ_DIR)/task_topology$(SUFFIX).o,$(library)/topology/task_topology.c,$(CFLAGS))
 	$(CC) $(CFLAGS) -c $< -o $@
-$(call Rule_Auto_Dependencies,obj/hash$(SUFFIX).o,$(library)/hash/hash.c,$(CFLAGS))
+$(call Rule_Auto_Dependencies,$(OBJ_DIR)/hash$(SUFFIX).o,$(library)/hash/hash.c,$(CFLAGS))
 	$(CC) $(CFLAGS) -c $< -o $@
-$(call Rule_Auto_Dependencies,obj/random$(SUFFIX).o,$(library)/random.c,$(CFLAGS))
+$(call Rule_Auto_Dependencies,$(OBJ_DIR)/random$(SUFFIX).o,$(library)/random.c,$(CFLAGS))
 	$(CC) $(CFLAGS) -c $< -o $@
-$(call Rule_Auto_Dependencies,obj/bitstream$(SUFFIX).o,$(library)/bitstream.c,$(CFLAGS))
+$(call Rule_Auto_Dependencies,$(OBJ_DIR)/bitstream$(SUFFIX).o,$(library)/bitstream.c,$(CFLAGS))
 	$(CC) $(CFLAGS) -c $< -o $@
-$(call Rule_Auto_Dependencies,obj/bytestream$(SUFFIX).o,$(library)/bytestream.c,$(CFLAGS))
+$(call Rule_Auto_Dependencies,$(OBJ_DIR)/bytestream$(SUFFIX).o,$(library)/bytestream.c,$(CFLAGS))
 	$(CC) $(CFLAGS) -c $< -o $@
-$(call Rule_Auto_Dependencies,obj/array_metrics$(SUFFIX).o,$(library)/array_metrics.c,$(CFLAGS))
+$(call Rule_Auto_Dependencies,$(OBJ_DIR)/array_metrics$(SUFFIX).o,$(library)/array_metrics.c,$(CFLAGS))
 	$(CC) $(CFLAGS) -c $< -o $@
-$(call Rule_Auto_Dependencies,obj/string_util$(SUFFIX).o,$(library)/string_util.c,$(CFLAGS))
+$(call Rule_Auto_Dependencies,$(OBJ_DIR)/string_util$(SUFFIX).o,$(library)/string_util.c,$(CFLAGS))
 	$(CC) $(CFLAGS) -c $< -o $@
-$(call Rule_Auto_Dependencies,obj/io$(SUFFIX).o,$(library)/io.c,$(CFLAGS))
+$(call Rule_Auto_Dependencies,$(OBJ_DIR)/io$(SUFFIX).o,$(library)/io.c,$(CFLAGS))
 	$(CC) $(CFLAGS) -c $< -o $@
-$(call Rule_Auto_Dependencies,obj/parallel_io$(SUFFIX).o,$(library)/parallel_io.c,$(CFLAGS))
+$(call Rule_Auto_Dependencies,$(OBJ_DIR)/parallel_io$(SUFFIX).o,$(library)/parallel_io.c,$(CFLAGS))
 	$(CC) $(CFLAGS) -c $< -o $@
-$(call Rule_Auto_Dependencies,obj/plot$(SUFFIX).o,$(library)/plot/plot.c,$(CFLAGS))
+$(call Rule_Auto_Dependencies,$(OBJ_DIR)/plot$(SUFFIX).o,$(library)/plot/plot.c,$(CFLAGS))
 	$(CC) $(CFLAGS) -c $< -o $@
-$(call Rule_Auto_Dependencies,obj/matrix_market$(SUFFIX).o,$(library)/storage_formats/matrix_market/matrix_market.c,$(CFLAGS))
+$(call Rule_Auto_Dependencies,$(OBJ_DIR)/matrix_market$(SUFFIX).o,$(library)/storage_formats/matrix_market/matrix_market.c,$(CFLAGS))
 	$(CC) $(CFLAGS) -c $< -o $@
-$(call Rule_Auto_Dependencies,obj/openfoam_matrix$(SUFFIX).o,$(library)/storage_formats/openfoam/openfoam_matrix.c,$(CFLAGS))
+$(call Rule_Auto_Dependencies,$(OBJ_DIR)/openfoam_matrix$(SUFFIX).o,$(library)/storage_formats/openfoam/openfoam_matrix.c,$(CFLAGS))
 	$(CC) $(CFLAGS) -c $< -o $@
-$(call Rule_Auto_Dependencies,obj/rapl$(SUFFIX).o,$(library)/monitoring/power/rapl.c,$(CFLAGS))
+$(call Rule_Auto_Dependencies,$(OBJ_DIR)/rapl$(SUFFIX).o,$(library)/monitoring/power/rapl.c,$(CFLAGS))
 	$(CC) $(CFLAGS) -c $< -o $@
-$(call Rule_Auto_Dependencies,obj/kmeans$(SUFFIX).o,$(library)/kmeans/kmeans.c,$(CFLAGS))
+$(call Rule_Auto_Dependencies,$(OBJ_DIR)/kmeans$(SUFFIX).o,$(library)/kmeans/kmeans.c,$(CFLAGS))
 	$(CC) $(CFLAGS) -c $< -o $@
-$(call Rule_Auto_Dependencies,obj/kmeans_char$(SUFFIX).o,$(library)/kmeans/kmeans_char.c,$(CFLAGS))
+$(call Rule_Auto_Dependencies,$(OBJ_DIR)/kmeans_char$(SUFFIX).o,$(library)/kmeans/kmeans_char.c,$(CFLAGS))
 	$(CC) $(CFLAGS) -c $< -o $@
-$(call Rule_Auto_Dependencies,obj/hashtable$(SUFFIX).o,$(library)/aux/hashtable.c,$(CFLAGS))
+$(call Rule_Auto_Dependencies,$(OBJ_DIR)/hashtable$(SUFFIX).o,$(library)/aux/hashtable.c,$(CFLAGS))
 	$(CC) $(CFLAGS) -c $< -o $@
-$(call Rule_Auto_Dependencies,obj/dynamic_array$(SUFFIX).o,$(library)/aux/dynamic_array.c,$(CFLAGS))
+$(call Rule_Auto_Dependencies,$(OBJ_DIR)/dynamic_array$(SUFFIX).o,$(library)/aux/dynamic_array.c,$(CFLAGS))
 	$(CC) $(CFLAGS) -c $< -o $@
-$(call Rule_Auto_Dependencies,obj/csr_converter$(SUFFIX).o,$(library)/aux/csr_converter.c,$(CFLAGS))
+$(call Rule_Auto_Dependencies,$(OBJ_DIR)/csr_converter$(SUFFIX).o,$(library)/aux/csr_converter.c,$(CFLAGS))
 	$(CC) $(CFLAGS) -c $< -o $@
-$(call Rule_Auto_Dependencies,obj/csc_converter$(SUFFIX).o,$(library)/aux/csc_converter.c,$(CFLAGS))
+$(call Rule_Auto_Dependencies,$(OBJ_DIR)/csc_converter$(SUFFIX).o,$(library)/aux/csc_converter.c,$(CFLAGS))
 	$(CC) $(CFLAGS) -c $< -o $@
-$(call Rule_Auto_Dependencies,obj/csr_converter_reference$(SUFFIX).o,$(library)/aux/csr_converter_reference.c,$(CFLAGS))
+$(call Rule_Auto_Dependencies,$(OBJ_DIR)/csr_converter_reference$(SUFFIX).o,$(library)/aux/csr_converter_reference.c,$(CFLAGS))
 	$(CC) $(CFLAGS) -c $< -o $@
-$(call Rule_Auto_Dependencies,obj/csr_util$(SUFFIX).o,$(library)/aux/csr_util.c,$(CFLAGS))
+$(call Rule_Auto_Dependencies,$(OBJ_DIR)/csr_util$(SUFFIX).o,$(library)/aux/csr_util.c,$(CFLAGS))
 	$(CC) $(CFLAGS) -c $< -o $@
-$(call Rule_Auto_Dependencies,obj/csc_util$(SUFFIX).o,$(library)/aux/csc_util.c,$(CFLAGS))
+$(call Rule_Auto_Dependencies,$(OBJ_DIR)/csc_util$(SUFFIX).o,$(library)/aux/csc_util.c,$(CFLAGS))
 	$(CC) $(CFLAGS) -c $< -o $@
-$(call Rule_Auto_Dependencies,obj/rcm$(SUFFIX).o,$(library)/aux/rcm.c,$(CFLAGS))
+$(call Rule_Auto_Dependencies,$(OBJ_DIR)/rcm$(SUFFIX).o,$(library)/aux/rcm.c,$(CFLAGS))
 	$(CC) $(CFLAGS) -c $< -o $@
 
 
@@ -640,5 +641,7 @@ $(DIRS): %:
 	mkdir -p $@
 
 clean:
-	$(RM) obj/* *.o *.exe a.out
+	$(RM) $(OBJ_DIR)/* *.o *.exe a.out
+
+-include $(OBJ_DIR)/*.d
 

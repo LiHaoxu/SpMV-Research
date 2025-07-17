@@ -45,10 +45,10 @@
 typedef uint64_t  vec_i64_t __attribute__((may_alias));
 
 
-#define vec_array_i64_8(val)                     ({vec_i64_8_t  * _tmp = &val; (vec_i64_t *) _tmp;})
-#define vec_array_i64_4(val)                     ({vec_i64_4_t  * _tmp = &val; (vec_i64_t *) _tmp;})
-#define vec_array_i64_2(val)                     ({vec_i64_2_t  * _tmp = &val; (vec_i64_t *) _tmp;})
-#define vec_array_i64_1(val)                     ({vec_i64_1_t  * _tmp = &val; (vec_i64_t *) _tmp;})
+#define vec_array_i64_8(vec)                     ({vec_i64_8_t  * _tmp = &vec; (vec_i64_t *) _tmp;})
+#define vec_array_i64_4(vec)                     ({vec_i64_4_t  * _tmp = &vec; (vec_i64_t *) _tmp;})
+#define vec_array_i64_2(vec)                     ({vec_i64_2_t  * _tmp = &vec; (vec_i64_t *) _tmp;})
+#define vec_array_i64_1(vec)                     ({vec_i64_1_t  * _tmp = &vec; (vec_i64_t *) _tmp;})
 
 #define vec_set1_i64_8(val)                      svdup_n_s64(val)
 #define vec_set1_i64_4(val)                      svdup_n_s64(val)

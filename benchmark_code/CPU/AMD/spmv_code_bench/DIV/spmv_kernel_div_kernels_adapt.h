@@ -839,7 +839,7 @@ compress_kernel_div_base(unsigned char * buf,
 						error("len > 8");
 
 					diff.u >>= trailing_zeros;
-					bytestream_write_unsafe_cast(&Bs[lane_id], (uint64_t) diff.u, len);   // Bytestream works with 'uint64_t' buffer (so we cast diff.u), and the actual size in bytes 'len'.
+					bytestream_write_unsafe_cast(&Bs[lane_id], (uint64_t) diff.u, len);   // Bytestream works with 'uint64_t' buffer (so we cast diff), and the actual size in bytes 'len'.
 					len |=  (trailing_zero_bits_div4 << 4ULL);
 					data_val_lens[k] = len;
 
@@ -1046,16 +1046,16 @@ mult_add_vector(ValueType * x_rel, ValueType * y_rel, __attribute__((unused)) Va
 	{
 		for (long iter=0;iter<VEC_LEN;iter++)
 		{
-			*((*window_ptr)++)    = val.s[iter];
-			*((*window_ia_ptr)++) = row.s[iter];
-			*((*window_ja_ptr)++) = col.s[iter];
+			*((*window_ptr)++)    = vec_elem_get(VTF, VEC_LEN, val, iter);
+			*((*window_ia_ptr)++) = vec_elem_get(i64, VEC_LEN, row, iter);
+			*((*window_ja_ptr)++) = vec_elem_get(i64, VEC_LEN, col, iter);
 		}
 	}
 	else
 	{
 		PRAGMA(GCC unroll VEC_LEN)
 		for (long iter=0;iter<VEC_LEN;iter++)
-			y_rel[row_rel.s[iter]] += val.s[iter] * x_rel[col_rel.s[iter]];
+			y_rel[vec_elem_get(i64, VEC_LEN, row_rel, iter)] += vec_elem_get(VTF, VEC_LEN, val, iter) * x_rel[vec_elem_get(i64, VEC_LEN, col_rel, iter)];
 	}
 }
 
@@ -1091,12 +1091,12 @@ mult_add_vector_sym(__attribute__((unused)) ValueType * x_rel, __attribute__((un
 	{
 		for (long iter=0;iter<VEC_LEN;iter++)
 		{
-			*((*window_ptr)++)    = val.s[iter];
-			*((*window_ia_ptr)++) = row.s[iter];
-			*((*window_ja_ptr)++) = col.s[iter];
-			*((*window_ptr)++)    = val.s[iter];
-			*((*window_ia_ptr)++) = col.s[iter];
-			*((*window_ja_ptr)++) = row.s[iter];
+			*((*window_ptr)++)    = vec_elem_get(i64, VEC_LEN, val, iter);
+			*((*window_ia_ptr)++) = vec_elem_get(i64, VEC_LEN, row, iter);
+			*((*window_ja_ptr)++) = vec_elem_get(i64, VEC_LEN, col, iter);
+			*((*window_ptr)++)    = vec_elem_get(i64, VEC_LEN, val, iter);
+			*((*window_ia_ptr)++) = vec_elem_get(i64, VEC_LEN, col, iter);
+			*((*window_ja_ptr)++) = vec_elem_get(i64, VEC_LEN, row, iter);
 		}
 	}
 	else
@@ -1104,10 +1104,10 @@ mult_add_vector_sym(__attribute__((unused)) ValueType * x_rel, __attribute__((un
 		// Seems important for performance stability to split off the symmetric values to another loop.
 		PRAGMA(GCC unroll VEC_LEN)
 		for (long iter=0;iter<VEC_LEN;iter++)
-			y[row.s[iter]] += val.s[iter] * x[col.s[iter]];
+			y[vec_elem_get(i64, VEC_LEN, row, iter)] += vec_elem_get(VTF, VEC_LEN, val, iter) * x[vec_elem_get(i64, VEC_LEN, col, iter)];
 		PRAGMA(GCC unroll VEC_LEN)
 		for (long iter=0;iter<VEC_LEN;iter++)
-			y[col.s[iter]] += val.s[iter] * x[row.s[iter]];
+			y[vec_elem_get(i64, VEC_LEN, col, iter)] += vec_elem_get(VTF, VEC_LEN, val, iter) * x[vec_elem_get(i64, VEC_LEN, row, iter)];
 	}
 }
 
@@ -1197,11 +1197,11 @@ decompress_and_compute_kernel_div_base(unsigned char * restrict buf, ValueType *
 		data_val_lens_bytes = num_vals_unique;
 		ptr_next += data_val_lens_bytes;
 
-		data_val_lanes.s[0] = (long long) ptr_next;
+		vec_elem_get(i64, VEC_LEN, data_val_lanes, 0) = (long long) ptr_next;
 		data_val_lanes_bytes = data_val_lanes_size[0];
 		for (long iter=1;iter<VEC_LEN;iter++)
 		{
-			data_val_lanes.s[iter] = data_val_lanes.s[iter-1] + data_val_lanes_size[iter-1];
+			vec_elem_get(i64, VEC_LEN, data_val_lanes, iter) = vec_elem_get(i64, VEC_LEN, data_val_lanes, iter-1) + data_val_lanes_size[iter-1];
 			data_val_lanes_bytes += data_val_lanes_size[iter];
 		}
 		ptr_next += data_val_lanes_bytes;
@@ -1215,24 +1215,18 @@ decompress_and_compute_kernel_div_base(unsigned char * restrict buf, ValueType *
 
 	for (l=0;l<num_rfs;l++)
 	{
-		union {
-			vec_t(VTF, VEC_LEN) d;
-			vec_t(VTI, VEC_LEN) u;
-		} val;
+		vec_t(VTI, VEC_LEN) val;
 		long rf = data_rfs[l];
 		long num_rf_vals_unique = data_num_unique_vals_per_rf[l];
 		long num_rf_vals_unique_div = num_rf_vals_unique / VEC_LEN;
 		long num_rf_vals_unique_multiple = num_rf_vals_unique_div * VEC_LEN;
-		val.u = vec_set1(VTI, VEC_LEN, 0);
+		val = vec_set1(VTI, VEC_LEN, 0);
 		for (i=0;i<num_rf_vals_unique_multiple;i+=VEC_LEN)
 		{
 			vec_t(i64, VEC_LEN) row_rel, col_rel;
 			if (dv_enabled)
 			{
-				union {
-					vec_t(VTF, VEC_LEN) d;
-					vec_t(VTI, VEC_LEN) u;
-				} diff;
+				vec_t(VTI, VEC_LEN) diff;
 				vec_t(i64, VEC_LEN) len_64;
 				vec_t(VTI, VEC_LEN) len;
 
@@ -1245,25 +1239,25 @@ decompress_and_compute_kernel_div_base(unsigned char * restrict buf, ValueType *
 				// len_bits = len << 3ULL;
 				vec_t(VTI, VEC_LEN) len_bits = vec_slli(VTI, VEC_LEN, len, 3ULL);
 
-				diff.u = vec_set_iter(VTI, VEC_LEN, iter, *((ValueTypeI *) data_val_lanes.s[iter]));
+				diff = vec_set_iter(VTI, VEC_LEN, iter, *((ValueTypeI *) vec_elem_get(i64, VEC_LEN, data_val_lanes, iter)));
 
 				// data_val_lanes = data_val_lanes + len_64;
-				len_64 = vec_set_iter(i64, VEC_LEN, iter, len.s[iter]);
+				len_64 = vec_set_iter(i64, VEC_LEN, iter, vec_elem_get(VTI, VEC_LEN, len, iter));
 				data_val_lanes = vec_add(i64, VEC_LEN, data_val_lanes, len_64);
 
 				// vec_t(VTI, VEC_LEN) mask = (1ULL << len_bits) - 1ULL;
 				vec_t(VTI, VEC_LEN) mask = vec_sub(VTI, VEC_LEN, vec_sllv(VTI, VEC_LEN, vec_set1(VTI, VEC_LEN, 1ULL), len_bits), vec_set1(VTI, VEC_LEN, 1ULL));
-				// diff.u &= mask;
-				diff.u = vec_and(VTI, VEC_LEN, diff.u, mask);
-				// diff.u <<= tz;
-				diff.u = vec_sllv(VTI, VEC_LEN, diff.u, tz);
+				// diff &= mask;
+				diff = vec_and(VTI, VEC_LEN, diff, mask);
+				// diff <<= tz;
+				diff = vec_sllv(VTI, VEC_LEN, diff, tz);
 
-				// val.u = val.u + diff.u;
-				val.u = vec_add(VTI, VEC_LEN, val.u, diff.u);
+				// val = val + diff;
+				val = vec_add(VTI, VEC_LEN, val, diff);
 			}
 			else
 			{
-				val.d = vec_loadu(VTF, VEC_LEN, &data_vals[i]);
+				val = reinterpret_cast(vec_t(VTI, VEC_LEN), vec_loadu(VTF, VEC_LEN, &data_vals[i]));
 			}
 
 			for (j=0;j<rf;j++)
@@ -1275,7 +1269,7 @@ decompress_and_compute_kernel_div_base(unsigned char * restrict buf, ValueType *
 				row = vec_add(i64, VEC_LEN, row_rel, vec_set1(i64, VEC_LEN, row_min));
 				col = vec_add(i64, VEC_LEN, col_rel, vec_set1(i64, VEC_LEN, col_min));
 
-				mult_add_v(x_rel, y_rel, x, y, val.d, row_rel, col_rel, row, col, &window, &window_ia, &window_ja, validate);
+				mult_add_v(x_rel, y_rel, x, y, reinterpret_cast(vec_t(VTF, VEC_LEN), val), row_rel, col_rel, row, col, &window, &window_ia, &window_ja, validate);
 			}
 		}
 
@@ -1284,10 +1278,7 @@ decompress_and_compute_kernel_div_base(unsigned char * restrict buf, ValueType *
 			long lane_id;
 			if (dv_enabled)
 			{
-				union {
-					ValueType d;
-					ValueTypeI u;
-				} diff;
+				ValueTypeI diff;
 				uint64_t len;
 				lane_id = i % VEC_LEN;
 
@@ -1297,20 +1288,20 @@ decompress_and_compute_kernel_div_base(unsigned char * restrict buf, ValueType *
 				len &= 15ULL;
 				uint64_t len_bits = len << 3ULL;
 
-				diff.u = *((ValueTypeI *) data_val_lanes.s[lane_id]);
+				diff = *((ValueTypeI *) vec_elem_get(i64, VEC_LEN, data_val_lanes, lane_id));
 
-				data_val_lanes.s[lane_id] = data_val_lanes.s[lane_id] + len;
+				vec_elem_get(i64, VEC_LEN, data_val_lanes, lane_id) += len;
 
 				ValueTypeI mask = (len == 8) ? -1ULL : (1ULL << len_bits) - 1ULL;
-				diff.u &= mask;
-				diff.u <<= tz;
+				diff &= mask;
+				diff <<= tz;
 
-				val.u.s[lane_id] = val.u.s[lane_id] + diff.u;
+				vec_elem_get(VTI, VEC_LEN, val, lane_id) += diff;
 			}
 			else
 			{
 				lane_id = 0;
-				val.d.s[0] = data_vals[i];
+				vec_elem_get(VTI, VEC_LEN, val, 0) = reinterpret_cast(ValueTypeI, data_vals[i]);
 			}
 
 			long rf_div = rf / VEC_LEN;
@@ -1319,7 +1310,7 @@ decompress_and_compute_kernel_div_base(unsigned char * restrict buf, ValueType *
 			{
 				vec_t(i64, VEC_LEN) row_rel, col_rel;
 				vec_t(i64, VEC_LEN) row, col;
-				vec_t(VTF, VEC_LEN) val_buf = vec_set1(VTF, VEC_LEN, val.d.s[lane_id]);
+				vec_t(VTF, VEC_LEN) val_buf = vec_set1(VTF, VEC_LEN, reinterpret_cast(ValueType, vec_elem_get(VTI, VEC_LEN, val, lane_id)));
 				k = i*rf + j;
 				gather_coords_v(k, data_coords, coords_bytes, row_bits, col_bits, &row_rel, &col_rel);
 				row = vec_add(i64, VEC_LEN, row_rel, vec_set1(i64, VEC_LEN, row_min));
@@ -1335,7 +1326,7 @@ decompress_and_compute_kernel_div_base(unsigned char * restrict buf, ValueType *
 				gather_coords(k, data_coords, coords_bytes, row_bits, col_bits, &row_rel, &col_rel);
 				row = row_rel + row_min;
 				col = col_rel + col_min;
-				mult_add(x_rel, y_rel, x, y, val.d.s[lane_id], row_rel, col_rel, row, col, &window, &window_ia, &window_ja, validate);
+				mult_add(x_rel, y_rel, x, y, reinterpret_cast(ValueType, vec_elem_get(VTI, VEC_LEN, val, lane_id)), row_rel, col_rel, row, col, &window, &window_ia, &window_ja, validate);
 			}
 		}
 

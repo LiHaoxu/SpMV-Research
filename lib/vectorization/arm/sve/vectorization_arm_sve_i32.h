@@ -48,11 +48,11 @@
 typedef uint32_t  vec_i32_t __attribute__((may_alias));
 
 
-#define vec_array_i32_16(val)                    ({vec_i32_16_t  * _tmp = &val; (vec_i32_t *) _tmp;})
-#define vec_array_i32_8(val)                     ({vec_i32_8_t  * _tmp = &val; (vec_i32_t *) _tmp;})
-#define vec_array_i32_4(val)                     ({vec_i32_4_t  * _tmp = &val; (vec_i32_t *) _tmp;})
-#define vec_array_i32_2(val)                     ({vec_i32_2_t  * _tmp = &val; (vec_i32_t *) _tmp;})
-#define vec_array_i32_1(val)                     ({vec_i32_1_t  * _tmp = &val; (vec_i32_t *) _tmp;})
+#define vec_array_i32_16(vec)                    ({vec_i32_16_t  * _tmp = &vec; (vec_i32_t *) _tmp;})
+#define vec_array_i32_8(vec)                     ({vec_i32_8_t  * _tmp = &vec; (vec_i32_t *) _tmp;})
+#define vec_array_i32_4(vec)                     ({vec_i32_4_t  * _tmp = &vec; (vec_i32_t *) _tmp;})
+#define vec_array_i32_2(vec)                     ({vec_i32_2_t  * _tmp = &vec; (vec_i32_t *) _tmp;})
+#define vec_array_i32_1(vec)                     ({vec_i32_1_t  * _tmp = &vec; (vec_i32_t *) _tmp;})
 
 #define vec_set1_i32_16(val)                     svdup_n_s32(val)
 #define vec_set1_i32_8(val)                      svdup_n_s32(val)

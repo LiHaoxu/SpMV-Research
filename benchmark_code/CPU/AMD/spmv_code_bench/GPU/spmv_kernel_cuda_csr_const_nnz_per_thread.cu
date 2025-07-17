@@ -841,7 +841,7 @@ __device__ void spmv_last_block(INT_T * thread_block_i_s, INT_T * thread_block_i
 
 
 template <typename group_t>
-__device__ ValueType reduce_warp_single_line(group_t g, ValueType val, ValueType * restrict y)
+__device__ ValueType reduce_warp_single_row(group_t g, ValueType val, ValueType * restrict y)
 {
 	// Use XOR mode to perform butterfly reduction
 	for (int i=g.size()/2; i>=1; i/=2)
@@ -863,7 +863,7 @@ __device__ void spmv_warp_single_row(group_t g, int i, int j_s, int j_e, INT_T *
 	{
 		sum = __fma_rn(a[j], x[ja[j] & 0x7FFFFFFF], sum);
 	}
-	sum = reduce_warp_single_line(g, sum, y);
+	sum = reduce_warp_single_row(g, sum, y);
 	if (tidl == 0)
 		atomicAdd(&y[i], sum);
 }

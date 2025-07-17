@@ -61,6 +61,11 @@ calc_numa_nodes()
 }
 
 
+cpu_info="$(lscpu)"
+num_cpus="$(echo "$cpu_info" | awk '/^CPU\(s\):/ {printf("%d", $2);}')"
+num_cores="$(( num_cpus / $(echo "$cpu_info" | awk '/^Thread\(s\) per core:/ {printf("%d", $4);}') ))"
+
+
 # export SPARSEX_ROOT_DIR="${HOME}/lib"
 # export SPARSEX_ROOT_DIR=/various/dgal/epyc1
 # export SPARSEX_ROOT_DIR=/home/pmpakos/sparsex
@@ -68,7 +73,6 @@ calc_numa_nodes()
 export SPARSEX_ROOT_DIR=/pfs/lustrep2/scratch/project_465000869/pmpakos/damned_directory/
 # export SPARSEX_ROOT_DIR=/leonardo_scratch/fast/EUHPC_D12_058/pmpakos/damned_directory
 # export SPARSEX_ROOT_DIR="/local/pmpakos/damned_directory"
-
 
 declare -A conf_vars
 conf_vars=(
@@ -139,6 +143,7 @@ conf_vars=(
     # ['max_cores']=8
 
     # Cores / Threads to utilize. Use spaces to define a set of different thread numbers to benchmark.
+    ['cores']="$num_cores"
     # ['cores']=1
     # ['cores']='1 2 4 8 16 32 64 128'
     # ['cores']='1 2 4 8 16 32 64'
@@ -159,7 +164,7 @@ conf_vars=(
     # ['cores']=14
     # ['cores']=12
     # ['cores']=8
-    ['cores']=6
+    # ['cores']=6
     # ['cores']=4
     # ['cores']=2
     # ['cores']=1
@@ -459,6 +464,7 @@ progs=(
     # ['csr_vector_perfect_nnz_balance_d']="${script_dir}/spmv_code_bench/spmv_csr_vector_perfect_nnz_balance_d.exe"
 
     # Custom csr x86
+    # ['csr_vec']="${script_dir}/spmv_code_bench/spmv_csr_vec_d.exe" # BENCH_AMD, BENCH_INTEL
     # ['csr_vector_x86_d']="${script_dir}/spmv_code_bench/spmv_csr_vector_x86_d.exe" # BENCH_AMD, BENCH_INTEL
     # ['csr_vector_oracle_balance_x86_d']="${script_dir}/spmv_code_bench/spmv_csr_vector_oracle_balance_x86_d.exe"
     # ['csr_vector_queues_x86_d']="${script_dir}/spmv_code_bench/spmv_csr_vector_queues_x86_d.exe"
@@ -477,7 +483,7 @@ progs=(
     # Custom compressed values stream
     # ['div_d']="${script_dir}/spmv_code_bench/spmv_div_d.exe" # BENCH_AMD, BENCH_INTEL
     # ['div_f']="${script_dir}/spmv_code_bench/spmv_div_f.exe" # BENCH_AMD, BENCH_INTEL
-    ['div_rf_d']="${script_dir}/spmv_code_bench/spmv_div_rf_d.exe" # BENCH_AMD, BENCH_INTEL
+    # ['div_rf_d']="${script_dir}/spmv_code_bench/spmv_div_rf_d.exe" # BENCH_AMD, BENCH_INTEL
     # ['div_rf_f']="${script_dir}/spmv_code_bench/spmv_div_rf_f.exe" # BENCH_AMD, BENCH_INTEL
     # ['div_adapt_d']="${script_dir}/spmv_code_bench/spmv_div_adapt_d.exe" # BENCH_AMD, BENCH_INTEL
     # ['div_adapt_f']="${script_dir}/spmv_code_bench/spmv_div_adapt_f.exe" # BENCH_AMD, BENCH_INTEL
@@ -488,7 +494,7 @@ progs=(
     # ['div_rf_ord2_d']="${script_dir}/spmv_code_bench/spmv_div_rf_ord2_d.exe"
     # ['div_sym_rf_local_d']="${script_dir}/spmv_code_bench/spmv_div_sym_rf_local_d.exe" # BENCH_SYM
     # ['div_sym_rf_local_f']="${script_dir}/spmv_code_bench/spmv_div_sym_rf_local_f.exe" # BENCH_SYM
-    # ['csr_cuda_div_rf_d']="${script_dir}/spmv_code_bench/spmv_cuda_div_rf_d.exe" # BENCH_AMD, BENCH_INTEL
+    ['csr_cuda_div_d']="${script_dir}/spmv_code_bench/spmv_cuda_div_d.exe" # BENCH_AMD, BENCH_INTEL
 
     # MKL IE
     # ['mkl_ie_d']="${script_dir}/spmv_code_bench/spmv_mkl_ie_d.exe" # BENCH_AMD, BENCH_INTEL

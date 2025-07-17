@@ -33,21 +33,23 @@ elif [[ -d "/local/pmpakos/arm-compiler/gcc-13.2.0_Ubuntu-22.04/bin" ]]; then
     gcc_bin=/local/pmpakos/arm-compiler/gcc-13.2.0_Ubuntu-22.04/bin/gcc
     gpp_bin=/local/pmpakos/arm-compiler/gcc-13.2.0_Ubuntu-22.04/bin/g++
 else
-    # gcc_bin=gcc
-    # gpp_bin=g++
-    gcc_bin=clang
-    gpp_bin=clang++
+    gcc_bin=gcc
+    gpp_bin=g++
+    # gcc_bin=clang
+    # gpp_bin=clang++
 fi
 
 
 CC="$gcc_bin"
 # CC=clang
 # CC=xlc
+# CC=riscv64-linux-gnu-gcc
 export CC
 
 CPP="$gpp_bin"
 # CPP=clang++
 # CPP=xlc++
+# CPP=riscv64-linux-gnu-g++
 export CPP
 CXX="$CPP"
 export CXX
@@ -67,6 +69,8 @@ fi
 export HIPCC
 
 export ARCH="$(uname -m)"
+# export ARCH='riscv64'
+# export ARCH='rave'
 
 
 CFLAGS=''
@@ -109,6 +113,35 @@ elif [[ ${ARCH} == aarch64 ]]; then
     # CFLAGS+=" -msve-vector-bits=512"
     # CFLAGS+=" -msve-vector-bits=256"
     CFLAGS+=" -msve-vector-bits=128"
+elif [[ ${ARCH} == riscv64 ]]; then
+    CFLAGS+=" -march=rv64gv"
+    # CFLAGS+=" -mrvv-vector-bits=zvl"
+    CFLAGS+=" -flax-vector-conversions"
+elif [[ ${ARCH} == rave ]]; then
+    module load rave/EPI
+    module load llvm/cross/EPI-development
+    module load sdv_trace
+    # CFLAGS+=" -march=rv64gv"
+    CFLAGS+=" -mcpu=avispado"
+    # CFLAGS+=" -mrvv-vector-bits=zvl"
+    CFLAGS+=" -flax-vector-conversions"
+    CFLAGS+=" -D'RAVE_TRACING' -I'/apps/riscv/sdv_trace/include/'"
+    CFLAGS+=" -fno-lto"
+
+    CFLAGS+=" -mepi"
+    CFLAGS+=" -mllvm -combiner-store-merging=0"
+    CFLAGS+=" -mllvm -disable-loop-idiom-memcpy"
+    CFLAGS+=" -fno-slp-vectorize"
+
+    # for when it crashes... simply add the function that refuses to compile... in the first case it was sth like "__epi_flog2_nxv1f64"
+    CFLAGS+=" -fno-builtin-log2"
+    CFLAGS+=" -mllvm -vectorizer-use-vp-strided-load-store"
+    CFLAGS+=" -mllvm -disable-loop-idiom-memset"
+    CFLAGS+=" -mllvm -riscv-uleb128-reloc=0"
+    CFLAGS+=" -Xclang -target-feature"
+    CFLAGS+=" -Xclang +does-not-implement-vszext"
+    CFLAGS+=" -Xclang -target-feature"
+    CFLAGS+=" -Xclang +does-not-implement-tu"
 else
     CFLAGS+=" -mcpu=native"
 fi
@@ -122,22 +155,22 @@ if ((${PRINT_STATISTICS} == 1)); then
     CFLAGS+=" -D'PRINT_STATISTICS'"
 fi
 
-export LEVEL1_DCACHE_LINESIZE="$(read v < /sys/devices/system/cpu/cpu0/cache/index0/coherency_line_size; echo ${v%K})"
-export LEVEL1_DCACHE_SIZE="$(read v < /sys/devices/system/cpu/cpu0/cache/index0/size; echo $((${v%K} * 1024)) )"
-export LEVEL2_CACHE_SIZE="$(read v < /sys/devices/system/cpu/cpu0/cache/index2/size; echo $((${v%K} * 1024)) )"
-export LEVEL3_CACHE_SIZE="$(read v < /sys/devices/system/cpu/cpu0/cache/index3/size; echo $((${v%K} * 1024)) )"
-export NUM_CPUS="$(ls /sys/devices/system/cpu/ | grep -c 'cpu[[:digit:]]\+')"
-export LEVEL3_CACHE_CPUS_PER_NODE="$(for range in $(cat /sys/devices/system/cpu/cpu0/cache/index3/shared_cpu_list | tr ',' ' '); do mapfile -t -d '-' a < <(printf "$range"); seq "${a[@]}"; done | wc -l)"
-export LEVEL3_CACHE_NUM_NODES="$(( NUM_CPUS / LEVEL3_CACHE_CPUS_PER_NODE ))"
-export LEVEL3_CACHE_SIZE_TOTAL="$(( LEVEL3_CACHE_SIZE * LEVEL3_CACHE_NUM_NODES ))"
-CFLAGS+=" -D'LEVEL1_DCACHE_LINESIZE=${LEVEL1_DCACHE_LINESIZE}ULL'"
-CFLAGS+=" -D'LEVEL1_DCACHE_SIZE=${LEVEL1_DCACHE_SIZE}ULL'"
-CFLAGS+=" -D'LEVEL2_CACHE_SIZE=${LEVEL2_CACHE_SIZE}ULL'"
-CFLAGS+=" -D'LEVEL3_CACHE_SIZE=${LEVEL3_CACHE_SIZE}ULL'"
-CFLAGS+=" -D'NUM_CPUS=${NUM_CPUS}ULL'"
-CFLAGS+=" -D'LEVEL3_CACHE_CPUS_PER_NODE=${LEVEL3_CACHE_CPUS_PER_NODE}ULL'"
-CFLAGS+=" -D'LEVEL3_CACHE_NUM_NODES=${LEVEL3_CACHE_NUM_NODES}ULL'"
-CFLAGS+=" -D'LEVEL3_CACHE_SIZE_TOTAL=${LEVEL3_CACHE_SIZE_TOTAL}ULL'"
+# export LEVEL1_DCACHE_LINESIZE="$(read v < /sys/devices/system/cpu/cpu0/cache/index0/coherency_line_size; echo ${v%K})"
+# export LEVEL1_DCACHE_SIZE="$(read v < /sys/devices/system/cpu/cpu0/cache/index0/size; echo $((${v%K} * 1024)) )"
+# export LEVEL2_CACHE_SIZE="$(read v < /sys/devices/system/cpu/cpu0/cache/index2/size; echo $((${v%K} * 1024)) )"
+# export LEVEL3_CACHE_SIZE="$(read v < /sys/devices/system/cpu/cpu0/cache/index3/size; echo $((${v%K} * 1024)) )"
+# export NUM_CPUS="$(ls /sys/devices/system/cpu/ | grep -c 'cpu[[:digit:]]\+')"
+# export LEVEL3_CACHE_CPUS_PER_NODE="$(for range in $(cat /sys/devices/system/cpu/cpu0/cache/index3/shared_cpu_list | tr ',' ' '); do mapfile -t -d '-' a < <(printf "$range"); seq "${a[@]}"; done | wc -l)"
+# export LEVEL3_CACHE_NUM_NODES="$(( NUM_CPUS / LEVEL3_CACHE_CPUS_PER_NODE ))"
+# export LEVEL3_CACHE_SIZE_TOTAL="$(( LEVEL3_CACHE_SIZE * LEVEL3_CACHE_NUM_NODES ))"
+# CFLAGS+=" -D'LEVEL1_DCACHE_LINESIZE=${LEVEL1_DCACHE_LINESIZE}ULL'"
+# CFLAGS+=" -D'LEVEL1_DCACHE_SIZE=${LEVEL1_DCACHE_SIZE}ULL'"
+# CFLAGS+=" -D'LEVEL2_CACHE_SIZE=${LEVEL2_CACHE_SIZE}ULL'"
+# CFLAGS+=" -D'LEVEL3_CACHE_SIZE=${LEVEL3_CACHE_SIZE}ULL'"
+# CFLAGS+=" -D'NUM_CPUS=${NUM_CPUS}ULL'"
+# CFLAGS+=" -D'LEVEL3_CACHE_CPUS_PER_NODE=${LEVEL3_CACHE_CPUS_PER_NODE}ULL'"
+# CFLAGS+=" -D'LEVEL3_CACHE_NUM_NODES=${LEVEL3_CACHE_NUM_NODES}ULL'"
+# CFLAGS+=" -D'LEVEL3_CACHE_SIZE_TOTAL=${LEVEL3_CACHE_SIZE_TOTAL}ULL'"
 
 
 # Read the matrix in double-precision for checking accuracy against doubles.
@@ -172,7 +205,26 @@ CPPFLAGS_NV_F="${CPPFLAGS_F} -fno-lto"
 
 
 LDFLAGS=''
-LDFLAGS+=" -lm"
+LDFLAGS+=' -lm'
+
+if [[ ${ARCH} == x86_64 ]]; then
+    :
+elif [[ ${ARCH} == ppc64le ]]; then
+    :
+elif [[ ${ARCH} == aarch64 ]]; then
+    :
+elif [[ ${ARCH} == riscv64 ]]; then
+    :
+    # LDFLAGS+=' -L /usr/riscv64-linux-gnu'
+    # LDFLAGS+=' -Wl,-rpath,/usr/riscv64-linux-gnu/usr/lib'
+    # LDFLAGS+=' -Wl,-dynamic-linker,/usr/riscv64-linux-gnu/usr/lib/ld-linux-riscv64-lp64d.so.1'
+elif [[ ${ARCH} == rave ]]; then
+    :
+    # LDFLAGS+=' -L /usr/riscv64-linux-gnu'
+    # LDFLAGS+=' -Wl,-rpath,/usr/riscv64-linux-gnu/usr/lib'
+    # LDFLAGS+=' -Wl,-dynamic-linker,/usr/riscv64-linux-gnu/usr/lib/ld-linux-riscv64-lp64d.so.1'
+    LDFLAGS+=" -L'/apps/riscv/sdv_trace/lib/' -lsdv_trace_rave -lsdv_trace"
+fi
 
 export LDFLAGS
 
@@ -291,5 +343,4 @@ if ((${#targets_nv_f[@]} > 0)); then
     export TARGETS="${targets_nv_f[*]}"
     make -f Makefile_in "$@"
 fi
-
 

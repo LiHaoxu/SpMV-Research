@@ -294,13 +294,35 @@
 }) */
 
 
-#define cast_to_type_unsafe(x, trg_type)                                            \
-({                                                                                  \
-	typeof(x) _cast_to_type_unsafe_x;                                           \
-	typeof(trg_type) * _cast_to_type_unsafe_ptr;                                \
-	_cast_to_type_unsafe_x = x;                                                 \
-	_cast_to_type_unsafe_ptr = (typeof(trg_type) *) &_cast_to_type_unsafe_x;    \
-	*_cast_to_type_unsafe_ptr;                                                  \
+/* #define cast_to_type_unsafe(x, trg_type)                                                            \
+({                                                                                                  \
+	typeof(x) _cast_to_type_unsafe_x;                                                           \
+	typeof(trg_type) * _cast_to_type_unsafe_ptr;                                                \
+	_cast_to_type_unsafe_x = x;                                                                 \
+	_cast_to_type_unsafe_ptr = (typeof(_cast_to_type_unsafe_ptr) *) &_cast_to_type_unsafe_x;    \
+	*_cast_to_type_unsafe_ptr;                                                                  \
+}) */
+
+/* #define reinterpret_cast(trg_type, x)                                                     \
+({                                                                                        \
+	__auto_type _reinterpret_cast_x = (x);                                            \
+	__attribute__((unused)) trg_type _reinterpret_cast_tmp;                           \
+	__attribute__((unused)) typeof(_reinterpret_cast_tmp) * _reinterpret_cast_ptr;    \
+	*((typeof(_reinterpret_cast_ptr)) &_reinterpret_cast_x);                          \
+}) */
+
+
+#define reinterpret_cast(trg_type, x)                                                       \
+({                                                                                          \
+	__auto_type _reinterpret_cast_x = (x);                                              \
+	trg_type _reinterpret_cast_tmp;                                                     \
+	typeof(_reinterpret_cast_tmp) * _reinterpret_cast_ptr;                              \
+	PRAGMA(GCC diagnostic push)                                                         \
+	PRAGMA(GCC diagnostic ignored "-Wstrict-aliasing")                                  \
+	PRAGMA(GCC diagnostic ignored "-Wuninitialized")                                    \
+	_reinterpret_cast_tmp = *((typeof(_reinterpret_cast_ptr)) &_reinterpret_cast_x);    \
+	PRAGMA(GCC diagnostic pop)                                                          \
+	_reinterpret_cast_tmp;                                                              \
 })
 
 

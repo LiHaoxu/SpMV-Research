@@ -327,6 +327,8 @@ scan_reduce_segment_concurrent(_TYPE_IN * A, _TYPE_OUT * P, long i_start, long i
 			// l1_cache_size = topo_get_cache_size_l2();
 			// l1_cache_size = sysconf(_SC_LEVEL1_DCACHE_SIZE);
 			// l1_cache_size = sysconf(_SC_LEVEL2_CACHE_SIZE);
+			if (l1_cache_size == 0)
+				l1_cache_size = 1ULL << 10;
 			block_size = l1_cache_size / sizeof(_TYPE_OUT) * num_threads;
 			// printf("block_size = %ld\n", block_size);
 		}

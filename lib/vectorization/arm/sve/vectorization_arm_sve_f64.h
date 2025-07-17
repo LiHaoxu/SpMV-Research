@@ -45,10 +45,10 @@
 typedef double  vec_f64_t __attribute__((may_alias));
 
 
-#define vec_array_f64_8(val)                     ({vec_f64_8_t  * _tmp = &val; (vec_f64_t *) _tmp;})
-#define vec_array_f64_4(val)                     ({vec_f64_4_t  * _tmp = &val; (vec_f64_t *) _tmp;})
-#define vec_array_f64_2(val)                     ({vec_f64_2_t  * _tmp = &val; (vec_f64_t *) _tmp;})
-#define vec_array_f64_1(val)                     ({vec_f64_1_t  * _tmp = &val; (vec_f64_t *) _tmp;})
+#define vec_array_f64_8(vec)                     ({vec_f64_8_t  * _tmp = &vec; (vec_f64_t *) _tmp;})
+#define vec_array_f64_4(vec)                     ({vec_f64_4_t  * _tmp = &vec; (vec_f64_t *) _tmp;})
+#define vec_array_f64_2(vec)                     ({vec_f64_2_t  * _tmp = &vec; (vec_f64_t *) _tmp;})
+#define vec_array_f64_1(vec)                     ({vec_f64_1_t  * _tmp = &vec; (vec_f64_t *) _tmp;})
 
 #define vec_set1_f64_8(val)                      svdup_n_f64(val)
 #define vec_set1_f64_4(val)                      svdup_n_f64(val)

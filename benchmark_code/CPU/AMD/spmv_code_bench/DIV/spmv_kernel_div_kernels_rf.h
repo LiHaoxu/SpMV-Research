@@ -20,18 +20,10 @@ extern "C"{
 	#include "macros/permutation.h"
 
 	#include "spmv_kernel_div_gather_coords.h"
+	// #include "spmv_kernel_div_gather_coords_less_loads.h"
 #ifdef __cplusplus
 }
 #endif
-
-
-struct cmp_data_packed_t {
-	union {
-		unsigned __int128 u128;
-		uint64_t u64[2];
-		uint32_t u32[4];
-	};
-};
 
 
 //==========================================================================================================================================
@@ -91,6 +83,15 @@ struct cmp_data_t {
 	unsigned int * rows;
 	unsigned int * cols;
 	ValueType * vals;
+};
+
+
+struct cmp_data_packed_t {
+	union {
+		unsigned __int128 u128;
+		uint64_t u64[2];
+		uint32_t u32[4];
+	};
 };
 
 
@@ -155,7 +156,8 @@ quicksort_cmp(struct cmp_data_packed_t a, struct cmp_data_packed_t b, __attribut
 #define QUICKSORT_BLOCKED_GEN_SUFFIX  _packed
 #include "sort/quicksort_blocked/quicksort_blocked_gen.c"
 long quicksort_permutation_table_i64_n;
-vec_perm_t(p64, VEC_LEN) * quicksort_permutation_table_i64;
+// vec_perm_t(p64, VEC_LEN) * quicksort_permutation_table_i64;
+vec_perm_elem_t(p64, VEC_LEN) * quicksort_permutation_table_i64;
 void
 create_permutation_table()
 {
@@ -163,7 +165,8 @@ create_permutation_table()
 	uint64_t mask;
 	long i, j, l, r;
 	quicksort_permutation_table_i64_n = VEC_LEN * (1ULL << VEC_LEN);
-	quicksort_permutation_table_i64 = (typeof(quicksort_permutation_table_i64)) malloc(quicksort_permutation_table_i64_n * sizeof(*quicksort_permutation_table_i64));
+	// quicksort_permutation_table_i64 = (typeof(quicksort_permutation_table_i64)) malloc(quicksort_permutation_table_i64_n * sizeof(*quicksort_permutation_table_i64));
+	quicksort_permutation_table_i64 = (typeof(quicksort_permutation_table_i64)) malloc(quicksort_permutation_table_i64_n * VEC_LEN * sizeof(*quicksort_permutation_table_i64));
 	for (i=0;i<1LL << VEC_LEN;i++)
 	{
 		l = 0;
@@ -177,7 +180,10 @@ create_permutation_table()
 				permutation[l++] = j;
 			mask <<= 1;
 		}
-		quicksort_permutation_table_i64[i] = vec_set_iter(p64, VEC_LEN, iter, permutation[iter]);
+		// quicksort_permutation_table_i64[i] = vec_set_iter(p64, VEC_LEN, iter, permutation[iter]);
+		// for (j=0;j<VEC_LEN;j++)
+			// ((int64_t *)quicksort_permutation_table_i64)[i*VEC_LEN + j] = permutation[j];
+		vec_storeu(p64, VEC_LEN, &(quicksort_permutation_table_i64[i*VEC_LEN]), vec_set_iter(p64, VEC_LEN, iter, permutation[iter]));
 	}
 }
 static inline
@@ -219,25 +225,26 @@ quicksort_blocked_buffer_and_partition_block(struct cmp_data_packed_t pivot_scal
 	}
 	mask = vec_mask_pack(m64, VEC_LEN, cmp_flag);
 
-	vec_perm_t(p64, VEC_LEN) perm = quicksort_permutation_table_i64[mask];
+	// vec_perm_t(p64, VEC_LEN) perm = quicksort_permutation_table_i64[mask];
+	vec_perm_t(p64, VEC_LEN) perm = vec_loadu(p64, VEC_LEN, &quicksort_permutation_table_i64[VEC_LEN * mask]);
 	val0 = vec_permutexvar(i64, VEC_LEN, val0, perm);
 	val1 = vec_permutexvar(i64, VEC_LEN, val1, perm);
 
 	PRAGMA(GCC unroll(VEC_LEN))
 	for (j=0;j<VEC_LEN;j++)
-		buf_out[*i_buf_l_ptr+j].u64[0] = val0.s[j];
+		buf_out[*i_buf_l_ptr+j].u64[0] = vec_elem_get(i64, VEC_LEN, val0, j);
 
 	PRAGMA(GCC unroll(VEC_LEN))
 	for (j=0;j<VEC_LEN;j++)
-		buf_out[*i_buf_l_ptr+j].u64[1] = val1.s[j];
+		buf_out[*i_buf_l_ptr+j].u64[1] = vec_elem_get(i64, VEC_LEN, val1, j);
 
 	PRAGMA(GCC unroll(VEC_LEN))
 	for (j=0;j<VEC_LEN;j++)
-		buf_out[*i_buf_r_ptr - VEC_LEN + 1 + j].u64[0] = val0.s[j];
+		buf_out[*i_buf_r_ptr - VEC_LEN + 1 + j].u64[0] = vec_elem_get(i64, VEC_LEN, val0, j);
 
 	PRAGMA(GCC unroll(VEC_LEN))
 	for (j=0;j<VEC_LEN;j++)
-		buf_out[*i_buf_r_ptr - VEC_LEN + 1 + j].u64[1] = val1.s[j];
+		buf_out[*i_buf_r_ptr - VEC_LEN + 1 + j].u64[1] = vec_elem_get(i64, VEC_LEN, val1, j);
 
 	long num_gt = bits_u32_popcnt(mask);
 	*i_buf_r_ptr -= num_gt;
@@ -652,8 +659,8 @@ compress_kernel_div(INT_T * row_ptr, INT_T * ja, ValueTypeReference * vals, __at
 		error("col_bits > 32 (%ld)", col_bits);
 
 	/* Sort the packet values. */
-	// quicksort_packed_perm(compare_data_packed, num_vals, NULL, tdk->qsort_partitions);
-	quicksort_blocked_packed(compare_data_packed, num_vals, NULL, tdk->qsort_partitions);
+	quicksort_packed_perm(compare_data_packed, num_vals, NULL, tdk->qsort_partitions);
+	// quicksort_blocked_packed(compare_data_packed, num_vals, NULL, tdk->qsort_partitions);
 
 	/* Find replication factors, but keep all duplicates (needed because each one has different coordinates). */
 	// long rf_threshold_max = (1ULL<<16) - 1;
@@ -792,7 +799,8 @@ compress_kernel_div(INT_T * row_ptr, INT_T * ja, ValueTypeReference * vals, __at
 	union {
 		ValueType d;
 		ValueTypeI u;
-	} val_prev[VEC_LEN], val, diff;
+	} val_prev[VEC_LEN], val;
+	ValueTypeI diff;
 	k_s = 0;
 	for (l=0;l<num_rfs;l++)
 	{
@@ -805,15 +813,15 @@ compress_kernel_div(INT_T * row_ptr, INT_T * ja, ValueTypeReference * vals, __at
 			k = k_s + i;
 			lane_id = i % VEC_LEN;
 			val.d = window[k];
-			diff.u = val.u - val_prev[lane_id].u;
+			diff = val.u - val_prev[lane_id].u;
 
-			val_prev[lane_id].u += diff.u;
+			val_prev[lane_id].u += diff;
 
 			double error = fabs(val.d - val_prev[lane_id].d) / fabs(val.d);
 			if (error > tolerance)
 				error("tolerance exceeded");
 
-			if (diff.u == 0)
+			if (diff == 0)
 			{
 				len = 0;
 				data_val_lens[k] = 0;
@@ -826,12 +834,12 @@ compress_kernel_div(INT_T * row_ptr, INT_T * ja, ValueTypeReference * vals, __at
 				 * so we keep shifts in strides of 4 (0, 4, 8, 12, ..., 60).
 				 */
 				uint64_t rem_tz;
-				ValueTypeI buf_diff = diff.u;
+				ValueTypeI buf_diff = diff;
 				uint64_t leading_zeros = 0;
 				uint64_t trailing_zeros = 0;
 				uint64_t trailing_zero_bits_div4 = 0;
-				leading_zeros = __builtin_clzl(diff.u);
-				trailing_zeros = __builtin_ctzl(diff.u);
+				leading_zeros = __builtin_clzl(diff);
+				trailing_zeros = __builtin_ctzl(diff);
 				rem_tz = trailing_zeros & 3ULL;
 
 				len_bits = 64ULL - leading_zeros - trailing_zeros;
@@ -864,8 +872,8 @@ compress_kernel_div(INT_T * row_ptr, INT_T * ja, ValueTypeReference * vals, __at
 				if (len > 8)
 					error("len > 8");
 
-				diff.u >>= trailing_zeros;
-				bytestream_write_unsafe_cast(&Bs[lane_id], (uint64_t) diff.u, len);   // Bytestream works with 'uint64_t' buffer (so we cast diff.u), and the actual size in bytes 'len'.
+				diff >>= trailing_zeros;
+				bytestream_write_unsafe_cast(&Bs[lane_id], (uint64_t) diff, len);   // Bytestream works with 'uint64_t' buffer (so we cast diff), and the actual size in bytes 'len'.
 				len |=  (trailing_zero_bits_div4 << 4ULL);
 				data_val_lens[k] = len;
 
@@ -874,10 +882,10 @@ compress_kernel_div(INT_T * row_ptr, INT_T * ja, ValueTypeReference * vals, __at
 					error("tz: %ld %ld %ld", len, tz, trailing_zero_bits_div4);
 				len &= 15ULL;
 				ValueTypeI mask = (len == 8) ? -1ULL : (1ULL << len_bits) - 1ULL;
-				diff.u &= mask;
-				diff.u <<= tz;
-				if (diff.u != buf_diff)
-					error("diff.u != buf_diff");
+				diff &= mask;
+				diff <<= tz;
+				if (diff != buf_diff)
+					error("diff != buf_diff");
 			}
 		}
 		k_s += num_rf_vals_unique;
@@ -924,7 +932,7 @@ void
 mult_add_serial(ValueType * x_rel, ValueType * y_rel, vec_t(VTF, VEC_LEN) val, vec_t(i64, VEC_LEN) row_rel, vec_t(i64, VEC_LEN) col_rel)
 {
 	for (long iter=0;iter<VEC_LEN;iter++)
-		y_rel[row_rel.s[iter]] += val.s[iter] * x_rel[col_rel.s[iter]];
+		y_rel[vec_elem_get(i64, VEC_LEN, row_rel, iter)] += vec_elem_get(VTF, VEC_LEN, val, iter) * x_rel[vec_elem_get(i64, VEC_LEN, col_rel, iter)];
 }
 
 
@@ -990,31 +998,29 @@ decompress_and_compute_kernel_div_base(unsigned char * restrict buf, ValueType *
 	const uint64_t data_val_lens_bytes = num_vals_unique;
 
 	vec_t(i64, VEC_LEN) data_val_lanes;
-	data_val_lanes.s[0] = (long long) &data_val_lens[data_val_lens_bytes];
+	vec_elem_get(i64, VEC_LEN, data_val_lanes, 0) = (long long) &data_val_lens[data_val_lens_bytes];
 	uint64_t data_val_lanes_bytes = data_val_lanes_size[0];
 	for (long iter=1;iter<VEC_LEN;iter++)
 	{
-		data_val_lanes.s[iter] = data_val_lanes.s[iter-1] + data_val_lanes_size[iter-1];
+		vec_elem_get(i64, VEC_LEN, data_val_lanes, iter) = vec_elem_get(i64, VEC_LEN, data_val_lanes, iter-1) + data_val_lanes_size[iter-1];
 		data_val_lanes_bytes += data_val_lanes_size[iter];
 	}
 
+	// static const ValueTypeI masks_first_bits[] = {
+		// 0, (1ULL << (8*1)) - 1, (1ULL << (8*2)) - 1, (1ULL << (8*3)) - 1, (1ULL << (8*4)) - 1, (1ULL << (8*5)) - 1, (1ULL << (8*6)) - 1, (1ULL << (8*7)) - 1, -1ULL
+	// };
+
 	for (l=0;l<num_rfs;l++)
 	{
-		union {
-			vec_t(VTF, VEC_LEN) d;
-			vec_t(VTI, VEC_LEN) u;
-		} val;
+		vec_t(VTI, VEC_LEN) val;
 		long rf = data_rfs[l];
 		long num_rf_vals_unique = data_num_unique_vals_per_rf[l];
 		long num_rf_vals_unique_div = num_rf_vals_unique / VEC_LEN;
 		long num_rf_vals_unique_multiple = num_rf_vals_unique_div * VEC_LEN;
-		val.u = vec_set1(VTI, VEC_LEN, 0);
+		val = vec_set1(VTI, VEC_LEN, 0);
 		for (i=0;i<num_rf_vals_unique_multiple;i+=VEC_LEN)
 		{
-			union {
-				vec_t(VTF, VEC_LEN) d;
-				vec_t(VTI, VEC_LEN) u;
-			} diff;
+			vec_t(VTI, VEC_LEN) diff;
 			vec_t(i64, VEC_LEN) len_64;
 			vec_t(VTI, VEC_LEN) len;
 			vec_t(i64, VEC_LEN) row_rel, col_rel;
@@ -1028,21 +1034,22 @@ decompress_and_compute_kernel_div_base(unsigned char * restrict buf, ValueType *
 			// len_bits = len << 3ULL;
 			vec_t(VTI, VEC_LEN) len_bits = vec_slli(VTI, VEC_LEN, len, 3ULL);
 
-			diff.u = vec_set_iter(VTI, VEC_LEN, iter, *((ValueTypeI *) data_val_lanes.s[iter]));
+			diff = vec_set_iter(VTI, VEC_LEN, iter, *((ValueTypeI *) vec_elem_get(i64, VEC_LEN, data_val_lanes, iter)));
 
 			// data_val_lanes = data_val_lanes + len_64;
-			len_64 = vec_set_iter(i64, VEC_LEN, iter, len.s[iter]);
+			len_64 = vec_set_iter(i64, VEC_LEN, iter, vec_elem_get(VTI, VEC_LEN, len, iter));
 			data_val_lanes = vec_add(i64, VEC_LEN, data_val_lanes, len_64);
 
 			// vec_t(VTI, VEC_LEN) mask = (1ULL << len_bits) - 1ULL;
 			vec_t(VTI, VEC_LEN) mask = vec_sub(VTI, VEC_LEN, vec_sllv(VTI, VEC_LEN, vec_set1(VTI, VEC_LEN, 1ULL), len_bits), vec_set1(VTI, VEC_LEN, 1ULL));
-			// diff.u &= mask;
-			diff.u = vec_and(VTI, VEC_LEN, diff.u, mask);
-			// diff.u <<= tz;
-			diff.u = vec_sllv(VTI, VEC_LEN, diff.u, tz);
+			// vec_t(VTI, VEC_LEN) mask = vec_gather(VTI, VTI, VEC_LEN, masks_first_bits, len);
+			// diff &= mask;
+			diff = vec_and(VTI, VEC_LEN, diff, mask);
+			// diff <<= tz;
+			diff = vec_sllv(VTI, VEC_LEN, diff, tz);
 
-			// val.u = val.u + diff.u;
-			val.u = vec_add(VTI, VEC_LEN, val.u, diff.u);
+			// val = val + diff;
+			val = vec_add(VTI, VEC_LEN, val, diff);
 
 			for (j=0;j<rf;j++)
 			{
@@ -1051,29 +1058,26 @@ decompress_and_compute_kernel_div_base(unsigned char * restrict buf, ValueType *
 
 				if (validate)
 				{
-					vec_storeu(VTF, VEC_LEN, &window[k], val.d);
+					vec_storeu(VTF, VEC_LEN, &window[k], reinterpret_cast(vec_t(VTF, VEC_LEN), val));
 					vec_t(i64, VEC_LEN) row, col;
 					row = vec_add(i64, VEC_LEN, row_rel, vec_set1(i64, VEC_LEN, row_min));
 					col = vec_add(i64, VEC_LEN, col_rel, vec_set1(i64, VEC_LEN, col_min));
 					for (r=0;r<VEC_LEN;r++)
 					{
-						window_ia[k+r] = row.s[r];
-						window_ja[k+r] = col.s[r];
+						window_ia[k+r] = vec_elem_get(i64, VEC_LEN, row, r);
+						window_ja[k+r] = vec_elem_get(i64, VEC_LEN, col, r);
 					}
 				}
 				else
 				{
-					mult_add_serial(x_rel, y_rel, val.d, row_rel, col_rel);
+					mult_add_serial(x_rel, y_rel, reinterpret_cast(vec_t(VTF, VEC_LEN), val), row_rel, col_rel);
 				}
 			}
 		}
 
 		for (i=num_rf_vals_unique_multiple;i<num_rf_vals_unique;i++)
 		{
-			union {
-				ValueType d;
-				ValueTypeI u;
-			} diff;
+			ValueTypeI diff;
 			uint64_t len;
 			long lane_id = i % VEC_LEN;
 
@@ -1083,22 +1087,23 @@ decompress_and_compute_kernel_div_base(unsigned char * restrict buf, ValueType *
 			len &= 15ULL;
 			uint64_t len_bits = len << 3ULL;
 
-			diff.u = *((ValueTypeI *) data_val_lanes.s[lane_id]);
+			diff = *((ValueTypeI *) vec_elem_get(i64, VEC_LEN, data_val_lanes, lane_id));
 
-			data_val_lanes.s[lane_id] = data_val_lanes.s[lane_id] + len;
+			vec_elem_get(i64, VEC_LEN, data_val_lanes, lane_id) += len;
 
 			ValueTypeI mask = (len == 8) ? -1ULL : (1ULL << len_bits) - 1ULL;
-			diff.u &= mask;
-			diff.u <<= tz;
+			// ValueTypeI mask = masks_first_bits[len];
+			diff &= mask;
+			diff <<= tz;
 
-			val.u.s[lane_id] = val.u.s[lane_id] + diff.u;
+			vec_elem_get(i64, VEC_LEN, val, lane_id) += diff;
 
 			long rf_div = rf / VEC_LEN;
 			long rf_multiple = rf_div * VEC_LEN;
 			for (j=0;j<rf_multiple;j+=VEC_LEN)
 			{
 				vec_t(i64, VEC_LEN) row_rel, col_rel;
-				vec_t(VTF, VEC_LEN) val_buf = vec_set1(VTF, VEC_LEN, val.d.s[lane_id]);
+				vec_t(VTF, VEC_LEN) val_buf = vec_set1(VTF, VEC_LEN, reinterpret_cast(ValueType, vec_elem_get(VTI, VEC_LEN, val, lane_id)));
 				k = i*rf + j;
 				gather_coords_v(k, data_coords, coords_bytes, row_bits, col_bits, &row_rel, &col_rel);
 				if (validate)
@@ -1109,8 +1114,8 @@ decompress_and_compute_kernel_div_base(unsigned char * restrict buf, ValueType *
 					col = vec_add(i64, VEC_LEN, col_rel, vec_set1(i64, VEC_LEN, col_min));
 					for (r=0;r<VEC_LEN;r++)
 					{
-						window_ia[k+r] = row.s[r];
-						window_ja[k+r] = col.s[r];
+						window_ia[k+r] = vec_elem_get(i64, VEC_LEN, row, r);
+						window_ja[k+r] = vec_elem_get(i64, VEC_LEN, col, r);
 					}
 				}
 				else
@@ -1126,7 +1131,7 @@ decompress_and_compute_kernel_div_base(unsigned char * restrict buf, ValueType *
 				gather_coords(k, data_coords, coords_bytes, row_bits, col_bits, &row_rel, &col_rel);
 				if (validate)
 				{
-					window[k] = val.d.s[lane_id];
+					window[k] = reinterpret_cast(ValueType, vec_elem_get(VTI, VEC_LEN, val, lane_id));
 					uint64_t row, col;
 					row = row_rel + row_min;
 					col = col_rel + col_min;
@@ -1135,7 +1140,7 @@ decompress_and_compute_kernel_div_base(unsigned char * restrict buf, ValueType *
 				}
 				else
 				{
-					y_rel[row_rel] += val.d.s[lane_id] * x_rel[col_rel];
+					y_rel[row_rel] += reinterpret_cast(ValueType, vec_elem_get(VTI, VEC_LEN, val, lane_id)) * x_rel[col_rel];
 				}
 			}
 		}

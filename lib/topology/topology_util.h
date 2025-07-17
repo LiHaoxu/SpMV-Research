@@ -189,16 +189,13 @@ find_numbered_files_list(char * dirname, char * filename_prefix, long ** number_
 		error("regcomp");
 
 	dr = opendir(dirname);
-	if (dr == NULL) {
+	if (dr == NULL)
+	{
 		// error("opendir");
-		printf("No %s directory found. Fix this sometime in the future! Returning 0...\n", dirname);
-		num_files = 1;
-		list = (typeof(list)) malloc(num_files * sizeof(*list));
-		// list[0] = -1;
-		list[0] = 0;
-		*number_list_ret = list;
+		if (number_list_ret != NULL)
+			*number_list_ret = NULL;
 		regfree(&regex);
-		return num_files;
+		return 0;
 	}
 
 	i = 0;

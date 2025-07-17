@@ -4,7 +4,6 @@
 #include <stdlib.h>
 #include <stdio.h>
 #include <stdint.h>
-#include <x86intrin.h>
 
 #include "macros/cpp_defines.h"
 #include "macros/macrolib.h"
@@ -25,7 +24,7 @@ typedef union __attribute__((packed, aligned(8))) { struct {int64_t a[ 4];} v; i
 typedef union __attribute__((packed, aligned(8))) { struct {int64_t a[ 8];} v; int64_t s[ 8]; }  vec_perm_p64_8_t;
 typedef union __attribute__((packed, aligned(8))) { struct {int64_t a[16];} v; int64_t s[16]; }  vec_perm_p64_16_t;
 
-#define vec_len_default_i64  8
+#define vec_len_default_i64  4
 
 
 #define vec_i64_16(val)                                    ( (vec_i64_16_t) { .v = (val) } )
@@ -74,11 +73,11 @@ typedef union __attribute__((packed, aligned(8))) { struct {int64_t a[16];} v; i
 //- Set - Load - Store
 //------------------------------------------------------------------------------------------------------------------------------------------
 
-#define vec_array_i64_16(val)                              (val).s
-#define vec_array_i64_8(val)                               (val).s
-#define vec_array_i64_4(val)                               (val).s
-#define vec_array_i64_2(val)                               (val).s
-#define vec_array_i64_1(val)                               (val).s
+#define vec_array_i64_16(vec)                              (vec).s
+#define vec_array_i64_8(vec)                               (vec).s
+#define vec_array_i64_4(vec)                               (vec).s
+#define vec_array_i64_2(vec)                               (vec).s
+#define vec_array_i64_1(vec)                               (vec).s
 
 #define vec_set1_i64_16(val)                               vec_loop_expr(vec_i64_16_t, 16, _tmp, _i, _tmp.s[_i] = (val);)
 #define vec_set1_i64_8(val)                                vec_loop_expr(vec_i64_8_t,   8, _tmp, _i, _tmp.s[_i] = (val);)
@@ -104,11 +103,23 @@ typedef union __attribute__((packed, aligned(8))) { struct {int64_t a[16];} v; i
 #define vec_loadu_i64_2(ptr)                               vec_loop_expr(vec_i64_2_t,   2, _tmp, _i, _tmp.s[_i] = ((int64_t *) (ptr))[_i];)
 #define vec_loadu_i64_1(ptr)                               vec_loop_expr(vec_i64_1_t,   1, _tmp, _i, _tmp.s[_i] = ((int64_t *) (ptr))[_i];)
 
+#define vec_maskz_loadu_i64_16(ptr, mask)                  vec_loop_expr(vec_i64_16_t, 16, _tmp, _i, _tmp.s[_i] = ((mask).v & (1 << _i)) ? ((int64_t *) (ptr))[_i] : 0;)
+#define vec_maskz_loadu_i64_8(ptr, mask)                   vec_loop_expr(vec_i64_8_t,   8, _tmp, _i, _tmp.s[_i] = ((mask).v & (1 << _i)) ? ((int64_t *) (ptr))[_i] : 0;)
+#define vec_maskz_loadu_i64_4(ptr, mask)                   vec_loop_expr(vec_i64_4_t,   4, _tmp, _i, _tmp.s[_i] = ((mask).v & (1 << _i)) ? ((int64_t *) (ptr))[_i] : 0;)
+#define vec_maskz_loadu_i64_2(ptr, mask)                   vec_loop_expr(vec_i64_2_t,   2, _tmp, _i, _tmp.s[_i] = ((mask).v & (1 << _i)) ? ((int64_t *) (ptr))[_i] : 0;)
+#define vec_maskz_loadu_i64_1(ptr, mask)                   vec_loop_expr(vec_i64_1_t,   1, _tmp, _i, _tmp.s[_i] = ((mask).v & (1 << _i)) ? ((int64_t *) (ptr))[_i] : 0;)
+
 #define vec_storeu_i64_16(ptr, vec)                        vec_loop_stmt(16, _i, ((int64_t *) (ptr))[_i] = vec.s[_i];)
 #define vec_storeu_i64_8(ptr, vec)                         vec_loop_stmt( 8, _i, ((int64_t *) (ptr))[_i] = vec.s[_i];)
 #define vec_storeu_i64_4(ptr, vec)                         vec_loop_stmt( 4, _i, ((int64_t *) (ptr))[_i] = vec.s[_i];)
 #define vec_storeu_i64_2(ptr, vec)                         vec_loop_stmt( 2, _i, ((int64_t *) (ptr))[_i] = vec.s[_i];)
 #define vec_storeu_i64_1(ptr, vec)                         vec_loop_stmt( 1, _i, ((int64_t *) (ptr))[_i] = vec.s[_i];)
+
+#define vec_mask_storeu_i64_16(ptr, vec, mask)             vec_loop_stmt(16, _i, if ((mask).v & (1 << _i)) ((int64_t *) (ptr))[_i] = vec.s[_i];)
+#define vec_mask_storeu_i64_8(ptr, vec, mask)              vec_loop_stmt( 8, _i, if ((mask).v & (1 << _i)) ((int64_t *) (ptr))[_i] = vec.s[_i];)
+#define vec_mask_storeu_i64_4(ptr, vec, mask)              vec_loop_stmt( 4, _i, if ((mask).v & (1 << _i)) ((int64_t *) (ptr))[_i] = vec.s[_i];)
+#define vec_mask_storeu_i64_2(ptr, vec, mask)              vec_loop_stmt( 2, _i, if ((mask).v & (1 << _i)) ((int64_t *) (ptr))[_i] = vec.s[_i];)
+#define vec_mask_storeu_i64_1(ptr, vec, mask)              vec_loop_stmt( 1, _i, if ((mask).v & (1 << _i)) ((int64_t *) (ptr))[_i] = vec.s[_i];)
 
 
 //------------------------------------------------------------------------------------------------------------------------------------------
@@ -209,17 +220,17 @@ typedef union __attribute__((packed, aligned(8))) { struct {int64_t a[16];} v; i
 //- Compare
 //------------------------------------------------------------------------------------------------------------------------------------------
 
-#define vec_cmpeq_i64_16(a, b)                             vec_loop_expr_init(vec_mask_m64_16_t, 16, _tmp, vec_mask_m64_16(0), _i, _tmp.v |= (a.s[_i] == b.s[_i]) << _i;)
-#define vec_cmpeq_i64_8(a, b)                              vec_loop_expr_init(vec_mask_m64_8_t,   8, _tmp, vec_mask_m64_8(0),  _i, _tmp.v |= (a.s[_i] == b.s[_i]) << _i;)
-#define vec_cmpeq_i64_4(a, b)                              vec_loop_expr_init(vec_mask_m64_4_t,   4, _tmp, vec_mask_m64_4(0),  _i, _tmp.v |= (a.s[_i] == b.s[_i]) << _i;)
-#define vec_cmpeq_i64_2(a, b)                              vec_loop_expr_init(vec_mask_m64_2_t,   2, _tmp, vec_mask_m64_2(0),  _i, _tmp.v |= (a.s[_i] == b.s[_i]) << _i;)
-#define vec_cmpeq_i64_1(a, b)                              vec_loop_expr_init(vec_mask_m64_1_t,   1, _tmp, vec_mask_m64_1(0),  _i, _tmp.v |= (a.s[_i] == b.s[_i]) << _i;)
+#define vec_cmpeq_i64_16(a, b)                             vec_loop_expr_init(vec_mask_m64_16_t, 16, _tmp, vec_mask_m64_16(0), _i, (_tmp).v |= (a.s[_i] == b.s[_i]) << _i;)
+#define vec_cmpeq_i64_8(a, b)                              vec_loop_expr_init(vec_mask_m64_8_t,   8, _tmp, vec_mask_m64_8(0),  _i, (_tmp).v |= (a.s[_i] == b.s[_i]) << _i;)
+#define vec_cmpeq_i64_4(a, b)                              vec_loop_expr_init(vec_mask_m64_4_t,   4, _tmp, vec_mask_m64_4(0),  _i, (_tmp).v |= (a.s[_i] == b.s[_i]) << _i;)
+#define vec_cmpeq_i64_2(a, b)                              vec_loop_expr_init(vec_mask_m64_2_t,   2, _tmp, vec_mask_m64_2(0),  _i, (_tmp).v |= (a.s[_i] == b.s[_i]) << _i;)
+#define vec_cmpeq_i64_1(a, b)                              vec_loop_expr_init(vec_mask_m64_1_t,   1, _tmp, vec_mask_m64_1(0),  _i, (_tmp).v |= (a.s[_i] == b.s[_i]) << _i;)
 
-#define vec_cmpgt_i64_16(a, b)                             vec_loop_expr_init(vec_mask_m64_16_t, 16, _tmp, vec_mask_m64_16(0), _i, _tmp.v |= (a.s[_i]  > b.s[_i]) << _i;)
-#define vec_cmpgt_i64_8(a, b)                              vec_loop_expr_init(vec_mask_m64_8_t,   8, _tmp, vec_mask_m64_8(0),  _i, _tmp.v |= (a.s[_i]  > b.s[_i]) << _i;)
-#define vec_cmpgt_i64_4(a, b)                              vec_loop_expr_init(vec_mask_m64_4_t,   4, _tmp, vec_mask_m64_4(0),  _i, _tmp.v |= (a.s[_i]  > b.s[_i]) << _i;)
-#define vec_cmpgt_i64_2(a, b)                              vec_loop_expr_init(vec_mask_m64_2_t,   2, _tmp, vec_mask_m64_2(0),  _i, _tmp.v |= (a.s[_i]  > b.s[_i]) << _i;)
-#define vec_cmpgt_i64_1(a, b)                              vec_loop_expr_init(vec_mask_m64_1_t,   1, _tmp, vec_mask_m64_1(0),  _i, _tmp.v |= (a.s[_i]  > b.s[_i]) << _i;)
+#define vec_cmpgt_i64_16(a, b)                             vec_loop_expr_init(vec_mask_m64_16_t, 16, _tmp, vec_mask_m64_16(0), _i, (_tmp).v |= (a.s[_i]  > b.s[_i]) << _i;)
+#define vec_cmpgt_i64_8(a, b)                              vec_loop_expr_init(vec_mask_m64_8_t,   8, _tmp, vec_mask_m64_8(0),  _i, (_tmp).v |= (a.s[_i]  > b.s[_i]) << _i;)
+#define vec_cmpgt_i64_4(a, b)                              vec_loop_expr_init(vec_mask_m64_4_t,   4, _tmp, vec_mask_m64_4(0),  _i, (_tmp).v |= (a.s[_i]  > b.s[_i]) << _i;)
+#define vec_cmpgt_i64_2(a, b)                              vec_loop_expr_init(vec_mask_m64_2_t,   2, _tmp, vec_mask_m64_2(0),  _i, (_tmp).v |= (a.s[_i]  > b.s[_i]) << _i;)
+#define vec_cmpgt_i64_1(a, b)                              vec_loop_expr_init(vec_mask_m64_1_t,   1, _tmp, vec_mask_m64_1(0),  _i, (_tmp).v |= (a.s[_i]  > b.s[_i]) << _i;)
 
 
 //------------------------------------------------------------------------------------------------------------------------------------------

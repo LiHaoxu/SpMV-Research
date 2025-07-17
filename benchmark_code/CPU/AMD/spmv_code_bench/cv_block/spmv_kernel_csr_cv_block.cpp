@@ -4,8 +4,8 @@
 
 #include "macros/cpp_defines.h"
 
-#include "spmv_bench_common.h"
-#include "spmv_kernel.h"
+#include "../spmv_bench_common.h"
+#include "../spmv_kernel.h"
 
 #include <immintrin.h>
 
@@ -17,7 +17,7 @@ extern "C"{
 	#include "parallel_util.h"
 	#include "array_metrics.h"
 	#include "x86_util.h"
-	#include "spmv_subkernel_csr_x86_d.hpp"
+	#include "../spmv_subkernel_csr_x86_d.hpp"
 #ifdef __cplusplus
 }
 #endif

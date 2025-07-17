@@ -3,12 +3,13 @@
 
 // https://stackoverflow.com/a/14038590
 #define gpuCudaErrorCheck(ans) { gpuCudaAssert((ans), __FILE__, __LINE__); }
-inline void gpuCudaAssert(cudaError_t code, const char *file, int line, bool abort=true)
+inline void gpuCudaAssert(cudaError_t code, const char * file, int line, bool abort=true)
 {
 	if (code != cudaSuccess) 
 	{
 		fprintf(stderr,"ERROR @ %s %s %d\n", cudaGetErrorString(code), file, line);
-		if (abort) exit(code);
+		if (abort)
+			exit(code);
 	}
 }
 

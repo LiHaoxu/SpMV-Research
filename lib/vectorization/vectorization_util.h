@@ -5,6 +5,10 @@
 #include "macros/macrolib.h"
 #include "bit_ops.h"
 
+#define vec_log2_8  3
+#define vec_log2_4  2
+#define vec_log2_2  1
+#define vec_log2_1  0
 
 #define vec_x2_128  256
 #define vec_x2_64   128
@@ -18,51 +22,38 @@
 #define vec_x2_size(size)  CONCAT(vec_x2_, size)
 
 
-
-#define vec_loop_expr(type, N, tmp, iter, code)    \
-({                                                 \
-	type tmp;                                  \
-	PRAGMA(GCC unroll N)                       \
-	for (long iter=0;iter<N;iter++)            \
-	{                                          \
-		code                               \
-	}                                          \
-	tmp;                                       \
+#define vec_loop_expr(type, N, tmp, iter, code)                    \
+({                                                                 \
+	type tmp;                                                  \
+	PRAGMA(GCC unroll N)                                       \
+	for (__attribute__((unused)) long iter=0;iter<N;iter++)    \
+	{                                                          \
+		code                                               \
+	}                                                          \
+	tmp;                                                       \
 })
 
 
-#define vec_loop_expr_init(type, N, tmp, init, iter, code)    \
-({                                                            \
-	type tmp = init;                                      \
-	PRAGMA(GCC unroll N)                                  \
-	for (long iter=0;iter<N;iter++)                       \
-	{                                                     \
-		code                                          \
-	}                                                     \
-	tmp;                                                  \
+#define vec_loop_expr_init(type, N, tmp, init, iter, code)         \
+({                                                                 \
+	type tmp = init;                                           \
+	PRAGMA(GCC unroll N)                                       \
+	for (__attribute__((unused)) long iter=0;iter<N;iter++)    \
+	{                                                          \
+		code                                               \
+	}                                                          \
+	tmp;                                                       \
 })
 
 
-#define vec_loop_stmt(N, iter, code)       \
-do {                                       \
-	PRAGMA(GCC unroll N)               \
-	for (long iter=0;iter<N;iter++)    \
-	{                                  \
-		code                       \
-	}                                  \
+#define vec_loop_stmt(N, iter, code)                               \
+do {                                                               \
+	PRAGMA(GCC unroll N)                                       \
+	for (__attribute__((unused)) long iter=0;iter<N;iter++)    \
+	{                                                          \
+		code                                               \
+	}                                                          \
 } while (0)
-
-
-#define vec_reduce_expr(type, N, zero, tmp, iter, code)    \
-({                                                         \
-	type tmp = zero;                                   \
-	PRAGMA(GCC unroll N)                               \
-	for (long iter=0;iter<N;iter++)                    \
-	{                                                  \
-		code                                       \
-	}                                                  \
-	tmp;                                               \
-})
 
 
 
@@ -145,7 +136,7 @@ do {                                       \
 	({long iter=1+(base); expr;}), ({long iter=0+(base); expr;})
 
 #define vec_iter_expr_1(iter, base, expr)    \
-	({long iter=0+(base); expr;})
+	({__attribute__((unused)) long iter=0+(base); expr;})
 
 
 #endif /* VECTORIZATION_UTIL_H */

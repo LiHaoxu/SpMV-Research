@@ -4,7 +4,6 @@
 #include <stdlib.h>
 #include <stdio.h>
 #include <stdint.h>
-#include <x86intrin.h>
 
 #include "macros/cpp_defines.h"
 #include "macros/macrolib.h"
@@ -62,11 +61,11 @@ typedef union __attribute__((packed, aligned(4))) { struct {float a[32];} v; str
 //- Set - Load - Store
 //------------------------------------------------------------------------------------------------------------------------------------------
 
-#define vec_array_f32_32(val)                              (val).s
-#define vec_array_f32_16(val)                              (val).s
-#define vec_array_f32_8(val)                               (val).s
-#define vec_array_f32_4(val)                               (val).s
-#define vec_array_f32_1(val)                               (val).s
+#define vec_array_f32_32(vec)                              (vec).s
+#define vec_array_f32_16(vec)                              (vec).s
+#define vec_array_f32_8(vec)                               (vec).s
+#define vec_array_f32_4(vec)                               (vec).s
+#define vec_array_f32_1(vec)                               (vec).s
 
 #define vec_set1_f32_32(val)                               vec_loop_expr(vec_f32_32_t, 32, _tmp, _i, _tmp.s[_i] = (val);)
 #define vec_set1_f32_16(val)                               vec_loop_expr(vec_f32_16_t, 16, _tmp, _i, _tmp.s[_i] = (val);)
@@ -86,11 +85,23 @@ typedef union __attribute__((packed, aligned(4))) { struct {float a[32];} v; str
 #define vec_loadu_f32_4(ptr)                               vec_loop_expr(vec_f32_4_t,   4, _tmp, _i, _tmp.s[_i] = ((float *) (ptr))[_i];)
 #define vec_loadu_f32_1(ptr)                               vec_loop_expr(vec_f32_1_t,   1, _tmp, _i, _tmp.s[_i] = ((float *) (ptr))[_i];)
 
+#define vec_maskz_loadu_f32_32(ptr, mask)                  vec_loop_expr(vec_f32_32_t, 32, _tmp, _i, _tmp.s[_i] = ((mask).v & (1 << _i)) ? ((float *) (ptr))[_i] : 0;)
+#define vec_maskz_loadu_f32_16(ptr, mask)                  vec_loop_expr(vec_f32_16_t, 16, _tmp, _i, _tmp.s[_i] = ((mask).v & (1 << _i)) ? ((float *) (ptr))[_i] : 0;)
+#define vec_maskz_loadu_f32_8(ptr, mask)                   vec_loop_expr(vec_f32_8_t,   8, _tmp, _i, _tmp.s[_i] = ((mask).v & (1 << _i)) ? ((float *) (ptr))[_i] : 0;)
+#define vec_maskz_loadu_f32_4(ptr, mask)                   vec_loop_expr(vec_f32_4_t,   4, _tmp, _i, _tmp.s[_i] = ((mask).v & (1 << _i)) ? ((float *) (ptr))[_i] : 0;)
+#define vec_maskz_loadu_f32_1(ptr, mask)                   vec_loop_expr(vec_f32_1_t,   1, _tmp, _i, _tmp.s[_i] = ((mask).v & (1 << _i)) ? ((float *) (ptr))[_i] : 0;)
+
 #define vec_storeu_f32_32(ptr, vec)                        vec_loop_stmt(32, _i, ((float *) (ptr))[_i] = vec.s[_i];)
 #define vec_storeu_f32_16(ptr, vec)                        vec_loop_stmt(16, _i, ((float *) (ptr))[_i] = vec.s[_i];)
 #define vec_storeu_f32_8(ptr, vec)                         vec_loop_stmt( 8, _i, ((float *) (ptr))[_i] = vec.s[_i];)
 #define vec_storeu_f32_4(ptr, vec)                         vec_loop_stmt( 4, _i, ((float *) (ptr))[_i] = vec.s[_i];)
 #define vec_storeu_f32_1(ptr, vec)                         vec_loop_stmt( 1, _i, ((float *) (ptr))[_i] = vec.s[_i];)
+
+#define vec_mask_storeu_f32_32(ptr, vec, mask)             vec_loop_stmt(32, _i, if ((mask).v & (1 << _i)) ((float *) (ptr))[_i] = vec.s[_i];)
+#define vec_mask_storeu_f32_16(ptr, vec, mask)             vec_loop_stmt(16, _i, if ((mask).v & (1 << _i)) ((float *) (ptr))[_i] = vec.s[_i];)
+#define vec_mask_storeu_f32_8(ptr, vec, mask)              vec_loop_stmt( 8, _i, if ((mask).v & (1 << _i)) ((float *) (ptr))[_i] = vec.s[_i];)
+#define vec_mask_storeu_f32_4(ptr, vec, mask)              vec_loop_stmt( 4, _i, if ((mask).v & (1 << _i)) ((float *) (ptr))[_i] = vec.s[_i];)
+#define vec_mask_storeu_f32_1(ptr, vec, mask)              vec_loop_stmt( 1, _i, if ((mask).v & (1 << _i)) ((float *) (ptr))[_i] = vec.s[_i];)
 
 
 //------------------------------------------------------------------------------------------------------------------------------------------
@@ -139,17 +150,17 @@ typedef union __attribute__((packed, aligned(4))) { struct {float a[32];} v; str
 //- Compare
 //------------------------------------------------------------------------------------------------------------------------------------------
 
-#define vec_cmpeq_f32_32(a, b)                             vec_loop_expr_init(vec_mask_m32_32_t, 32, _tmp, vec_mask_m32_32(0), _i, _tmp.v |= (a.s[_i] == b.s[_i]) << _i;)
-#define vec_cmpeq_f32_16(a, b)                             vec_loop_expr_init(vec_mask_m32_16_t, 16, _tmp, vec_mask_m32_16(0), _i, _tmp.v |= (a.s[_i] == b.s[_i]) << _i;)
-#define vec_cmpeq_f32_8(a, b)                              vec_loop_expr_init(vec_mask_m32_8_t,   8, _tmp, vec_mask_m32_8(0),  _i, _tmp.v |= (a.s[_i] == b.s[_i]) << _i;)
-#define vec_cmpeq_f32_4(a, b)                              vec_loop_expr_init(vec_mask_m32_4_t,   4, _tmp, vec_mask_m32_4(0),  _i, _tmp.v |= (a.s[_i] == b.s[_i]) << _i;)
-#define vec_cmpeq_f32_1(a, b)                              vec_loop_expr_init(vec_mask_m32_1_t,   1, _tmp, vec_mask_m32_1(0),  _i, _tmp.v |= (a.s[_i] == b.s[_i]) << _i;)
+#define vec_cmpeq_f32_32(a, b)                             vec_loop_expr_init(vec_mask_m32_32_t, 32, _tmp, vec_mask_m32_32(0), _i, (_tmp).v |= (a.s[_i] == b.s[_i]) << _i;)
+#define vec_cmpeq_f32_16(a, b)                             vec_loop_expr_init(vec_mask_m32_16_t, 16, _tmp, vec_mask_m32_16(0), _i, (_tmp).v |= (a.s[_i] == b.s[_i]) << _i;)
+#define vec_cmpeq_f32_8(a, b)                              vec_loop_expr_init(vec_mask_m32_8_t,   8, _tmp, vec_mask_m32_8(0),  _i, (_tmp).v |= (a.s[_i] == b.s[_i]) << _i;)
+#define vec_cmpeq_f32_4(a, b)                              vec_loop_expr_init(vec_mask_m32_4_t,   4, _tmp, vec_mask_m32_4(0),  _i, (_tmp).v |= (a.s[_i] == b.s[_i]) << _i;)
+#define vec_cmpeq_f32_1(a, b)                              vec_loop_expr_init(vec_mask_m32_1_t,   1, _tmp, vec_mask_m32_1(0),  _i, (_tmp).v |= (a.s[_i] == b.s[_i]) << _i;)
 
-#define vec_cmpgt_f32_32(a, b)                             vec_loop_expr_init(vec_mask_m32_32_t, 32, _tmp, vec_mask_m32_32(0), _i, _tmp.v |= (a.s[_i]  > b.s[_i]) << _i;)
-#define vec_cmpgt_f32_16(a, b)                             vec_loop_expr_init(vec_mask_m32_16_t, 16, _tmp, vec_mask_m32_16(0), _i, _tmp.v |= (a.s[_i]  > b.s[_i]) << _i;)
-#define vec_cmpgt_f32_8(a, b)                              vec_loop_expr_init(vec_mask_m32_8_t,   8, _tmp, vec_mask_m32_8(0),  _i, _tmp.v |= (a.s[_i]  > b.s[_i]) << _i;)
-#define vec_cmpgt_f32_4(a, b)                              vec_loop_expr_init(vec_mask_m32_4_t,   4, _tmp, vec_mask_m32_4(0),  _i, _tmp.v |= (a.s[_i]  > b.s[_i]) << _i;)
-#define vec_cmpgt_f32_1(a, b)                              vec_loop_expr_init(vec_mask_m32_1_t,   1, _tmp, vec_mask_m32_1(0),  _i, _tmp.v |= (a.s[_i]  > b.s[_i]) << _i;)
+#define vec_cmpgt_f32_32(a, b)                             vec_loop_expr_init(vec_mask_m32_32_t, 32, _tmp, vec_mask_m32_32(0), _i, (_tmp).v |= (a.s[_i]  > b.s[_i]) << _i;)
+#define vec_cmpgt_f32_16(a, b)                             vec_loop_expr_init(vec_mask_m32_16_t, 16, _tmp, vec_mask_m32_16(0), _i, (_tmp).v |= (a.s[_i]  > b.s[_i]) << _i;)
+#define vec_cmpgt_f32_8(a, b)                              vec_loop_expr_init(vec_mask_m32_8_t,   8, _tmp, vec_mask_m32_8(0),  _i, (_tmp).v |= (a.s[_i]  > b.s[_i]) << _i;)
+#define vec_cmpgt_f32_4(a, b)                              vec_loop_expr_init(vec_mask_m32_4_t,   4, _tmp, vec_mask_m32_4(0),  _i, (_tmp).v |= (a.s[_i]  > b.s[_i]) << _i;)
+#define vec_cmpgt_f32_1(a, b)                              vec_loop_expr_init(vec_mask_m32_1_t,   1, _tmp, vec_mask_m32_1(0),  _i, (_tmp).v |= (a.s[_i]  > b.s[_i]) << _i;)
 
 
 #endif /* VECTORIZATION_SCALAR_F32_H */

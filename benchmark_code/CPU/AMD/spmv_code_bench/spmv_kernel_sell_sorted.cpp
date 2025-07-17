@@ -25,6 +25,7 @@ extern "C"{
 	#if DOUBLE == 0
 		#define VTI   i32
 		#define VTF   f32
+		#define VEC_SCALE_SHIFT  2
 		// #define VEC_LEN  1
 		#define VEC_LEN  vec_len_default_f32
 		// #define VEC_LEN  vec_len_default_f64
@@ -35,6 +36,7 @@ extern "C"{
 	#elif DOUBLE == 1
 		#define VTI   i64
 		#define VTF   f64
+		#define VEC_SCALE_SHIFT  3
 		#define VEC_LEN  vec_len_default_f64
 		// #define VEC_LEN  1
 	#endif
@@ -126,6 +128,8 @@ struct SELLArray : Matrix_Format
 		long num_threads = omp_get_max_threads();
 
 		tds = (typeof(tds)) aligned_alloc(64, num_threads * sizeof(*tds));
+
+		printf("VEC_LEN = %d\n", VEC_LEN);
 
 		num_row_clusters = (m + VEC_LEN - 1) / VEC_LEN;
 		m_ext = num_row_clusters * VEC_LEN;
@@ -341,6 +345,7 @@ compute_sell(SELLArray * sell, ValueType * x , ValueType * y)
 		struct thread_data * td = tds[tnum];
 		vec_t(VTF, VEC_LEN) zero = vec_set1(VTF, VEC_LEN, 0);
 		__attribute__((unused)) vec_t(VTF, VEC_LEN) val = zero, mul = zero, x_buf = zero, sum = zero;
+		__attribute__((unused)) vec_t(i32, VEC_LEN) idx;
 		long ii, ii_s, ii_e, jj, jj_s, jj_e;
 		long i, k;
 		__attribute__((unused)) long i_s, i_e;
@@ -364,12 +369,23 @@ compute_sell(SELLArray * sell, ValueType * x , ValueType * y)
 
 				// for (k=0;k<VEC_LEN;k++)
 				// {
+					// vec_array(VTF, VEC_LEN, sum)[k] += sell->a[jj+k] * x[sell->ja[jj+k]];
+				// }
+
+				// for (k=0;k<VEC_LEN;k++)
+				// {
 					// vec_array(VTF, VEC_LEN, mul)[k] = sell->a[jj+k] * x[sell->ja[jj+k]];
 				// }
 				// sum = vec_add(VTF, VEC_LEN, sum, mul);
 
 				val = vec_loadu(VTF, VEC_LEN, &sell->a[jj]);
-				x_buf = vec_set_iter(VTF, VEC_LEN, iter, x[sell->ja[jj+iter]]);
+
+				// x_buf = vec_set_iter(VTF, VEC_LEN, iter, x[sell->ja[jj+iter]]);
+				idx = vec_loadu(i32, VEC_LEN, &sell->ja[jj]);
+				x_buf = vec_gather(VTF, i32, VEC_LEN, x, idx);
+				// vint32mf2_t idx = __riscv_vle32_v_i32mf2(&sell->ja[jj], VEC_LEN);
+				// x_buf = __riscv_vluxei32_v_f64m1(x, __riscv_vsll_vx_u32mf2(idx, VEC_SCALE_SHIFT, VEC_LEN),  VEC_LEN);
+
 				sum = vec_fmadd(VTF, VEC_LEN, val, x_buf, sum);
 
 			}

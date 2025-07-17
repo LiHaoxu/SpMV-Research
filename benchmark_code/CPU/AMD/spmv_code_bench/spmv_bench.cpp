@@ -20,6 +20,7 @@ extern "C"{
 	#include "time_it.h"
 	#include "parallel_util.h"
 	#include "pthread_functions.h"
+	#include "topology/hardware_topology.h"
 	#include "matrix_util.h"
 	#include "array_metrics.h"
 
@@ -68,7 +69,8 @@ long num_loops_out;
 
 // #define ValueTypeValidation  double
 // #define ValueTypeValidation  long double
-#define ValueTypeValidation  __float128
+// #define ValueTypeValidation  __float128
+#define ValueTypeValidation  _Float128
 
 /* ldoor, mkl_ie, 8 threads:
  *     ValueType | ValueTypeValidation       | Errors
@@ -324,7 +326,7 @@ compute(char * matrix_name,
 	{
 		// Warm up cpu.
 		__attribute__((unused)) volatile double warmup_total;
-		long A_warmup_n = (1<<20) * num_threads;
+		long A_warmup_n = (1ULL<<20) * num_threads;
 		double * A_warmup;
 		time_warm_up = time_it(1,
 			A_warmup = (typeof(A_warmup)) malloc(A_warmup_n * sizeof(*A_warmup));
@@ -379,7 +381,9 @@ compute(char * matrix_name,
 		/*****************************************************************************************/
 
 		volatile unsigned long * L3_cache_block;
-		long L3_cache_block_n = LEVEL3_CACHE_SIZE_TOTAL / sizeof(*L3_cache_block);
+		long L3_cache_block_n = topohw_get_cache_size(0, 3, TOPOHW_CT_U)  / sizeof(*L3_cache_block);
+		if (L3_cache_block_n == 0)
+			L3_cache_block_n = (1ULL<<20) * num_threads;
 		L3_cache_block = (typeof(L3_cache_block)) malloc(L3_cache_block_n * sizeof(*L3_cache_block));
 		int clear_caches = atoi(getenv("CLEAR_CACHES"));
 		time_total = 0;
@@ -994,7 +998,8 @@ child_proc_label:
 	#endif
 
 	long min_num_loops;
-	min_num_loops = 256;
+	// min_num_loops = 256;
+	min_num_loops = 64;
 
 	prefetch_distance = 1;
 	time = time_it(1,

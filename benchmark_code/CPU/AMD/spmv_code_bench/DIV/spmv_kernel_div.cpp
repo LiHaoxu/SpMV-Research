@@ -118,8 +118,8 @@ init_thread_statistics(struct thread_data * td)
 #elif defined(DIV_TYPE_SELECT)
 	#include "spmv_kernel_div_kernels_select.h"
 #elif defined(DIV_TYPE_ORD2)
-	#include "spmv_kernel_div_kernels_rf_ord2_buf.h"
-	// #include "spmv_kernel_div_kernels_rf_ord2.h"
+	// #include "spmv_kernel_div_kernels_rf_ord2_buf.h"
+	#include "ord2/spmv_kernel_div_kernels_rf_ord2.h"
 #elif defined(DIV_TYPE_COLS_SORT)
 	#include "spmv_kernel_div_kernels_cols_sort.h"
 #elif defined(DIV_TYPE_SYM_RF_LOCAL)
@@ -318,6 +318,13 @@ struct DIVArray : Matrix_Format
 
 				#if defined(DIV_TYPE_ADAPT)
 					adapt_statistics_concurrent(packet_buf_stealable, packet_buf_protected);
+					// DV_ENABLED = 0;
+					DV_ENABLED = 1;
+					symmetric = 0;
+					_Pragma("omp single")
+					{
+						printf("DV_ENABLED=%ld , RF_ENABLED=%ld, symmetric=%ld\n", DV_ENABLED, RF_ENABLED, symmetric);
+					}
 				#endif
 
 				i = i_s;
