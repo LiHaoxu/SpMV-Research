@@ -30,12 +30,12 @@ typedef DYNAMIC_ARRAY_GEN_TYPE_1  _TYPE;
 struct dynarray {
 	long page_size;
 
-	long capacity;  // max number of BYTES
-	long max_size;  // max number of items
-	_TYPE * data;
-	long size __attribute__ ((aligned(CACHE_LINE_SIZE)));      // current number of items
+	long capacity;  // Max number of BYTES.
+	long max_size;  // Max number of items.
+	_TYPE * data;   // Always page-aligned, via mmap.
+	long size __attribute__ ((aligned(CACHE_LINE_SIZE)));      // Current number of items.
 
-	long semaphore; // transaction completion semaphore
+	long semaphore; // Transaction completion semaphore.
 
 	char padding[0] __attribute__ ((aligned(CACHE_LINE_SIZE)));
 };
@@ -91,17 +91,29 @@ void dynarray_set_safe(struct dynarray * restrict da, long pos, _TYPE elem, _TYP
 
 #undef  dynarray_push_back
 #define dynarray_push_back  DYNAMIC_ARRAY_GEN_EXPAND(dynarray_push_back)
-void dynarray_push_back(struct dynarray * da, _TYPE elem);
+long dynarray_push_back(struct dynarray * da, _TYPE elem);
 
 #undef   dynarray_push_back_atomic
 #define dynarray_push_back_atomic  DYNAMIC_ARRAY_GEN_EXPAND(dynarray_push_back_atomic)
-void dynarray_push_back_atomic(struct dynarray * restrict da, _TYPE elem);
+long dynarray_push_back_atomic(struct dynarray * restrict da, _TYPE elem);
 
 
 #undef  dynarray_push_back_array
 #define dynarray_push_back_array  DYNAMIC_ARRAY_GEN_EXPAND(dynarray_push_back_array)
-void dynarray_push_back_array(struct dynarray * restrict da, _TYPE * restrict array, long n);
+long dynarray_push_back_array(struct dynarray * restrict da, _TYPE * restrict array, long n);
 
+#undef  dynarray_push_back_array_aligned
+#define dynarray_push_back_array_aligned  DYNAMIC_ARRAY_GEN_EXPAND(dynarray_push_back_array_aligned)
+long dynarray_push_back_array_aligned(struct dynarray * restrict da, _TYPE * restrict array, long n, long alignment);
+
+#undef  dynarray_push_back_array_atomic
+#define dynarray_push_back_array_atomic  DYNAMIC_ARRAY_GEN_EXPAND(dynarray_push_back_array_atomic)
+long dynarray_push_back_array_atomic(struct dynarray * restrict da, _TYPE * restrict array, long n);
+
+
+#undef  dynarray_copy_to_array
+#define dynarray_copy_to_array  DYNAMIC_ARRAY_GEN_EXPAND(dynarray_copy_to_array)
+long dynarray_copy_to_array(struct dynarray * restrict da, _TYPE * array_out);
 
 #undef  dynarray_export_array
 #define dynarray_export_array  DYNAMIC_ARRAY_GEN_EXPAND(dynarray_export_array)

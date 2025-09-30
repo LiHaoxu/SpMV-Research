@@ -40,18 +40,23 @@ else
 fi
 
 
-CC="$gcc_bin"
-# CC=clang
-# CC=xlc
-# CC=riscv64-linux-gnu-gcc
-export CC
+if ((RAVE_TRACING)); then
+    CC=clang
+    CPP=clang++
+else
+    CC="$gcc_bin"
+    # CC=clang
+    # CC=xlc
+    # CC=riscv64-linux-gnu-gcc
 
-CPP="$gpp_bin"
-# CPP=clang++
-# CPP=xlc++
-# CPP=riscv64-linux-gnu-g++
+    CPP="$gpp_bin"
+    # CPP=clang++
+    # CPP=xlc++
+    # CPP=riscv64-linux-gnu-g++
+    CXX="$CPP"
+fi
+export CC
 export CPP
-CXX="$CPP"
 export CXX
 
 if [[ -d "${CUDA_PATH}/bin" ]]; then
@@ -68,9 +73,12 @@ else
 fi
 export HIPCC
 
-export ARCH="$(uname -m)"
-# export ARCH='riscv64'
-# export ARCH='rave'
+if ((RAVE_TRACING)); then
+    export ARCH='rave'
+else
+    export ARCH="$(uname -m)"
+    # export ARCH='riscv64'
+fi
 
 
 CFLAGS=''
@@ -100,7 +108,7 @@ if [[ ${ARCH} == x86_64 ]]; then
     CFLAGS+=" -mbmi"
     CFLAGS+=" -mbmi2"
     CFLAGS+=" -march=native"
-    CFLAGS+=" -mno-avx512fp16"
+    # CFLAGS+=" -mno-avx512fp16"
     # CFLAGS+=" -mfma"
     # CFLAGS+=" -mavx"
     # CFLAGS+=" -mavx2"
@@ -125,7 +133,8 @@ elif [[ ${ARCH} == rave ]]; then
     CFLAGS+=" -mcpu=avispado"
     # CFLAGS+=" -mrvv-vector-bits=zvl"
     CFLAGS+=" -flax-vector-conversions"
-    CFLAGS+=" -D'RAVE_TRACING' -I'/apps/riscv/sdv_trace/include/'"
+    CFLAGS+=" -D'RAVE_TRACING'"
+    CFLAGS+=" -I'/apps/riscv/sdv_trace/include/'"
     CFLAGS+=" -fno-lto"
 
     CFLAGS+=" -mepi"
@@ -244,9 +253,6 @@ HIPCCFLAGS=
 HIPCCFLAGS+=' --offload-arch=native' # MI250
 export HIPCCFLAGS
 
-export NUM_STREAMS=;export NUM_THREADS=;export ROW_CLUSTER_SIZE=;export BLOCK_SIZE=;export NNZ_PER_THREAD=;export MULTIBLOCK_SIZE=;
-
-
 
 targets_d=()
 targets_f=()
@@ -276,6 +282,9 @@ export MULTIBLOCK_SIZE=
 
 unset MAKELEVEL
 
+
+# CPU
+
 if ((${#targets_d[@]} > 0)); then
     export DOUBLE=1
     export CFLAGS="${CFLAGS_D}"
@@ -293,6 +302,9 @@ if ((${#targets_f[@]} > 0)); then
     export TARGETS="${targets_f[*]}"
     make -f Makefile_in "$@"
 fi
+
+
+# GPU
 
 if ((${#targets_nv_d[@]} > 0)); then
     export DOUBLE=1

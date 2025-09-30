@@ -1,0 +1,508 @@
+#include <stdlib.h>
+#include <stdio.h>
+#include <omp.h>
+
+#include "macros/cpp_defines.h"
+
+#include "spmv_kernel.h"
+
+#ifdef __cplusplus
+extern "C"{
+#endif
+	#include "macros/macrolib.h"
+	#include "time_it.h"
+	#include "parallel_util.h"
+
+	// #define VEC_FORCE
+
+	// #define VEC_X86_512
+	// #define VEC_X86_256
+	// #define VEC_X86_128
+	// #define VEC_ARM_SVE
+
+	#if DOUBLE == 0
+		#define VTI   i32
+		#define VTF   f32
+		// #define VEC_LEN  1
+		// #define VEC_LEN  vec_len_default_f32
+		#define VEC_LEN  vec_len_default_f64
+		// #define VEC_LEN  4
+		// #define VEC_LEN  8
+		// #define VEC_LEN  16
+		// #define VEC_LEN  32
+	#elif DOUBLE == 1
+		#define VTI   i64
+		#define VTF   f64
+		#define VEC_LEN  vec_len_default_f64
+		// #define VEC_LEN  1
+	#endif
+
+	// #include "vectorization.h"
+	#include "vectorization/vectorization_gen.h"
+
+#ifdef __cplusplus
+}
+#endif
+
+
+struct ELLArrays : Matrix_Format
+{
+	INT_T width;  //< max nnz per row
+	ValueType *a;   //< the values (of size NNZ)
+	INT_T *ja;    //< the colidx of each NNZ (of size nnz)
+
+	ELLArrays(long m, long n, long nnz) : Matrix_Format(m, n, nnz)
+	{
+		a = NULL;
+		ja= NULL;
+	}
+
+	~ELLArrays()
+	{
+		free(a);
+		free(ja);
+	}
+
+	void spmv(ValueType * x, ValueType * y);
+	void statistics_start();
+	int statistics_print_data(__attribute__((unused)) char * buf, __attribute__((unused)) long buf_n);
+};
+
+
+/* struct ELLSYMArrays : Matrix_Format
+{
+	INT_T width;  //< max nnz per row
+	INT_T upper_n;
+	ValueType * diag;
+	ValueType * upper;       // upper diagonal
+	ValueType * lower;       // lower diagonal
+	INT_T * ja;    //< the colidx of each NNZ (of size nnz)
+
+	ELLSYMArrays(){
+		diag = NULL;
+		upper = NULL;
+		lower = NULL;
+		ja = NULL;
+	}
+
+	~ELLSYMArrays()
+	{
+		free(diag);
+		free(upper);
+		free(lower);
+		free(ja);
+	}
+
+	void spmv(ValueType * x, ValueType * y);
+}; */
+
+
+void compute_ell_par(ELLArrays * ell, ValueType * x , ValueType * y);
+void compute_ell(ELLArrays * ell, ValueType * x , ValueType * y);
+void compute_ell_unroll(ELLArrays * ell, ValueType * x , ValueType * y);
+void compute_ell_v(ELLArrays * ell, ValueType * x , ValueType * y);
+void compute_ell_v_hor(ELLArrays * ell, ValueType * x , ValueType * y);
+void compute_ell_v_hor_split(ELLArrays * ell, ValueType * x , ValueType * y);
+void compute_ell_transposed(ELLArrays * ell, ValueType * x , ValueType * y);
+void compute_ell_transposed_v(ELLArrays * ell, ValueType * x , ValueType * y);
+
+
+void
+ELLArrays::spmv(ValueType * x, ValueType * y)
+{
+	// compute_ell(this, x, y);
+	// compute_ell_v(this, x, y);
+	// compute_ell_v_hor(this, x, y);
+	// compute_ell_unroll(this, x, y);
+	// compute_ell_v_hor_split(this, x, y);
+	// compute_ell_transposed(this, x, y);
+	compute_ell_transposed_v(this, x, y);
+}
+
+
+template<typename T>
+T *
+transpose(T * a, INT_T m, INT_T n)
+{
+	T * t = (T *) aligned_alloc(64, m*n * sizeof(*t));
+	#pragma omp parallel
+	{
+		long i, j;
+		#pragma omp for schedule(static)
+		for (j=0;j<n;j++)
+		{
+			for (i=0;i<m;i++)
+				t[j*m + i] = a[i*n + j];
+		}
+	}
+	return t;
+}
+
+
+struct Matrix_Format *
+csr_to_format(INT_T * row_ptr, INT_T * col_ind, ValueTypeReference * values, long m, long n, long nnz, long symmetric, long symmetry_expanded)
+{
+	if (symmetric && !symmetry_expanded)
+		error("symmetric matrices have to be expanded to be supported by this format");
+	ELLArrays * ell = new ELLArrays(m, n, nnz);
+	long i, j, j_s, j_e;
+	long degree, degree_max;
+
+	ell->format_name = (char *) "ELL";
+	ell->m = ((m + VEC_LEN - 1) / VEC_LEN) * VEC_LEN;
+	ell->n = n;
+	ell->nnz = nnz;
+
+	degree_max = 0;
+	for (i=0;i<ell->m;i++)
+	{
+		degree = row_ptr[i+1] - row_ptr[i];
+		if (degree > degree_max)
+			degree_max = degree;
+	}
+	printf("max degree = %ld\n", degree_max);
+	ell->width = degree_max;
+	// ell->width = ((degree_max + VEC_LEN - 1) / VEC_LEN) * VEC_LEN;
+	printf("width = %d\n", ell->width);
+
+	ell->mem_footprint = m * ell->width * (sizeof(ValueType) + sizeof(INT_T));
+
+	ell->a = (ValueType *) aligned_alloc(64, ell->m * ell->width * sizeof(ValueType));
+	ell->ja = (INT_T *) aligned_alloc(64, ell->m * ell->width * sizeof(INT_T));
+	#pragma omp parallel
+	{
+		long i, j, k;
+		#pragma omp for
+		for (i=0;i<m;i++)
+		{
+			k = i * ell->width;
+			for (j=row_ptr[i];j<row_ptr[i+1];j++,k++)
+			{
+				ell->a[k] = values[j];
+				ell->ja[k] = col_ind[j];
+			}
+			for (;k<(i+1)*ell->width;k++)
+			{
+				ell->a[k] = 0;
+				ell->ja[k] = 0;
+			}
+		}
+	}
+	for (i=m;i<ell->m;i++)
+	{
+		j_s = i * ell->width;
+		j_e = (i + 1) * ell->width;
+		for (j=j_s;j<j_e;j++)
+		{
+			ell->a[j] = 0;
+			ell->ja[j] = 0;
+		}
+	}
+
+	ValueType * a = transpose<ValueType>(ell->a, ell->m, ell->width);
+	INT_T * ja = transpose<INT_T>(ell->ja, ell->m, ell->width);
+	free(ell->a);
+	free(ell->ja);
+	ell->a = a;
+	ell->ja = ja;
+	return ell;
+}
+
+
+//==========================================================================================================================================
+//= ELLPACK
+//==========================================================================================================================================
+
+
+void
+compute_ell_par(ELLArrays * ell, ValueType * x , ValueType * y)
+{
+	#pragma omp parallel
+	{
+		ValueType sum;
+		long i, j, j_s, j_e;
+		const INT_T width = ell->width;
+		PRAGMA(omp for schedule(static))
+		for (i=0;i<ell->m;i++)
+		{
+			j_s = i * width;
+			j_e = (i + 1) * width;
+			sum = 0;
+			for (j=j_s;j<j_e;j++)
+				sum += ell->a[j] * x[ell->ja[j]];
+			y[i] = sum;
+		}
+	}
+}
+
+
+void
+compute_ell(ELLArrays * ell, ValueType * x , ValueType * y)
+{
+	ValueType sum;
+	long i, j, j_s, j_e;
+	const INT_T width = ell->width;
+	for (i=0;i<ell->m;i++)
+	{
+		j_s = i * width;
+		j_e = (i + 1) * width;
+		sum = 0;
+		for (j=j_s;j<j_e;j++)
+			sum += ell->a[j] * x[ell->ja[j]];
+		y[i] = sum;
+	}
+}
+
+
+void
+compute_ell_unroll(ELLArrays * ell, ValueType * x , ValueType * y)
+{
+	ValueType sum;
+	long i, j, j_s, j_e, j_unroll, j_unroll_width;
+	long unroll = 4;
+	const long mask = ~(((long) unroll) - 1);      // unroll is a power of 2.
+	const INT_T width = ell->width;
+	j_unroll_width = width & mask;
+	for (i=0;i<ell->m;i++)
+	{
+		j_s = i * width;
+		j_e = (i + 1) * width;
+		j_unroll = j_s + j_unroll_width;
+		sum = 0;
+		for (j=j_s;j<j_unroll;j+=unroll)
+		{
+			sum += ell->a[j+0] * x[ell->ja[j+0]];
+			sum += ell->a[j+1] * x[ell->ja[j+1]];
+			sum += ell->a[j+2] * x[ell->ja[j+2]];
+			sum += ell->a[j+3] * x[ell->ja[j+3]];
+		}
+		for (;j<j_e;j++)
+			sum += ell->a[j] * x[ell->ja[j]];
+		y[i] = sum;
+	}
+}
+
+
+void
+compute_ell_transposed(ELLArrays * ell, ValueType * x , ValueType * y)
+{
+	long i, j, row;
+	const INT_T width = ell->width;
+	for (i=0;i<ell->n;i++)
+		y[i] = 0;
+	for (i=0;i<width;i++)
+	{
+		PRAGMA(GCC ivdep)
+		for (row=0,j=i*ell->m;j<(i + 1)*ell->m;row++,j++)
+			y[row] += ell->a[j] * x[ell->ja[j]];
+	}
+}
+
+
+void
+compute_ell_v(ELLArrays * ell, ValueType * x , ValueType * y)
+{
+	long i, i_vector, j, j_s, j_e, k;
+	const long mask = ~(((long) VEC_LEN) - 1);      // VEC_LEN is a power of 2.
+	vec_t(VTF, VEC_LEN) zero = {0};
+	__attribute__((unused)) vec_t(VTF, VEC_LEN) v_a = zero, v_x = zero, v_mul = zero, v_sum = zero;
+	__attribute__((unused)) ValueType sum = 0;
+	const INT_T width = ell->width;
+	i_vector = ell->m & mask;
+	for (i=0;i<i_vector;i+=VEC_LEN)
+	{
+		v_sum = zero;
+		j_s = i * width;
+		j_e = (i + 1) * width;
+		for (j=j_s;j<j_e;j++)
+		{
+
+			PRAGMA(GCC unroll VEC_LEN)
+			PRAGMA(GCC ivdep)
+			for (k=0;k<VEC_LEN;k++)
+			{
+				v_mul[k] = ell->a[j+k*width] * x[ell->ja[j+k*width]];
+			}
+			v_sum += v_mul;
+
+			// PRAGMA(GCC unroll VEC_LEN)
+			// PRAGMA(GCC ivdep)
+			// for (k=0;k<VEC_LEN;k++)
+			// {
+				// v_a[k] = ell->a[j+k*width] ;
+				// v_x[k] = x[ell->ja[j+k*width]];
+			// }
+			// v_sum += v_a * v_x;
+
+		}
+		*((vec_t(VTF, VEC_LEN) *)&y[i]) = v_sum;
+	}
+	for (i=i_vector;i<ell->m;i++)
+	{
+		j_s = i * width;
+		j_e = (i + 1) * width;
+		sum = 0;
+		for (j=j_s;j<j_e;j++)
+			sum += ell->a[j] * x[ell->ja[j]];
+		y[i] = sum;
+	}
+}
+
+
+void
+compute_ell_v_hor(ELLArrays * ell, ValueType * x , ValueType * y)
+{
+	long i, j, j_s, j_e, k, j_vector_width, j_e_vector;
+	const long mask = ~(((long) VEC_LEN) - 1);      // VEC_LEN is a power of 2.
+	vec_t(VTF, VEC_LEN) zero = {0};
+	__attribute__((unused)) vec_t(VTF, VEC_LEN) v_a, v_x = zero, v_mul = zero, v_sum = zero;
+	__attribute__((unused)) ValueType sum = 0;
+	const INT_T width = ell->width;
+	j_vector_width = width & mask;
+	for (i=0;i<ell->m;i++)
+	{
+		v_sum = zero;
+		j_s = i * width;
+		j_e = (i + 1) * width;
+		j_e_vector = j_s + j_vector_width;
+		for (j=j_s;j<j_e_vector;j+=VEC_LEN)
+		{
+			v_a = *(vec_t(VTF, VEC_LEN) *) &ell->a[j];
+			PRAGMA(GCC unroll VEC_LEN)
+			PRAGMA(GCC ivdep)
+			for (k=0;k<VEC_LEN;k++)
+			{
+				v_mul[k] = v_a[k] * x[ell->ja[j+k]];
+			}
+			v_sum += v_mul;
+		}
+		for (;j<j_e;j++)
+			v_sum[0] += ell->a[j] * x[ell->ja[j]];
+		for (j=1;j<VEC_LEN;j++)
+			v_sum[0] += v_sum[j];
+		y[i] = v_sum[0];
+	}
+}
+
+
+// Twice slower than compute_ell_v_hor.
+void
+compute_ell_v_hor_split(ELLArrays * ell, ValueType * x , ValueType * y)
+{
+	long i, j, j_s, j_e, k, j_vector_width, j_e_vector;
+	const long mask = ~(((long) VEC_LEN) - 1);      // VEC_LEN is a power of 2.
+	vec_t(VTF, VEC_LEN) zero = {0};
+	__attribute__((unused)) vec_t(VTF, VEC_LEN) v_a, v_x = zero, v_mul = zero, v_sum = zero;
+	__attribute__((unused)) ValueType sum = 0;
+	const INT_T width = ell->width;
+	j_vector_width = width & mask;
+	for (i=0;i<ell->m;i++)
+	{
+		v_sum = zero;
+		j_s = i * width;
+		j_e_vector = j_s + j_vector_width;
+		for (j=j_s;j<j_e_vector;j+=VEC_LEN)
+		{
+			v_a = *(vec_t(VTF, VEC_LEN) *) &ell->a[j];
+			PRAGMA(GCC unroll VEC_LEN)
+			PRAGMA(GCC ivdep)
+			for (k=0;k<VEC_LEN;k++)
+			{
+				v_mul[k] = v_a[k] * x[ell->ja[j+k]];
+			}
+			v_sum += v_mul;
+		}
+		for (j=1;j<VEC_LEN;j++)
+			v_sum[0] += v_sum[j];
+		y[i] = v_sum[0];
+	}
+	for (i=0;i<ell->m;i++)
+	{
+		j_s = i * width;
+		j_e = (i + 1) * width;
+		j_e_vector = j_s + j_vector_width;
+		for (j=j_e_vector;j<j_e;j++)
+			y[i] += ell->a[j] * x[ell->ja[j]];
+	}
+}
+
+
+void
+compute_ell_transposed_v(ELLArrays * ell, ValueType * x , ValueType * y)
+{
+	#pragma omp parallel
+	{
+		long i, i_vector, j, j_s, j_e, k;
+		const long mask = ~(((long) VEC_LEN) - 1);      // VEC_LEN is a power of 2.
+		vec_t(VTF, VEC_LEN) zero = {0};
+		__attribute__((unused)) vec_t(VTF, VEC_LEN) v_a = zero, v_x = zero, v_mul = zero, v_sum = zero;
+		__attribute__((unused)) ValueType sum = 0;
+		const INT_T width = ell->width;
+		i_vector = ell->m & mask;
+		#pragma omp for nowait
+		for (i=0;i<i_vector;i+=VEC_LEN)
+		{
+			v_sum = zero;
+			j_s = i;
+			j_e = i + (width) * ell->m;
+			for (j=j_s;j<j_e;j+=ell->m)
+			{
+
+				PRAGMA(GCC unroll VEC_LEN)
+				PRAGMA(GCC ivdep)
+				for (k=0;k<VEC_LEN;k++)
+				{
+					v_mul[k] = ell->a[j+k] * x[ell->ja[j+k]];
+				}
+				v_sum += v_mul;
+
+				// v_a = *(vec_t(VTF, VEC_LEN) *) &ell->a[j];
+				// PRAGMA(GCC unroll VEC_LEN)
+				// PRAGMA(GCC ivdep)
+				// for (k=0;k<VEC_LEN;k++)
+				// {
+					// v_x[k] = x[ell->ja[j+k]];
+				// }
+				// v_sum += v_a * v_x;
+
+			}
+			*((vec_t(VTF, VEC_LEN) *)&y[i]) = v_sum;
+		}
+		#pragma omp for nowait
+		for (i=i_vector;i<ell->m;i++)
+		{
+			j_s = i * ell->m;
+			j_e = (i + 1) * ell->m;
+			sum = 0;
+			for (j=j_s;j<j_e;j++)
+				sum += ell->a[j] * x[ell->ja[j]];
+			y[i] = sum;
+		}
+	}
+}
+
+
+//==========================================================================================================================================
+//= Print Statistics
+//==========================================================================================================================================
+
+
+void
+ELLArrays::statistics_start()
+{
+}
+
+
+int
+statistics_print_labels(__attribute__((unused)) char * buf, __attribute__((unused)) long buf_n)
+{
+	return 0;
+}
+
+
+int
+ELLArrays::statistics_print_data(__attribute__((unused)) char * buf, __attribute__((unused)) long buf_n)
+{
+	return 0;
+}
+

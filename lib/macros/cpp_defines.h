@@ -5,9 +5,19 @@
  * Replace C idioms with equivalent of C++.
  *
  * __cplusplus
+ *
  *     This macro is defined when the C++ compiler is in use.
  *     You can use __cplusplus to test whether a header is compiled by a C compiler or a C++ compiler.
- *     This macro is similar to __STDC_VERSION__, in that it expands to a version number. 
+ *     This macro is similar to __STDC_VERSION__, in that it expands to a version number.
+ *
+ *     Depending on the language standard selected, the value of the macro is
+ *     199711L for the 1998 C++ standard,
+ *     201103L for the 2011 C++ standard,
+ *     201402L for the 2014 C++ standard,
+ *     201703L for the 2017 C++ standard,
+ *     202002L for the 2020 C++ standard,
+ *     202302L for the 2023 C++ standard,
+ *     or an unspecified value strictly larger than 202302L for the experimental languages enabled by -std=c++26 and -std=gnu++26.
  */
 
 #ifdef __cplusplus
@@ -18,8 +28,11 @@
 	#define __auto_type  auto
 
 	// This is more correct (decays to pass by value), but needs C++11.
-	// #define typeof(t)  std::decay<decltype(t)>::type
-	#define typeof(t)  decltype(t)
+	#if __cplusplus >= 201100L
+		#define typeof(t)  std::decay<decltype(t)>::type
+	#else
+		#define typeof(t)  decltype(t)
+	#endif
 
 	#define static_cast(type, expression)  static_cast<type>(expression)
 

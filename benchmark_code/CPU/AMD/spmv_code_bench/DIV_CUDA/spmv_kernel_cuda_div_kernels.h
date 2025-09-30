@@ -29,7 +29,7 @@ extern "C"{
 static uint64_t window_size_bits;
 static uint64_t window_size;
 
-struct thread_data_kernel {
+struct thread_data {
 	ValueType * window;
 	ValueType * window_buf;
 	INT_T * window_ia;
@@ -45,7 +45,7 @@ struct thread_data_kernel {
 	int * qsort_partitions;
 };
 
-static struct thread_data_kernel ** tdks;
+static struct thread_data ** tds;
 
 
 // struct __attribute__((packed)) packet_header {
@@ -57,10 +57,11 @@ struct packet_header {
 	uint32_t row_min;
 	uint32_t col_min;
 
-	uint8_t row_bits;
-	uint8_t col_bits;
+	uint32_t data_val_lanes_offsets[VEC_LEN];
 
-	uint32_t data_val_lanes_size[VEC_LEN];
+	unsigned char row_bits;
+	unsigned char col_bits;
+
 };
 
 
@@ -69,6 +70,14 @@ struct cmp_data_t {
 	unsigned int * cols;
 	ValueType * vals;
 };
+
+
+#define find_aligned_ptr(ptr, alignment)                                \
+({                                                                      \
+	uint64_t __ptr = (uint64_t) ptr;                                \
+	__ptr = (__ptr + alignment - 1ULL) & (~ (alignment - 1ULL));    \
+	ptr;                                                            \
+})
 
 
 //------------------------------------------------------------------------------------------------------------------------------------------
@@ -115,9 +124,9 @@ quicksort_cmp(int a, int b, struct cmp_data_t * aux)
 //~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 
-#define __aligned_alloc(ptr, N)                                           \
-do {                                                                      \
-	ptr = (typeof(&(*ptr))) aligned_alloc(64, (N) * sizeof(*ptr));    \
+#define __aligned_alloc(ptr, N)                                                         \
+do {                                                                                    \
+	ptr = (typeof(&(*ptr))) aligned_alloc(MEMORY_ALIGNMENT, (N) * sizeof(*ptr));    \
 } while (0)
 
 
@@ -130,39 +139,33 @@ compress_init_div(__attribute__((unused)) ValueTypeReference * vals, __attribute
 	bits_u64_required_bits_for_binary_representation(packet_size - 1, &window_size_bits, &window_size);    // Maximum representable number we want is 'packet_size - 1'.
 	printf("window_size = %ld , window_size_bits = %ld\n", window_size, window_size_bits);
 
-	tdks = (typeof(tdks)) aligned_alloc(64, num_threads * sizeof(*tdks));
+	tds = (typeof(tds)) aligned_alloc(MEMORY_ALIGNMENT, num_threads * sizeof(*tds));
 	#pragma omp parallel
 	{
 		int tnum = omp_get_thread_num();
 		struct thread_data * td = tds[tnum];
-		struct thread_data_kernel * tdk;
 		long i;
-		tdk = (typeof(tdk)) aligned_alloc(64, sizeof(*tdk));
+		td = (typeof(td)) aligned_alloc(MEMORY_ALIGNMENT, sizeof(*td));
 
-		__aligned_alloc(tdk->window, window_size);
-		__aligned_alloc(tdk->window_buf, window_size);
-		__aligned_alloc(tdk->window_ia, window_size);
-		__aligned_alloc(tdk->window_ja, window_size);
-		__aligned_alloc(tdk->data_lanes, VEC_LEN);
-		__aligned_alloc(tdk->permutation, window_size);
-		__aligned_alloc(tdk->rev_permutation, window_size);
-		__aligned_alloc(tdk->rev_permutation_buf, window_size);
-		__aligned_alloc(tdk->rows, window_size);
-		__aligned_alloc(tdk->rows_buf, window_size);
-		__aligned_alloc(tdk->cols, window_size);
-		__aligned_alloc(tdk->cols_buf, window_size);
-		__aligned_alloc(tdk->qsort_partitions, window_size);
+		__aligned_alloc(td->window, window_size);
+		__aligned_alloc(td->window_buf, window_size);
+		__aligned_alloc(td->window_ia, window_size);
+		__aligned_alloc(td->window_ja, window_size);
+		__aligned_alloc(td->data_lanes, VEC_LEN);
+		__aligned_alloc(td->permutation, window_size);
+		__aligned_alloc(td->rev_permutation, window_size);
+		__aligned_alloc(td->rev_permutation_buf, window_size);
+		__aligned_alloc(td->rows, window_size);
+		__aligned_alloc(td->rows_buf, window_size);
+		__aligned_alloc(td->cols, window_size);
+		__aligned_alloc(td->cols_buf, window_size);
+		__aligned_alloc(td->qsort_partitions, window_size);
 		for (i=0;i<VEC_LEN;i++)
 		{
-			__aligned_alloc(tdk->data_lanes[i], 2*window_size*sizeof(ValueType));   // '*data_lanes[i]' is unsigned char.
+			__aligned_alloc(td->data_lanes[i], 2*window_size*sizeof(ValueType));   // '*data_lanes[i]' is unsigned char.
 		}
 
-		td->row_bits_accum = 0;
-		td->col_bits_accum = 0;
-		td->row_col_bytes_accum = 0;
-		td->packet_unique_values_fraction_accum = 0;
-
-		tdks[tnum] = tdk;
+		tds[tnum] = td;
 	}
 }
 
@@ -281,19 +284,18 @@ compress_kernel_div(INT_T * row_ptr, INT_T * ja, ValueTypeReference * vals, __at
 {
 	int tnum = omp_get_thread_num();
 	struct thread_data * td = tds[tnum];
-	struct thread_data_kernel * tdk = tdks[tnum];
-	ValueType * window = tdk->window;
-	ValueType * window_buf = tdk->window_buf;
+	ValueType * window = td->window;
+	ValueType * window_buf = td->window_buf;
 	struct packet_header * header;
-	unsigned char ** data_val_lanes = tdk->data_lanes;
-	uint32_t * data_val_lanes_size;
-	unsigned int * rows = tdk->rows;
-	unsigned int * rows_buf = tdk->rows_buf;
-	unsigned int * cols = tdk->cols;
-	unsigned int * cols_buf = tdk->cols_buf;
-	int * rev_permutation_sort = tdk->rev_permutation_buf;
-	int * permutation = tdk->permutation;
-	int * rev_permutation = tdk->rev_permutation;
+	unsigned char ** data_val_lanes = td->data_lanes;
+	uint32_t * data_val_lanes_offsets;
+	unsigned int * rows = td->rows;
+	unsigned int * rows_buf = td->rows_buf;
+	unsigned int * cols = td->cols;
+	unsigned int * cols_buf = td->cols_buf;
+	int * rev_permutation_sort = td->rev_permutation_buf;
+	int * permutation = td->permutation;
+	int * rev_permutation = td->rev_permutation;
 	struct Byte_Stream Bs[VEC_LEN];
 	uint64_t len_bits = 0;
 	uint64_t len = 0;
@@ -310,7 +312,7 @@ compress_kernel_div(INT_T * row_ptr, INT_T * ja, ValueTypeReference * vals, __at
 	double tolerance = atof(getenv("DIV_VC_TOLERANCE"));
 
 	long force_row_index_lte_1_byte = 1;
-	long force_row_index_rounding = 0;
+	long force_row_index_rounding = 1;
 
 	if (num_vals <= 0)
 		error("packet with no nnz requested");
@@ -378,12 +380,19 @@ compress_kernel_div(INT_T * row_ptr, INT_T * ja, ValueTypeReference * vals, __at
 		}
 	}
 	col_bits = (coords_bytes << 3) - row_bits;
+
+	if (row_bits == 0 && col_bits == 24)  // Align to 4 bytes.
+	{
+		col_bits = 32;
+		coords_bytes = 4;
+	}
+
 	if (col_bits > 32)
 		error("col_bits > 32 (%ld)", col_bits);
 
-	td->row_bits_accum += row_bits * num_vals;
-	td->col_bits_accum += col_bits * num_vals;
-	td->row_col_bytes_accum += coords_bytes * num_vals;
+	// row_bits = 8;
+	// col_bits = 32;
+	// coords_bytes = 5;
 
 	/* Sort the packet values. */
 	for (k=0;k<num_vals;k++)
@@ -392,7 +401,7 @@ compress_kernel_div(INT_T * row_ptr, INT_T * ja, ValueTypeReference * vals, __at
 	compare_data.vals = window_buf;
 	compare_data.rows = rows_buf;
 	compare_data.cols = cols_buf;
-	quicksort(rev_permutation_sort, num_vals, &compare_data, tdk->qsort_partitions);
+	quicksort(rev_permutation_sort, num_vals, &compare_data, td->qsort_partitions);
 	for (k=0;k<num_vals;k++)
 	{
 		l = (k % VEC_LEN) * num_vals_div + k / VEC_LEN;   // interleave index
@@ -422,10 +431,10 @@ compress_kernel_div(INT_T * row_ptr, INT_T * ja, ValueTypeReference * vals, __at
 			error("col index");
 	}
 
-	unsigned char * data_intro = buf;
-	uint64_t data_intro_bytes = sizeof(*header);
-
 	header = (typeof(header)) buf;
+
+	unsigned char * data_intro = (unsigned char * ) header;
+	uint64_t data_intro_bytes = sizeof(*header);
 
 	header->row_bits = row_bits;
 	header->col_bits = col_bits;
@@ -434,21 +443,63 @@ compress_kernel_div(INT_T * row_ptr, INT_T * ja, ValueTypeReference * vals, __at
 	header->row_min = row_min;
 	header->col_min = col_min;
 
-	data_val_lanes_size = header->data_val_lanes_size;
+	data_val_lanes_offsets = header->data_val_lanes_offsets;
 
 	unsigned char * data_coords = &data_intro[data_intro_bytes];
 	const uint64_t data_coords_bytes = coords_bytes * num_vals;
 
+	// long padding = 0;
+	// long mod = ((long) data_coords) % 4;
+	// if (mod)
+		// padding = 4 - mod;
+	// data_coords += padding;
+	data_coords = (typeof(data_coords)) ((((long) data_coords) + 3 ) & (~3));
+
+
+	uint64_t row_bytes = row_bits >> 3;
+	uint64_t col_bytes = col_bits >> 3;
+	unsigned char * data_cols = data_coords;
+	const uint64_t data_cols_bytes = col_bytes * num_vals;
+	unsigned char * data_rows = &data_cols[data_cols_bytes];
+
+	if (row_bits == 0)   // col_bits = 8, 16 or 32
+	{
+		for (i=0;i<num_vals;i++)
+		{
+			col_diff = cols[i] - col_min;
+			memcpy(&data_cols[i*col_bytes], &col_diff, col_bytes);
+		}
+	}
+	else if (row_bits == 8)
+	{
+		if (col_bits == 24)
+		{
+			for (i=0;i<num_vals;i++)
+			{
+				row_diff = rows[i] - row_min;
+				col_diff = cols[i] - col_min;
+				coords = row_diff | (col_diff << row_bits);
+				memcpy(&data_coords[i*coords_bytes], &coords, coords_bytes);
+			}
+		}
+		else
+		{
+			for (i=0;i<num_vals;i++)
+			{
+				row_diff = rows[i] - row_min;
+				col_diff = cols[i] - col_min;
+				memcpy(&data_rows[i*row_bytes], &row_diff, row_bytes);
+				memcpy(&data_cols[i*col_bytes], &col_diff, col_bytes);
+			}
+		}
+	}
+	else
+	{
+		error("row_bits=%ld\n", row_bits);
+	}
+
 	unsigned char * data_val_lens = &data_coords[data_coords_bytes];
 	const uint64_t data_val_lens_bytes = num_vals;
-
-	for (i=0;i<num_vals;i++)
-	{
-		row_diff = rows[i] - row_min;
-		col_diff = cols[i] - col_min;
-		coords = row_diff | (col_diff << row_bits);
-		memcpy(&data_coords[i*coords_bytes], &coords, coords_bytes);
-	}
 
 	for (long iter=0;iter<VEC_LEN;iter++)
 		bytestream_init_write(&Bs[iter], data_val_lanes[iter]);
@@ -538,8 +589,9 @@ compress_kernel_div(INT_T * row_ptr, INT_T * ja, ValueTypeReference * vals, __at
 				error("test");
 		}
 	}
-	for (long iter=0;iter<VEC_LEN;iter++)
-		data_val_lanes_size[iter] = Bs[iter].len;
+	data_val_lanes_offsets[0] = Bs[0].len;
+	for (long iter=1;iter<VEC_LEN;iter++)
+		data_val_lanes_offsets[iter] = data_val_lanes_offsets[iter-1] + Bs[iter].len;
 
 	unsigned char * ptr = &data_val_lens[data_val_lens_bytes];
 	uint64_t data_val_lanes_bytes = 0;
@@ -550,7 +602,8 @@ compress_kernel_div(INT_T * row_ptr, INT_T * ja, ValueTypeReference * vals, __at
 		data_val_lanes_bytes += Bs[iter].len;
 	}
 
-	*size_out = data_intro_bytes + data_coords_bytes + data_val_lens_bytes + data_val_lanes_bytes;
+	// *size_out = data_intro_bytes + data_coords_bytes + data_val_lens_bytes + data_val_lanes_bytes;
+	*size_out = ptr - buf;
 }
 
 
@@ -562,50 +615,35 @@ compress_kernel_div(INT_T * row_ptr, INT_T * ja, ValueTypeReference * vals, __at
 
 
 //==========================================================================================================================================
-//= Multiply Add
-//==========================================================================================================================================
-
-
-static __attribute__((always_inline)) inline
-void
-mult_add_serial(ValueType * x_rel, ValueType * y_rel, vec_t(VTF, VEC_LEN) val, vec_t(i64, VEC_LEN) row_rel, vec_t(i64, VEC_LEN) col_rel)
-{
-	for (long iter=0;iter<VEC_LEN;iter++)
-		y_rel[row_rel.s[iter]] += val.s[iter] * x_rel[col_rel.s[iter]];
-}
-
-
-//==========================================================================================================================================
 //= Decompress
 //==========================================================================================================================================
 
 
+__device__
 static __attribute__((always_inline)) inline
 long
-decompress_and_compute_kernel_div_base(unsigned char * restrict buf, ValueType * restrict x, ValueType * restrict y, long * restrict num_vals_out, const int validate,
-		void (* gather_coords)(long i, unsigned char * data_coords, const uint64_t coords_bytes, uint64_t row_bits, uint64_t col_bits, uint64_t * row_rel_out, uint64_t * col_rel_out),
-		void (* gather_coords_v)(long i, unsigned char * data_coords, const uint64_t coords_bytes, uint64_t row_bits, uint64_t col_bits, vec_t(i64, VEC_LEN) * row_rel_out, vec_t(i64, VEC_LEN) * col_rel_out)
+decompress_and_compute_kernel_div_base(unsigned char * restrict buf, ValueType * restrict x, ValueType * restrict y, INT_T * ia_out, INT_T * ja_out, ValueType * a_out , const int validate,
+		void (* gather_coords)(long i, unsigned char * data_coords, const uint64_t coords_bytes, uint64_t row_bits, uint64_t col_bits, uint64_t * row_rel_out, uint64_t * col_rel_out, const long num_vals)
 		)
 {
-	int tnum = omp_get_thread_num();
-	struct thread_data_kernel * tdk = tdks[tnum];
+	extern __shared__ ValueType y_rel_buf[];
+
+	const int tid = threadIdx.x;
+
 	struct packet_header * header;
 	ValueType * x_rel;
 	ValueType * y_rel;
-	ValueType * window = tdk->window;
-	INT_T * window_ia = tdk->window_ia;
-	INT_T * window_ja = tdk->window_ja;
 	long num_vals;
 	uint64_t row_min, col_min;
 	__attribute__((unused)) long num_rows;
 	uint64_t row_bits, col_bits;
-	uint32_t * data_val_lanes_size;
-	long i, j;
-
-	unsigned char * data_intro = buf;
-	uint64_t data_intro_bytes = sizeof(*header);
+	uint32_t * data_val_lanes_offsets;
+	long i;
 
 	header = (typeof(header)) buf;
+
+	unsigned char * data_intro = (unsigned char * ) header;
+	uint64_t data_intro_bytes = sizeof(*header);
 
 	row_bits = header->row_bits;
 	col_bits = header->col_bits;
@@ -614,7 +652,7 @@ decompress_and_compute_kernel_div_base(unsigned char * restrict buf, ValueType *
 	row_min = header->row_min;
 	col_min = header->col_min;
 
-	data_val_lanes_size = header->data_val_lanes_size;
+	data_val_lanes_offsets = header->data_val_lanes_offsets;
 
 	y_rel = y + row_min;
 	x_rel = x + col_min;
@@ -622,96 +660,46 @@ decompress_and_compute_kernel_div_base(unsigned char * restrict buf, ValueType *
 	unsigned char * data_coords = &data_intro[data_intro_bytes];
 	const uint64_t coords_bytes = (row_bits + col_bits + 7) >> 3;
 	const uint64_t data_coords_bytes = coords_bytes * num_vals;
+	data_coords = (typeof(data_coords)) ((((long) data_coords) + 3 ) & (~3));
 
 	unsigned char * data_val_lens = &data_coords[data_coords_bytes];
 	const uint64_t data_val_lens_bytes = num_vals;
 
-	vec_t(i64, VEC_LEN) data_val_lanes;
-	data_val_lanes.s[0] = (long long) &data_val_lens[data_val_lens_bytes];
-	uint64_t data_val_lanes_bytes = data_val_lanes_size[0];
-	for (long iter=1;iter<VEC_LEN;iter++)
-	{
-		data_val_lanes.s[iter] = data_val_lanes.s[iter-1] + data_val_lanes_size[iter-1];
-		data_val_lanes_bytes += data_val_lanes_size[iter];
-	}
+	int64_t data_val_lanes;
+	data_val_lanes = (long long) &data_val_lens[data_val_lens_bytes];
+	uint64_t data_val_lanes_bytes;
+	if (tid > 0)
+		data_val_lanes += data_val_lanes_offsets[tid-1];
+	data_val_lanes_bytes = data_val_lanes_offsets[VEC_LEN-1];
+
+	uint64_t total_size = &data_val_lens[data_val_lens_bytes] + data_val_lanes_bytes - buf;
 
 	i = 0;
 
 	union {
-		vec_t(VTF, VEC_LEN) d;
-		vec_t(VTI, VEC_LEN) u;
+		double  d;
+		int64_t u;
 	} val;
-	val.u = vec_set1(VTI, VEC_LEN, 0);
+	val.u = 0;
 
-	long num_vals_div = num_vals / VEC_LEN;
-	long num_vals_multiple = num_vals_div * VEC_LEN;
-
-	for (i=0;i<num_vals_multiple;i+=VEC_LEN)
+	if (!validate)
 	{
-		union {
-			vec_t(VTF, VEC_LEN) d;
-			vec_t(VTI, VEC_LEN) u;
-		} diff;
-		vec_t(i64, VEC_LEN) len_64;
-		vec_t(VTI, VEC_LEN) len;
-		vec_t(i64, VEC_LEN) row_rel, col_rel;
-
-		gather_coords_v(i, data_coords, coords_bytes, row_bits, col_bits, &row_rel, &col_rel);
-
-		len = vec_set_iter(VTI, VEC_LEN, iter, data_val_lens[i+iter]);
-
-		// vec_t(VTI, VEC_LEN) tz = (len >> 2ULL) & (~3ULL);
-		vec_t(VTI, VEC_LEN) tz = vec_and(VTI, VEC_LEN, vec_srli(VTI, VEC_LEN, len, 2ULL), vec_set1(VTI, VEC_LEN, (ValueTypeI) ~3ULL));
-		// len &= 15ULL;
-		len = vec_and(VTI, VEC_LEN, len, vec_set1(VTI, VEC_LEN, 15ULL));
-		// len_bits = len << 3ULL;
-		vec_t(VTI, VEC_LEN) len_bits = vec_slli(VTI, VEC_LEN, len, 3ULL);
-
-		diff.u = vec_set_iter(VTI, VEC_LEN, iter, *((ValueTypeI*) data_val_lanes.s[iter]));
-
-		// data_val_lanes = data_val_lanes + len;
-		len_64 = vec_set_iter(i64, VEC_LEN, iter, len.s[iter]);
-		data_val_lanes = vec_add(i64, VEC_LEN, data_val_lanes, len_64);
-
-		// vec_t(VTI, VEC_LEN) mask = (1ULL << len_bits) - 1ULL;
-		vec_t(VTI, VEC_LEN) mask = vec_sub(VTI, VEC_LEN, vec_sllv(VTI, VEC_LEN, vec_set1(VTI, VEC_LEN, 1ULL), len_bits), vec_set1(VTI, VEC_LEN, 1ULL));
-		// diff.u &= mask;
-		diff.u = vec_and(VTI, VEC_LEN, diff.u, mask);
-		// diff.u <<= tz;
-		diff.u = vec_sllv(VTI, VEC_LEN, diff.u, tz);
-
-		// val.u = val.u + diff.u;
-		val.u = vec_add(VTI, VEC_LEN, val.u, diff.u);
-
-		if (validate)
-		{
-			vec_storeu(VTF, VEC_LEN, &window[i], val.d);
-			vec_t(i64, VEC_LEN) row, col;
-			row = vec_add(i64, VEC_LEN, row_rel, vec_set1(i64, VEC_LEN, row_min));
-			col = vec_add(i64, VEC_LEN, col_rel, vec_set1(i64, VEC_LEN, col_min));
-			for (j=0;j<VEC_LEN;j++)
-			{
-				window_ia[i+j] = row.s[j];
-				window_ja[i+j] = col.s[j];
-			}
-		}
-		else
-		{
-			mult_add_serial(x_rel, y_rel, val.d, row_rel, col_rel);
-		}
+		for (i=tid;i<num_rows;i+=VEC_LEN)
+			y_rel_buf[i] = 0;
+		__syncthreads();
 	}
 
-	for (i=num_vals_multiple;i<num_vals;i++)
+	for (i=tid;i<num_vals;i+=VEC_LEN)
 	{
 		union {
 			ValueType d;
 			ValueTypeI u;
+			unsigned char c[sizeof(ValueTypeI)];
 		} diff;
 		uint64_t len;
 		uint64_t row_rel, col_rel;
-		long lane_id = i % VEC_LEN;
 
-		gather_coords(i, data_coords, coords_bytes, row_bits, col_bits, &row_rel, &col_rel);
+		gather_coords(i, data_coords, coords_bytes, row_bits, col_bits, &row_rel, &col_rel, num_vals);
 
 		len = data_val_lens[i];
 
@@ -719,138 +707,131 @@ decompress_and_compute_kernel_div_base(unsigned char * restrict buf, ValueType *
 		len &= 15ULL;
 		uint64_t len_bits = len << 3ULL;
 
-		diff.u = *((ValueTypeI *) data_val_lanes.s[lane_id]);
+		// diff.u = *((ValueTypeI *) data_val_lanes);
+		memcpy(&diff.u, (unsigned char *) data_val_lanes, sizeof(diff.u));
+		// memcpy(&diff.u, (unsigned char *) data_val_lanes, len);  // Much slower.
 
-		data_val_lanes.s[lane_id] = data_val_lanes.s[lane_id] + len;
+		data_val_lanes = data_val_lanes + len;
 
-		ValueTypeI mask = (len == 8) ? -1ULL : (1ULL << len_bits) - 1ULL;
+		// ValueTypeI mask = (len == 8) ? -1ULL : (1ULL << len_bits) - 1ULL;
+		ValueTypeI mask = (1ULL << len_bits) - 1ULL;
+
 		diff.u &= mask;
 		diff.u <<= tz;
 
-		val.u.s[lane_id] = val.u.s[lane_id] + diff.u;
+		val.u = val.u + diff.u;
 
 		if (validate)
 		{
-			window[i] = val.d.s[lane_id];
+			a_out[i] = val.d;
 			uint64_t row, col;
 			row = row_rel + row_min;
 			col = col_rel + col_min;
-			window_ia[i] = row;
-			window_ja[i] = col;
+			ia_out[i] = row;
+			ja_out[i] = col;
 		}
 		else
 		{
-			y_rel[row_rel] += val.d.s[lane_id] * x_rel[col_rel];
+			// y_rel[row_rel] += val.d * x_rel[col_rel];
+			// atomicAdd(&y_rel[row_rel], val.d * x_rel[col_rel]);
+			atomicAdd_block(&y_rel_buf[row_rel], val.d * x_rel[col_rel]);
+			// y_rel_buf[row_rel] += val.d * x_rel[col_rel];
 		}
 	}
 
-	if (num_vals_out != NULL)
-		*num_vals_out = num_vals;
-	return data_intro_bytes + data_coords_bytes + data_val_lens_bytes + data_val_lanes_bytes;
+	if (!validate)
+	{
+		__syncthreads();
+		for (i=tid;i<num_rows;i+=VEC_LEN)
+		{
+			atomicAdd(&y_rel[i], y_rel_buf[i]);
+			// y_rel[i] = y_rel_buf[i];
+		}
+	}
+
+	return total_size;
 }
 
 
+__device__
 static __attribute__((always_inline)) inline
 long
-decompress_and_compute_kernel_div_select(unsigned char * restrict buf, ValueType * restrict x, ValueType * restrict y, long * restrict num_vals_out, const int validate)
+decompress_and_compute_kernel_div_select(unsigned char * restrict buf, ValueType * restrict x, ValueType * restrict y, INT_T * ia_out, INT_T * ja_out, ValueType * a_out, const int validate)
 {
-	struct packet_header * header = (typeof(header)) buf;
+	struct packet_header * header;
 	uint64_t row_bits, col_bits;
 
+	header = (typeof(header)) buf;
 	row_bits = header->row_bits;
 	col_bits = header->col_bits;
 
-	const uint64_t coords_bytes = (row_bits + col_bits + 7) >> 3;
-
-	if (__builtin_expect(row_bits == 8, 1))
-	// if (row_bits == 8)
+	if (row_bits == 8)
 	{
 		switch (col_bits) {
 			case 8:
-				return decompress_and_compute_kernel_div_base(buf, x, y, num_vals_out, validate, gather_coords_sparse_r1_c1, gather_coords_sparse_r1_c1_v);
+				return decompress_and_compute_kernel_div_base(buf, x, y, ia_out, ja_out, a_out, validate, gather_coords_sparse_r1_c1);
 			case 16:
-				return decompress_and_compute_kernel_div_base(buf, x, y, num_vals_out, validate, gather_coords_sparse_r1_c2, gather_coords_sparse_r1_c2_v);
+				return decompress_and_compute_kernel_div_base(buf, x, y, ia_out, ja_out, a_out, validate, gather_coords_sparse_r1_c2);
 			case 24:
-				return decompress_and_compute_kernel_div_base(buf, x, y, num_vals_out, validate, gather_coords_sparse_r1_c3, gather_coords_sparse_r1_c3_v);
+				return decompress_and_compute_kernel_div_base(buf, x, y, ia_out, ja_out, a_out, validate, gather_coords_sparse_r1_c3);
 			case 32:
-				return decompress_and_compute_kernel_div_base(buf, x, y, num_vals_out, validate, gather_coords_sparse_r1_c4, gather_coords_sparse_r1_c4_v);
+				return decompress_and_compute_kernel_div_base(buf, x, y, ia_out, ja_out, a_out, validate, gather_coords_sparse_r1_c4);
 		}
 	}
 
 	/* Huge rows. */
 	if (row_bits == 0)
 	{
-		// return decompress_and_compute_kernel_div_base(buf, x, y, num_vals_out, validate, gather_coords_sparse_r0, gather_coords_sparse_r0_v, 0);
 		switch (col_bits) {
 			case 8:
-				return decompress_and_compute_kernel_div_base(buf, x, y, num_vals_out, validate, gather_coords_sparse_r0_c1, gather_coords_sparse_r0_c1_v);
+				return decompress_and_compute_kernel_div_base(buf, x, y, ia_out, ja_out, a_out, validate, gather_coords_sparse_r0_c1);
 			case 16:
-				return decompress_and_compute_kernel_div_base(buf, x, y, num_vals_out, validate, gather_coords_sparse_r0_c2, gather_coords_sparse_r0_c2_v);
-			case 24:
-				return decompress_and_compute_kernel_div_base(buf, x, y, num_vals_out, validate, gather_coords_sparse_r0_c3, gather_coords_sparse_r0_c3_v);
+				return decompress_and_compute_kernel_div_base(buf, x, y, ia_out, ja_out, a_out, validate, gather_coords_sparse_r0_c2);
 			case 32:
-				return decompress_and_compute_kernel_div_base(buf, x, y, num_vals_out, validate, gather_coords_sparse_r0_c4, gather_coords_sparse_r0_c4_v);
+				return decompress_and_compute_kernel_div_base(buf, x, y, ia_out, ja_out, a_out, validate, gather_coords_sparse_r0_c4);
 		}
 	}
 
-	switch (coords_bytes) {
-		case 1:
-			return decompress_and_compute_kernel_div_base(buf, x, y, num_vals_out, validate, gather_coords_dense_1, gather_coords_dense_1_v);
-		case 2:
-			return decompress_and_compute_kernel_div_base(buf, x, y, num_vals_out, validate, gather_coords_dense_2, gather_coords_dense_2_v);
-		case 3:
-			return decompress_and_compute_kernel_div_base(buf, x, y, num_vals_out, validate, gather_coords_dense_3, gather_coords_dense_3_v);
-		case 4:
-			return decompress_and_compute_kernel_div_base(buf, x, y, num_vals_out, validate, gather_coords_dense_4, gather_coords_dense_4_v);
-	}
+	return decompress_and_compute_kernel_div_base(buf, x, y, ia_out, ja_out, a_out, validate, gather_coords_dense);
 
-	return decompress_and_compute_kernel_div_base(buf, x, y, num_vals_out, validate, gather_coords_dense, gather_coords_dense_v);
-
+	// printf("ERROR row_bits=%ld col_bits=%ld\n", row_bits, col_bits);
+	return 0;
 }
 
 
+__global__
 void
-get_packet_rows(unsigned char * restrict buf, long * i_s_ptr, long * i_e_ptr)
+decompress_and_compute_kernel_div(unsigned char * restrict compr_data_d, long * packet_data_offsets_d, ValueType * restrict x, ValueType * restrict y)
 {
-	struct packet_header * header = (typeof(header)) buf;
-	uint64_t row_min;
-	long num_rows;
-
-	num_rows = header->num_rows;
-	row_min = header->row_min;
-
-	*i_s_ptr = row_min;
-	*i_e_ptr = row_min + num_rows;
+	int block_id = blockIdx.x;
+	unsigned char * packet_data = &compr_data_d[packet_data_offsets_d[block_id]];
+	decompress_and_compute_kernel_div_select(packet_data, x, y, NULL, NULL, NULL, 0);
 }
 
 
-static inline
-long
-decompress_and_compute_kernel_div(unsigned char * restrict buf, ValueType * restrict x, ValueType * restrict y)
+__global__
+void
+decompress_kernel_div(INT_T * ia_out, INT_T * ja_out, ValueType * a_out, unsigned char * restrict compr_data_d, long * packet_data_offsets_d, long * packet_nnz_offsets_d)
 {
-	return decompress_and_compute_kernel_div_select(buf, x, y, NULL, 0);
-}
-
-
-static
-long
-decompress_kernel_div(INT_T * ia_out, INT_T * ja_out, ValueType * a_out, long * num_vals_out, unsigned char * restrict buf)
-{
-	long num_vals;
-	int tnum = omp_get_thread_num();
-	struct thread_data_kernel * tdk = tdks[tnum];
-	ValueType * window = tdk->window;
-	INT_T * window_ia = tdk->window_ia;
-	INT_T * window_ja = tdk->window_ja;
-	long i, bytes;
-	bytes = decompress_and_compute_kernel_div_select(buf, NULL, NULL, &num_vals, 1);
-	for (i=0;i<num_vals;i++)
+	int block_id = blockIdx.x;
+	unsigned char * packet_data = &compr_data_d[packet_data_offsets_d[block_id]];
+	long nnz_offset = packet_nnz_offsets_d[block_id];
+	struct packet_header * header;
+	header = (typeof(header)) packet_data;
+	// if (threadIdx.x == 0)
+		// printf("%4d: %ld\n", block_id, nnz_offset);
+	decompress_and_compute_kernel_div_select(packet_data, NULL, NULL, &ia_out[nnz_offset], &ja_out[nnz_offset], &a_out[nnz_offset], 1);
+	if (threadIdx.x == 0)
 	{
-		a_out[i] = window[i];
-		ia_out[i] = window_ia[i];
-		ja_out[i] = window_ja[i];
+		long num_vals = num_vals = header->num_vals;
+		// printf("%4d: %ld %ld\n", block_id, nnz_offset, num_vals);
+		// for (long i=nnz_offset;i<nnz_offset + num_vals;i++)
+			// printf("%4d: i=%10ld %10d %10d %g\n", block_id, i, ia_out[i], ja_out[i], a_out[i]);
+		for (long i=nnz_offset;i<nnz_offset + num_vals;i++)
+		{
+			if (ia_out[i] < 0 || ja_out[i] < 0)
+				printf("%4d: i=%10ld %10d %10d %g\n", block_id, i, ia_out[i], ja_out[i], a_out[i]);
+		}
 	}
-	*num_vals_out = num_vals;
-	return bytes;
 }
 

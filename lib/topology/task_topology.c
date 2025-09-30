@@ -169,7 +169,7 @@ set_task_node_data_mem(struct topotk_task * task, long task_node_local_task_id, 
 
 static
 long
-calculate_task_node(
+calculate_task_nodes(
 	struct topotk_topology * tp,
 	struct topohw_topology * tphw,
 	long num_nodes,
@@ -188,6 +188,11 @@ calculate_task_node(
 	long i, j, k;
 	if (task_nodes_ret == NULL)
 		error("'task_nodes_ret' is NULL");
+	if (num_nodes <= 0)
+	{
+		*task_nodes_ret = NULL;
+		return 0;
+	}
 	/* Find the tasks of each node. */
 	das = (typeof(das)) malloc(num_nodes * sizeof(*das));
 	dict_node_to_task_node = (typeof(dict_node_to_task_node)) malloc(num_nodes * sizeof(*dict_node_to_task_node));
@@ -337,7 +342,7 @@ topotk_get_topology()
 		if (cache_class->level == 1 && cache_class->type == TOPOHW_CT_D)
 			num_l1_nodes = cache_class->num_caches;
 	}
-	tp->num_task_l1_nodes = calculate_task_node(tp, tphw, num_l1_nodes, &tp->task_l1_nodes, get_cpu_node_id_l1, set_task_node_data_l1);
+	tp->num_task_l1_nodes = calculate_task_nodes(tp, tphw, num_l1_nodes, &tp->task_l1_nodes, get_cpu_node_id_l1, set_task_node_data_l1);
 
 	long num_l2_nodes = 0;
 	for (i=0;i<tphw->num_cache_classes;i++)
@@ -346,7 +351,7 @@ topotk_get_topology()
 		if (cache_class->level == 2 && cache_class->type == TOPOHW_CT_U)
 			num_l2_nodes = cache_class->num_caches;
 	}
-	tp->num_task_l2_nodes = calculate_task_node(tp, tphw, num_l2_nodes, &tp->task_l2_nodes, get_cpu_node_id_l2, set_task_node_data_l2);
+	tp->num_task_l2_nodes = calculate_task_nodes(tp, tphw, num_l2_nodes, &tp->task_l2_nodes, get_cpu_node_id_l2, set_task_node_data_l2);
 
 	long num_l3_nodes = 0;
 	for (i=0;i<tphw->num_cache_classes;i++)
@@ -355,9 +360,9 @@ topotk_get_topology()
 		if (cache_class->level == 3 && cache_class->type == TOPOHW_CT_U)
 			num_l3_nodes = cache_class->num_caches;
 	}
-	tp->num_task_l3_nodes = calculate_task_node(tp, tphw, num_l3_nodes, &tp->task_l3_nodes, get_cpu_node_id_l3, set_task_node_data_l3);
+	tp->num_task_l3_nodes = calculate_task_nodes(tp, tphw, num_l3_nodes, &tp->task_l3_nodes, get_cpu_node_id_l3, set_task_node_data_l3);
 
-	tp->num_task_mem_nodes = calculate_task_node(tp, tphw, tphw->num_mem_nodes, &tp->task_mem_nodes, get_cpu_node_id_mem, set_task_node_data_mem);
+	tp->num_task_mem_nodes = calculate_task_nodes(tp, tphw, tphw->num_mem_nodes, &tp->task_mem_nodes, get_cpu_node_id_mem, set_task_node_data_mem);
 
 
 	dynarray_destroy(&da);

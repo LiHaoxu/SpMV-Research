@@ -27,30 +27,26 @@ extern "C" {
 
 	#include "aux/dynamic_array.h"
 
-	// #include "cuda/cuda_util.h"
+	#include "cuda/cuda_util.h"
 #ifdef __cplusplus
 }
 #endif
 
 
-struct __attribute__((aligned(64))) padded_int64_t {
-	int64_t val __attribute__((aligned(64)));
-	char padding[0] __attribute__((aligned(64)));
-};
+#undef MEMORY_ALIGNMENT
+#define MEMORY_ALIGNMENT  128
+
+#undef MEMORY_ALIGNMENT_PACKET
+#define MEMORY_ALIGNMENT_PACKET  8
 
 
-struct __attribute__((aligned(64))) thread_block_data {
-	long i_s;
-	long i_e;
-
-	long num_vals;
-
-	long num_packets;
-	long compr_data_size;
-	unsigned char * compr_data;
-};
-
-static struct thread_block_data ** tbds;
+#undef BLOCK_SIZE
+// #define BLOCK_SIZE  32
+// #define BLOCK_SIZE  64
+// #define BLOCK_SIZE  128
+#define BLOCK_SIZE  256
+// #define BLOCK_SIZE  512
+// #define BLOCK_SIZE  1024
 
 
 #if defined(DIV_TYPE_RF)
@@ -94,38 +90,6 @@ reduce_min_double(double a, double b)
 }
 
 
-//------------------------------------------------------------------------------------------------------------------------------------------
-//- Bucketsort
-//------------------------------------------------------------------------------------------------------------------------------------------
-
-#include "sort/bucketsort/bucketsort_gen_undef.h"
-#define BUCKETSORT_GEN_TYPE_1  int
-#define BUCKETSORT_GEN_TYPE_2  int
-#define BUCKETSORT_GEN_TYPE_3  int
-#define BUCKETSORT_GEN_TYPE_4  void
-#define BUCKETSORT_GEN_SUFFIX  _packet_type
-#include "sort/bucketsort/bucketsort_gen.c"
-static inline
-int
-bucketsort_find_bucket(int * A, long i, __attribute__((unused)) void * unused)
-{
-		return A[i];
-}
-
-#include "sort/quicksort/quicksort_gen_undef.h"
-#define QUICKSORT_GEN_TYPE_1  int
-#define QUICKSORT_GEN_TYPE_2  int
-#define QUICKSORT_GEN_TYPE_3  int
-#define QUICKSORT_GEN_SUFFIX  _packet_type
-#include "sort/quicksort/quicksort_gen.c"
-static inline
-int
-quicksort_cmp(int a, int b, int * cols)
-{
-	return cols[a] > cols[b] ? 1 : cols[a] < cols[b] ? -1 : 0;
-}
-
-
 struct DIVArray : Matrix_Format
 {
 	INT_T * row_ptr;                             // the usual rowptr (of size m+1)
@@ -134,84 +98,96 @@ struct DIVArray : Matrix_Format
 	long symmetric;
 	long symmetry_expanded;
 
+	ValueType * x = NULL;
+	ValueType * y = NULL;
 	ValueType * x_d = NULL;
 	ValueType * y_d = NULL;
 
-	ValueType * x_bench, * y_bench;
-
 	double matrix_mae, matrix_max_ae, matrix_mse, matrix_mape, matrix_smape;
 	double matrix_lnQ_error, matrix_mlare, matrix_gmare;
+
+	int num_threads;
+	int thread_block_size;
+	int num_thread_blocks;
+
+	long num_packets;
+
+	long * packet_data_offsets;
+	long * packet_data_offsets_d;
+
+	long * packet_nnz_offsets;
+	long * packet_nnz_offsets_d;
+
+	long compr_data_size;
+	unsigned char * compr_data;
+	unsigned char * compr_data_d;
 
 	void calculate_matrix_compression_error(ValueType * a_conv, INT_T * csr_row_ptr_new, INT_T * csr_ja_new, ValueType * csr_a_new);
 
 	DIVArray(INT_T * row_ptr, INT_T * ja, ValueTypeReference * a, long m, long n, long nnz, long symmetric, long symmetry_expanded) : Matrix_Format(m, n, nnz), row_ptr(row_ptr), ja(ja), a(a), symmetric(symmetric), symmetry_expanded(symmetry_expanded)
 	{
-		long num_threads = omp_get_max_threads();
-		double time_balance;
-		long i;
-
-		tbds = (typeof(tbds)) aligned_alloc(64, num_threads * sizeof(*tbds));
-
-		time_balance = time_it(1,
-			_Pragma("omp parallel")
-			{
-				long tnum = omp_get_thread_num();
-				struct thread_block_data * td;
-				long i_s, i_e;
-
-				loop_partitioner_balance_prefix_sums(num_threads, tnum, row_ptr, m, nnz, &i_s, &i_e);
-
-				td = (typeof(td)) aligned_alloc(64, sizeof(*td));
-
-				td->i_s = i_s;
-				td->i_e = i_e;
-
-				tbds[tnum] = td;
-			}
-		);
-		printf("balance time = %g\n", time_balance);
-
 		time_compress = time_it(1,
 			const long num_packet_vals = atol(getenv("CSRCV_NUM_PACKET_VALS"));
 			compress_init_div(a, nnz, num_packet_vals);
 
+			/* cudaError_t cudaMalloc (void ** devPtr, size_t size)
+			 *     Allocates size bytes of linear memory on the device and returns in *devPtr a pointer to the allocated memory.
+			 *     The allocated memory is suitably aligned for any kind of variable.
+			 *     The memory is not cleared. cudaMalloc() returns cudaErrorMemoryAllocation in case of failure.
+			 *
+			 *     The pointers which are allocated by using any of the CUDA Runtime's device memory allocation functions, e.g, cudaMalloc or cudaMallocPitch,
+			 *     are guaranteed to be 256 byte aligned, i.e. the address is a multiple of 256.
+			 */
+			gpuCudaErrorCheck(cudaMalloc(&x_d, n * sizeof(*x_d)));
+			gpuCudaErrorCheck(cudaMalloc(&y_d, m * sizeof(*y_d)));
+
 			_Pragma("omp parallel")
 			{
+				long num_threads = omp_get_max_threads();
 				long tnum = omp_get_thread_num();
-				struct thread_block_data * td = tbds[tnum];
 				unsigned char * packet_buf;
-				long t_nnz;
 				long max_packet_size;
-				__attribute__((unused)) long ps, pp, i, i_s, i_e, j, j_s, j_e, k;
-				long num_vals, num_vals_max, num_vals_total=0;
+				__attribute__((unused)) long i, i_s, i_e, j, j_s, j_e, k;
+				long num_vals, num_vals_max;
 				long size;
-				dynarray_uc * da_compr_data;
+				long pos;
+				long t_num_packets;
 
-				i_s = td->i_s;
-				i_e = td->i_e;
+				loop_partitioner_balance_prefix_sums(num_threads, tnum, row_ptr, m, nnz, &i_s, &i_e);
+
 				j_s = row_ptr[i_s];
 				j_e = row_ptr[i_e];
+
+
+				long t_nnz;
+				t_nnz = j_e - j_s;
+				const long num_packets_estimated = t_nnz / num_packet_vals + 64;
+				dynarray_l * da_packet_data_offsets;
+				dynarray_l * da_packet_nnz_offsets;
+				dynarray_uc * da_compr_data;
+
+				da_packet_data_offsets = dynarray_new_l(num_packets_estimated * sizeof(*(da_packet_data_offsets->data)));
+				da_packet_nnz_offsets = dynarray_new_l(num_packets_estimated * sizeof(*(da_packet_nnz_offsets->data)));
+
+				long da_init_size = t_nnz * (sizeof(*row_ptr) + sizeof(*ja) + sizeof(ValueType));
+				if (symmetric)
+					da_init_size /= 2;
+				da_compr_data = dynarray_new_uc(da_init_size);
+
 
 				_Pragma("omp single")
 				{
 					printf("Number of packet vals = %ld\n", num_packet_vals);
 				}
 
-				t_nnz = j_e - j_s;
-
-				long da_init_size = t_nnz * (sizeof(*row_ptr) + sizeof(*ja) + sizeof(ValueType));
-				if (symmetric)
-					da_init_size /= 2;
-				da_compr_data= dynarray_new_uc(da_init_size);
-
 				/* We also add 'sizeof(struct packet_header)' for the case of extremely small matrices. */
 				max_packet_size = sizeof(struct packet_header) + num_packet_vals * (sizeof(*row_ptr) + sizeof(*ja) + 8 * sizeof(ValueType));
-				packet_buf= (typeof(packet_buf)) aligned_alloc(64, max_packet_size);
+				packet_buf = (typeof(packet_buf)) aligned_alloc(MEMORY_ALIGNMENT, max_packet_size);
 
 				i = i_s;
-				ps = 0;
-				pp = 0;
+				t_num_packets = 0;
 				j = j_s;
+				long nnz_offset = 0;
 				while (j < j_e)
 				{
 					while (row_ptr[i] < j)
@@ -226,76 +202,121 @@ struct DIVArray : Matrix_Format
 					compress_kernel_div(row_ptr, ja, &a[j], symmetric, i, i_s, i_e, j, packet_buf, num_vals_max, &num_vals, &size);
 					if (size > max_packet_size)
 						error("data buffer overflow");
-					num_vals_total += num_vals;
 
 					if (size > 0)
 					{
-						dynarray_push_back_array_uc(da_compr_data, packet_buf, size);
-						pp++;
+						pos = dynarray_push_back_array_aligned_uc(da_compr_data, packet_buf, size, MEMORY_ALIGNMENT_PACKET);
+						dynarray_push_back_l(da_packet_data_offsets, pos);
+						dynarray_push_back_l(da_packet_nnz_offsets, nnz_offset);
+						nnz_offset += num_vals;
+						t_num_packets++;
 					}
 
 					j += num_vals;
 				}
-				td->num_vals = num_vals_total;
 
-				td->num_packets = pp;
-				td->compr_data_size = da_compr_data->size;
-				dynarray_export_array_uc(da_compr_data, &td->compr_data);
+				while (da_compr_data->size % MEMORY_ALIGNMENT_PACKET)   // Padding for correct alignment of the data of the next thread.
+				{
+					dynarray_push_back_uc(da_compr_data, 0);
+				}
+
+				// omp_thread_reduce_global(_reduce_fun, _partial, _zero, exclusive, _backwards, _local_result_ptr_ret, _total_result_ptr_ret)
+
+				long num_packets_prefix_sum;
+				omp_thread_reduce_global(reduce_add_long, t_num_packets, 0, 1, 0, &num_packets_prefix_sum, &num_packets);
+
+				long num_vals_prefix_sum;
+				omp_thread_reduce_global(reduce_add_long, t_nnz, 0, 1, 0, &num_vals_prefix_sum, );
+				for (i=0;i<t_num_packets;i++)
+					da_packet_nnz_offsets->data[i] += num_vals_prefix_sum;
+
+				long compr_data_size_prefix_sum;
+				omp_thread_reduce_global(reduce_add_long, da_compr_data->size, 0, 1, 0, &compr_data_size_prefix_sum, &compr_data_size);
+				for (i=0;i<t_num_packets;i++)
+					da_packet_data_offsets->data[i] += compr_data_size_prefix_sum;
+
+				_Pragma("omp single")
+				{
+					packet_data_offsets = (typeof(packet_data_offsets)) aligned_alloc(MEMORY_ALIGNMENT, num_packets *  sizeof(*packet_data_offsets));
+					packet_nnz_offsets = (typeof(packet_nnz_offsets)) aligned_alloc(MEMORY_ALIGNMENT, num_packets * sizeof(*packet_nnz_offsets));
+					compr_data = (typeof(compr_data)) aligned_alloc(MEMORY_ALIGNMENT, compr_data_size);
+				}
+
+				dynarray_copy_to_array_l(da_packet_data_offsets, &packet_data_offsets[num_packets_prefix_sum]);
+				dynarray_destroy_l(&da_packet_data_offsets);
+
+				dynarray_copy_to_array_l(da_packet_nnz_offsets, &packet_nnz_offsets[num_packets_prefix_sum]);
+				dynarray_destroy_l(&da_packet_nnz_offsets);
+
+				dynarray_copy_to_array_uc(da_compr_data, &compr_data[compr_data_size_prefix_sum]);
 				dynarray_destroy_uc(&da_compr_data);
+
 			}
 		);
 		printf("compression time = %g\n", time_compress);
 
-		long nnz_new= 0;
-		mem_footprint = 0;
-		for (i=0;i<num_threads;i++)
-		{
-			mem_footprint += tbds[i]->compr_data_size;
-			nnz_new += tbds[i]->num_vals;
-		}
-		if (nnz_new != nnz)
-			error("nnz_new = %ld != nnz = %ld", nnz_new, nnz);
+		// for (long i=0;i<num_packets;i++)
+		// {
+			// printf("%5ld: %10ld %10ld\n", i, packet_data_offsets[i], packet_nnz_offsets[i]);
+		// }
+
+		thread_block_size = BLOCK_SIZE;
+		num_thread_blocks = num_packets;
+		num_threads = num_thread_blocks * thread_block_size;
+
+		gpuCudaErrorCheck(cudaMalloc(&packet_data_offsets_d, num_packets * sizeof(*packet_data_offsets)));
+		gpuCudaErrorCheck(cudaMemcpy(packet_data_offsets_d, packet_data_offsets, num_packets * sizeof(*packet_data_offsets), cudaMemcpyHostToDevice));
+
+		gpuCudaErrorCheck(cudaMalloc(&packet_nnz_offsets_d, num_packets * sizeof(*packet_nnz_offsets)));
+		gpuCudaErrorCheck(cudaMemcpy(packet_nnz_offsets_d, packet_nnz_offsets, num_packets * sizeof(*packet_nnz_offsets), cudaMemcpyHostToDevice));
+
+		gpuCudaErrorCheck(cudaMalloc(&compr_data_d, compr_data_size));
+		gpuCudaErrorCheck(cudaMemcpy(compr_data_d, compr_data, compr_data_size, cudaMemcpyHostToDevice));
+
+
+		mem_footprint = compr_data_size;
+
 
 		/* Decompress and calculate compression error. */
 
-		INT_T * coo_ia_new = (typeof(coo_ia_new)) aligned_alloc(64, nnz * sizeof(*coo_ia_new));
-		INT_T * coo_ja_new = (typeof(coo_ja_new)) aligned_alloc(64, nnz * sizeof(*coo_ja_new));
-		ValueType * coo_a_new = (typeof(coo_a_new)) aligned_alloc(64, nnz * sizeof(*coo_a_new));
+		INT_T * coo_ia_new_d;
+		INT_T * coo_ja_new_d;
+		ValueType * coo_a_new_d;
+		gpuCudaErrorCheck(cudaMalloc(&coo_ia_new_d, nnz * sizeof(*coo_ia_new_d)));
+		gpuCudaErrorCheck(cudaMalloc(&coo_ja_new_d, nnz * sizeof(*coo_ja_new_d)));
+		gpuCudaErrorCheck(cudaMalloc(&coo_a_new_d, nnz * sizeof(*coo_a_new_d)));
 
-		INT_T * csr_row_ptr_new= (typeof(csr_row_ptr_new)) aligned_alloc(64, (m+1) * sizeof(*csr_row_ptr_new));
-		INT_T * csr_ja_new = (typeof(csr_ja_new)) aligned_alloc(64, nnz * sizeof(*csr_ja_new));
-		ValueType * csr_a_new = (typeof(csr_a_new)) aligned_alloc(64, nnz * sizeof(*csr_a_new));
+		INT_T * coo_ia_new = (typeof(coo_ia_new)) aligned_alloc(MEMORY_ALIGNMENT, nnz * sizeof(*coo_ia_new));
+		INT_T * coo_ja_new = (typeof(coo_ja_new)) aligned_alloc(MEMORY_ALIGNMENT, nnz * sizeof(*coo_ja_new));
+		ValueType * coo_a_new = (typeof(coo_a_new)) aligned_alloc(MEMORY_ALIGNMENT, nnz * sizeof(*coo_a_new));
+
+		INT_T * csr_row_ptr_new = (typeof(csr_row_ptr_new)) aligned_alloc(MEMORY_ALIGNMENT, (m+1) * sizeof(*csr_row_ptr_new));
+		INT_T * csr_ja_new = (typeof(csr_ja_new)) aligned_alloc(MEMORY_ALIGNMENT, nnz * sizeof(*csr_ja_new));
+		ValueType * csr_a_new = (typeof(csr_a_new)) aligned_alloc(MEMORY_ALIGNMENT, nnz * sizeof(*csr_a_new));
+
+		dim3 block_dims(BLOCK_SIZE);
+		dim3 grid_dims(num_thread_blocks);
+		// long shared_mem_size = BLOCK_SIZE * (sizeof(ValueType));
+		// long shared_mem_size = BLOCK_SIZE * (sizeof(ValueType) + sizeof(INT_T));
+		long shared_mem_size = 256 * sizeof(ValueType);
+		// long shared_mem_size = 0;
+		decompress_kernel_div<<<grid_dims, block_dims, shared_mem_size>>>(coo_ia_new_d, coo_ja_new_d, coo_a_new_d, compr_data_d, packet_data_offsets_d, packet_nnz_offsets_d);
+
+		gpuCudaErrorCheck(cudaDeviceSynchronize());
+
+		gpuCudaErrorCheck(cudaMemcpy(coo_ia_new, coo_ia_new_d, nnz * sizeof(*coo_ia_new_d), cudaMemcpyDeviceToHost));
+		gpuCudaErrorCheck(cudaMemcpy(coo_ja_new, coo_ja_new_d, nnz * sizeof(*coo_ja_new_d), cudaMemcpyDeviceToHost));
+		gpuCudaErrorCheck(cudaMemcpy(coo_a_new, coo_a_new_d, nnz * sizeof(*coo_a_new_d), cudaMemcpyDeviceToHost));
+
+		gpuCudaErrorCheck(cudaDeviceSynchronize());
+
+		gpuCudaErrorCheck(cudaFree(coo_ia_new_d));
+		gpuCudaErrorCheck(cudaFree(coo_ja_new_d));
+		gpuCudaErrorCheck(cudaFree(coo_a_new_d));
 
 		_Pragma("omp parallel")
 		{
-			long tnum = omp_get_thread_num();
-			struct thread_block_data * tbd_self = tbds[tnum];
-			unsigned char * compr_data = tbd_self->compr_data;
-			long pos, i, i_s, i_e, j_s;
-			long pos_decompress;
-			long num_vals_total_dc = 0;
-			long num_vals;
-			long size;
-
-			i_s = tbd_self->i_s;
-			i_e = tbd_self->i_e;
-			j_s = row_ptr[i_s];
-
-			pos_decompress = j_s;
-			num_vals_total_dc = 0;
-			pos = 0;
-			while (pos < tbd_self->compr_data_size)
-			{
-				size = decompress_kernel_div(&coo_ia_new[pos_decompress], &coo_ja_new[pos_decompress], &coo_a_new[pos_decompress], &num_vals, &compr_data[pos], i_s, i_e);
-				pos_decompress += num_vals;
-				num_vals_total_dc += num_vals;
-				pos += size;
-			}
-			if (num_vals_total_dc != tbd_self->num_vals)
-				error("tnum=%d: num_vals_dc = %ld != num_vals = %ld", tnum, num_vals_total_dc, tbd_self->num_vals);
-
-			#pragma omp barrier
-
+			long i;
 			#pragma omp for
 			for (i=0;i<nnz;i++)
 			{
@@ -306,10 +327,13 @@ struct DIVArray : Matrix_Format
 			}
 		}
 
+		// for (long i=0;i<nnz;i++)
+			// printf("%10d %10d %g\n", coo_ia_new[i], coo_ja_new[i], coo_a_new[i]);
+
 		coo_to_csr(coo_ia_new, coo_ja_new, coo_a_new, m, n, nnz, csr_row_ptr_new, csr_ja_new, csr_a_new, 1, 0);
 
 		ValueType * a_conv;
-		a_conv = (typeof(a_conv)) malloc(nnz * sizeof(*a_conv));
+		a_conv = (typeof(a_conv)) aligned_alloc(MEMORY_ALIGNMENT, nnz * sizeof(*a_conv));
 		#pragma omp parallel for
 		for (long i=0;i<nnz;i++)
 		{
@@ -330,13 +354,6 @@ struct DIVArray : Matrix_Format
 
 	~DIVArray()
 	{
-		int num_threads = omp_get_max_threads();
-		long i;
-		for (i=0;i<num_threads;i++)
-		{
-			free(tbds[i]);
-		}
-		free(tbds);
 		free(row_ptr);
 		free(ja);
 	}
@@ -355,9 +372,9 @@ csr_to_format(INT_T * row_ptr, INT_T * col_ind, ValueTypeReference * values, lon
 		error("symmetric matrices have to be expanded to be supported by this format");
 	struct DIVArray * csr = new DIVArray(row_ptr, col_ind, values, m, n, nnz, symmetric, symmetry_expanded);
 	#if defined(DIV_TYPE_RF)
-		csr->format_name = (char *) "DIV_RF";
+		csr->format_name = (char *) "DIV_CUDA_RF";
 	#else
-		csr->format_name = (char *) "DIV";
+		csr->format_name = (char *) "DIV_CUDA";
 	#endif
 	return csr;
 }
@@ -441,26 +458,15 @@ DIVArray::spmv(ValueType * x, ValueType * y)
 }
 
 
-__global__
-void
-compute_div_device(ValueType * restrict x, ValueType * restrict y)
-{
-	int block_id = blockIdx.x;
-	struct thread_block_data * tbd_self = tbds[block_id];
-	unsigned char * compr_data = tbd_self->compr_data;
-
-	decompress_and_compute_kernel_div(compr_data, x, y);
-}
-
-
 void
 compute_div(DIVArray * restrict csr, ValueType * restrict x, ValueType * restrict y)
 {
 	dim3 block_dims(BLOCK_SIZE);
-	dim3 grid_dims(csr->num_blocks);
+	dim3 grid_dims(csr->num_thread_blocks);
 	// long shared_mem_size = BLOCK_SIZE * (sizeof(ValueType));
 	// long shared_mem_size = BLOCK_SIZE * (sizeof(ValueType) + sizeof(INT_T));
-	long shared_mem_size = 0;
+	long shared_mem_size = 256 * sizeof(ValueType);
+	// long shared_mem_size = 0;
 
 	if (csr->x == NULL)
 	{
@@ -469,7 +475,9 @@ compute_div(DIVArray * restrict csr, ValueType * restrict x, ValueType * restric
 		gpuCudaErrorCheck(cudaMemcpy(csr->x_d, x, csr->n * sizeof(*csr->x_d), cudaMemcpyHostToDevice));
 	}
 
-	compute_div_device<<<grid_dims, block_dims, shared_mem_size>>>(csr->x_d, csr->y_d);
+	gpuCudaErrorCheck(cudaMemset(csr->y_d, 0, csr->m * sizeof(*csr->y_d)));
+
+	decompress_and_compute_kernel_div<<<grid_dims, block_dims, shared_mem_size>>>(csr->compr_data_d, csr->packet_data_offsets_d, csr->x_d, csr->y_d);
 	gpuCudaErrorCheck(cudaDeviceSynchronize());
 
 	if (csr->y == NULL)
@@ -488,8 +496,6 @@ compute_div(DIVArray * restrict csr, ValueType * restrict x, ValueType * restric
 void
 DIVArray::statistics_start()
 {
-	int num_threads = omp_get_max_threads();
-	long i;
 }
 
 
@@ -520,7 +526,7 @@ DIVArray::statistics_print_data(char * buf, long buf_n)
 
 	double data_size_max = 0, data_size_avg = 0;
 
-	long i, len;
+	long len;
 
 	data_size_avg /= num_threads;
 

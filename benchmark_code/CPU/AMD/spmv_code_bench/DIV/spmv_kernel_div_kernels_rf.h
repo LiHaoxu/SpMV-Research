@@ -741,6 +741,7 @@ compress_kernel_div(INT_T * row_ptr, INT_T * ja, ValueTypeReference * vals, __at
 		num_unique_vals_per_rf[num_rfs] = num_rf_vals_unique;
 		num_rfs++;
 
+		// permutation_interleave(_A_in, _A_out, _N, _num_segments, _unit_size, _solid_units_main, _solid_units_rem)
 		permutation_interleave(window + k, window_buf + k, num_rf_vals_unique, VEC_LEN, 1, 0, 1);
 		permutation_interleave(window_rf + k, window_rf_buf + k, num_rf_vals_unique, VEC_LEN, 1, 0, 1);
 		permutation_interleave(compare_data_packed + l_s, compare_data_packed_buf + l_s, num_rf_vals, VEC_LEN, rf, 0, 1);

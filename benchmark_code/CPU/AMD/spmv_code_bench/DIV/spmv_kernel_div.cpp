@@ -282,7 +282,7 @@ struct DIVArray : Matrix_Format
 				long t_nnz;
 				long max_packet_size;
 				__attribute__((unused)) long ps, pp, i, i_s, i_e, j, j_s, j_e, k;
-				long num_vals, num_vals_max, num_vals_total=0;
+				long num_vals, num_vals_max;
 				long size_stealable, size_protected;
 				dynarray_uc * da_compr_data_stealable;
 				dynarray_uc * da_compr_data_protected;
@@ -347,7 +347,6 @@ struct DIVArray : Matrix_Format
 						error("data buffer overflow");
 					if (size_protected > max_packet_size)
 						error("data buffer overflow");
-					num_vals_total += num_vals;
 
 					if (size_stealable > 0)
 					{
@@ -411,7 +410,7 @@ struct DIVArray : Matrix_Format
 					j += num_vals;
 
 				}
-				td->num_vals = num_vals_total;
+				td->num_vals = t_nnz;
 
 				td->num_packets_stealable = ps;
 				td->compr_data_size_stealable = da_compr_data_stealable->size;
@@ -486,7 +485,7 @@ struct DIVArray : Matrix_Format
 		);
 		printf("compression time = %g\n", time_compress);
 
-		long nnz_new= 0;
+		long nnz_new = 0;
 		mem_footprint = 0;
 		for (i=0;i<num_threads;i++)
 		{
@@ -504,7 +503,7 @@ struct DIVArray : Matrix_Format
 		INT_T * coo_ja_new = (typeof(coo_ja_new)) aligned_alloc(64, nnz * sizeof(*coo_ja_new));
 		ValueType * coo_a_new = (typeof(coo_a_new)) aligned_alloc(64, nnz * sizeof(*coo_a_new));
 
-		INT_T * csr_row_ptr_new= (typeof(csr_row_ptr_new)) aligned_alloc(64, (m+1) * sizeof(*csr_row_ptr_new));
+		INT_T * csr_row_ptr_new = (typeof(csr_row_ptr_new)) aligned_alloc(64, (m+1) * sizeof(*csr_row_ptr_new));
 		INT_T * csr_ja_new = (typeof(csr_ja_new)) aligned_alloc(64, nnz * sizeof(*csr_ja_new));
 		ValueType * csr_a_new = (typeof(csr_a_new)) aligned_alloc(64, nnz * sizeof(*csr_a_new));
 

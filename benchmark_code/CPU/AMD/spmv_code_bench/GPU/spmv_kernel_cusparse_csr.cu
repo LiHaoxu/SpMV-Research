@@ -7,8 +7,8 @@
 
 #include "macros/cpp_defines.h"
 
-#include "spmv_bench_common.h"
-#include "spmv_kernel.h"
+#include "../spmv_bench_common.h"
+#include "../spmv_kernel.h"
 
 #ifdef __cplusplus
 extern "C"{
@@ -270,9 +270,9 @@ CSRArrays::spmv(ValueType * x, ValueType * y)
 
 
 struct Matrix_Format *
-csr_to_format(INT_T * row_ptr, INT_T * col_ind, ValueType * values, long m, long n, long nnz, int symmetric)
+csr_to_format(INT_T * row_ptr, INT_T * col_ind, ValueTypeReference * values, long m, long n, long nnz, long symmetric, long symmetry_expanded)
 {
-	if (symmetric)
+	if (symmetric && !symmetry_expanded)
 		error("symmetric matrices not supported by this format, expand symmetry");
 	struct CSRArrays * csr = new CSRArrays(row_ptr, col_ind, values, m, n, nnz);
 	csr->mem_footprint = nnz * (sizeof(ValueType) + sizeof(INT_T)) + (m+1) * sizeof(INT_T);

@@ -116,23 +116,25 @@ do {                                                                            
 
 
 /*
- * _reduce_fun           : the reduction function
- * _partial              : the thread's partial result
- * _zero                 : the zero value - optional when '_local_result_ptr_ret' also not given
- * exclusive             : whether the reduction is exclusive, i.e., each prefix sum is without accounting the current value - matters if _local_result_ptr_ret is given
- * _backwards            : whether the reduction is performed backwards
- * _local_result_ptr_ret : the prefix sum until the current thread's value - optional 
- * _total_result_ptr_ret : the total result, should be a thread local variable!
+ * _reduce_fun           : The reduction function.
+ * _partial              : The thread's partial result.
+ * _zero                 : optional* - The zero value. *Optional only when 'exclusive' is 0.
+ * exclusive             : Whether the reduction is exclusive, i.e., each prefix sum is without accounting the current value - matters if _local_result_ptr_ret is given.
+ *			   Can only be a 0 or 1 integer literal (implementation detail: it is because '_zero' arg has to be optional).
+ * _backwards            : Whether the reduction is performed backwards.
+ * _local_result_ptr_ret : optional - The prefix sum until the current thread's value.
+ * _total_result_ptr_ret : optional - The total result, should be a thread local variable!
  */
 #undef  omp_thread_reduce_global
 #define omp_thread_reduce_global(_reduce_fun, _partial, _zero, exclusive, _backwards, _local_result_ptr_ret, _total_result_ptr_ret)              \
 do {                                                                                                                                             \
-	_Static_assert(exclusive == 0 || exclusive == 1, "exclusive arg can only be 0 or 1");                                                    \
-	RENAME((_reduce_fun, reduce_fun), (_partial, __partial),                                                                                 \
-		OPT((_zero), ((_zero, zero, , __attribute__((unused))), ))                                                                       \
-		(_backwards, backwards, int, __attribute__((unused))),                                                                           \
-		OPT((_local_result_ptr_ret), ((_local_result_ptr_ret, __local_result_ptr_ret), ))                                                \
-		(_total_result_ptr_ret, __total_result_ptr_ret));                                                                                \
+	_Static_assert(exclusive == 0 || exclusive == 1, "exclusive arg can only be a 0 or 1 constant");                                         \
+	RENAME((_reduce_fun, reduce_fun), (_partial, __partial)                                                                                  \
+		OPT((_zero), (, (_zero, zero, , __attribute__((unused)))))                                                                       \
+		, (_backwards, backwards, int, __attribute__((unused)))                                                                          \
+		OPT((_local_result_ptr_ret), (, (_local_result_ptr_ret, __local_result_ptr_ret)))                                                \
+		OPT((_total_result_ptr_ret), (, (_total_result_ptr_ret, __total_result_ptr_ret)))                                                \
+	);                                                                                                                                       \
                                                                                                                                                  \
 	/* Anchor type. */                                                                                                                       \
 	typeof(reduce_fun(__partial, __partial)) T;                                                                                              \
@@ -142,7 +144,7 @@ do {                                                                            
 	/* This also produces more sensible error messages in the case of argument type mismatches. */                                           \
 	typeof(T) partial = __partial;                                                                                                           \
 	OPT((_local_result_ptr_ret), typeof(T) * local_result_ptr_ret = __local_result_ptr_ret;)                                                 \
-	typeof(T) * total_result_ptr_ret = __total_result_ptr_ret;                                                                               \
+	OPT((_total_result_ptr_ret), typeof(T) * total_result_ptr_ret = __total_result_ptr_ret;)                                                 \
                                                                                                                                                  \
 	static int t_num_threads = 0;  /* Store the static data for next calls. */                                                               \
 	static typeof(T) * t_partial = NULL;                                                                                                     \
@@ -178,8 +180,9 @@ do {                                                                            
 	OPT((_local_result_ptr_ret),                                                                                                             \
 		if (local_result_ptr_ret != NULL)                                                                                                \
 			*local_result_ptr_ret = local_buf;)                                                                                      \
-	if (total_result_ptr_ret != NULL)                                                                                                        \
-		*total_result_ptr_ret = total_buf;                                                                                               \
+	OPT((_total_result_ptr_ret),                                                                                                             \
+		if (total_result_ptr_ret != NULL)                                                                                                \
+			*total_result_ptr_ret = total_buf;)                                                                                      \
 } while (0)
 
 

@@ -16,5 +16,8 @@
 #undef dynarray_push_back
 #undef dynarray_push_back_atomic
 #undef dynarray_push_back_array
+#undef dynarray_push_back_array_aligned
+#undef dynarray_push_back_array_atomic
+#undef dynarray_copy_to_array
 #undef dynarray_export_array
 

@@ -16,5 +16,8 @@
 #pragma pop_macro("dynarray_push_back")
 #pragma pop_macro("dynarray_push_back_atomic")
 #pragma pop_macro("dynarray_push_back_array")
+#pragma pop_macro("dynarray_push_back_array_aligned")
+#pragma pop_macro("dynarray_push_back_array_atomic")
+#pragma pop_macro("dynarray_copy_to_array")
 #pragma pop_macro("dynarray_export_array")
 

@@ -1,0 +1,43 @@
+
+
+1) Add
+#include <limits>
+in 'include/io/mmf.hpp'.
+
+
+2) In configure.ac change lines from line 46:
+    dnl Optional dependencies
+    dnl ----- Intel MKL
+    AC_ARG_WITH([mkl], AS_HELP_STRING([--with-mkl], [Benchmark Intel MKL. The value detect, which is the default, enables MKL if it can be found.]))
+    AS_IF([test "x$with_mkl" == "x"], [with_mkl="detect"])
+    AS_IF([test "x$with_mkl" == "xdetect"], [AX_CHECK_MKL],
+          [test "x$with_mkl" == "xyes"], [AX_CHECK_MKL],
+          [test "x$with_mkl" == "xno"], [],
+          [AC_MSG_ERROR([invalid value $with_mkl for with_mkl.])]
+    )
+to: 
+    AS_IF([test "x$with_mkl" == "x"], [with_mkl="xno"])
+
+
+3) Change to use doubles.
+At line 57 change:
+    dnl --enable-dp option
+    AC_ARG_ENABLE([dp], AS_HELP_STRING([--enable-dp], [Compile SpMV benchmarks with double-precision floating-point values. Default is no]))
+    AS_IF([test "x$enable_dp" = "xyes"], [
+      AC_DEFINE([_USE_DOUBLE], [1], [Define if logging is enabled.])
+    ])
+to:
+    AC_DEFINE([_USE_DOUBLE], [1], [Define if logging is enabled.])
+
+
+LAST)
+
+./autogen.sh
+mkdir build
+cd build
+../configure
+make -j8
+
+
+Set number of threads with CFS_NUM_THREADS.
+

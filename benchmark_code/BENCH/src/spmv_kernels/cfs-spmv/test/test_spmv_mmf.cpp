@@ -1,0 +1,153 @@
+#include <iomanip>
+#include <iostream>
+#include <string.h>
+
+#include "cfs.hpp"
+
+using namespace std;
+using namespace cfs::util;
+using namespace cfs::util::memory;
+using namespace cfs::util::runtime;
+using namespace cfs::matrix::sparse;
+using namespace cfs::kernel::sparse;
+
+extern "C" {
+	#include "time_it.h"
+}
+
+
+
+char *program_name = nullptr;
+
+typedef int INDEX;
+typedef double VALUE;
+
+static void set_program_name(char *path)
+{
+	if (!program_name)
+		program_name = strdup(path);
+	if (!program_name)
+		fprintf(stderr, "strdup failed\n");
+}
+
+static void print_usage()
+{
+	cout << "Usage: " << program_name
+		<< " <mmf_file> <format>(0: CSR, 1: CFS-SSS, 2: CFH-SSS)" << endl;
+}
+
+
+int main(int argc, char **argv)
+{
+	set_program_name(argv[0]);
+	if (argc < 3) {
+		cerr << "Error in number of arguments!" << endl;
+		print_usage();
+		exit(1);
+	}
+
+	const string mmf_file(argv[1]);
+	int fmt = atoi(argv[2]);
+	if (fmt > 2) {
+		cerr << "Error in arguments!" << endl;
+		print_usage();
+		exit(1);
+	}
+
+	// Load a sparse matrix from an MMF file
+	SparseMatrix<INDEX, VALUE> *A = nullptr;
+	switch (fmt) {
+		case 0:
+			A = SparseMatrix<INDEX, VALUE>::create(mmf_file, Format::csr);
+			break;
+		case 1:
+			A = SparseMatrix<INDEX, VALUE>::create(mmf_file, Format::sss);
+			break;
+		case 2:
+			A = SparseMatrix<INDEX, VALUE>::create(mmf_file, Format::hyb);
+			break;
+		default:
+			break;
+	}
+
+
+
+	int M = A->nrows();
+	int N = A->ncols();
+	int nnz = A->nnz();
+
+
+
+	#ifdef _LOG_INFO
+		double sparsity = (1 - ((A->nnz() / (double)(M)) / N)) * 100;
+		cout << "[INFO]: sparsity " << sparsity << " %" << endl;
+	#endif
+
+	VALUE *x = (VALUE *)internal_alloc(N * sizeof(VALUE));
+	VALUE *y = (VALUE *)internal_alloc(M * sizeof(VALUE));
+
+	random_device rd;
+	mt19937 gen(rd());
+	uniform_real_distribution<> dis_val(10.01, 20.42);
+	for (int i = 0; i < N; i++) {
+		x[i] = dis_val(gen);
+	}
+
+	SpDMV<INDEX, VALUE> fn(A, Tuning::Aggressive);
+	// Run more than one iteration
+	for (int i = 0; i < 2; ++i)
+		fn(y, M, x, N);
+
+
+
+	SparseMatrix<INDEX, VALUE> *A_test = SparseMatrix<INDEX, VALUE>::create(mmf_file, Format::csr);
+	SpDMV<INDEX, VALUE> test(A_test, Tuning::None);
+	VALUE *y_test = (VALUE *)internal_alloc(M * sizeof(VALUE));
+
+
+	long num_loops = 128;
+	double time = time_it(1,
+		for (long i=0;i<num_loops;i++)
+		{
+			test(y_test, M, x, N);
+		}
+	);
+
+	double gflops = nnz / time * num_loops * 2 * 1e-9;
+
+	int num_threads = omp_get_max_threads();
+	printf("%s,%d,%d,%d,%d,%g,%g\n", argv[1], num_threads, M, N, nnz, time, gflops);
+
+
+
+	#ifdef _LOG_INFO
+		cout << "[INFO]: checking result... ";
+	#endif
+	bool passed = true;
+	for (INDEX i = 0; i < M; i++) {
+		if (!isEqual(y[i], y_test[i])) {
+			cout << "element " << i << " differs: " << y[i] << " vs " << y_test[i]
+				<< endl;
+			passed = false;
+			break;
+		}
+		if (!passed)
+			break;
+	}
+
+	if (passed)
+		cout << "PASSED!" << endl;
+	else
+		cout << "FAILED!" << endl;
+
+	// Cleanup
+	delete A;
+	delete A_test;
+	internal_free(x);
+	internal_free(y);
+	internal_free(y_test);
+	free(program_name);
+
+	return 0;
+}
+

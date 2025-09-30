@@ -16,6 +16,9 @@
 #pragma push_macro("dynarray_push_back")
 #pragma push_macro("dynarray_push_back_atomic")
 #pragma push_macro("dynarray_push_back_array")
+#pragma push_macro("dynarray_push_back_array_aligned")
+#pragma push_macro("dynarray_push_back_array_atomic")
+#pragma push_macro("dynarray_copy_to_array")
 #pragma push_macro("dynarray_export_array")
 
 #include "dynamic_array_gen_undef.h"

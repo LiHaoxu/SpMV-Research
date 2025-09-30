@@ -515,6 +515,9 @@ redirection_fd_to_file(int fd, char * path)
 /* int munmap(void *addr, size_t length);
  * void * mmap(void *addr, size_t length, int prot, int flags, int fd, off_t offset);
  * void * mremap(void *old_address, size_t old_size, size_t new_size, int flags, ... void *new_address );
+ *
+ * Notes:
+ *     Alignment: If addr is NULL, then the kernel chooses the PAGE-ALIGNED address at which to create the mapping.
  */
 
 

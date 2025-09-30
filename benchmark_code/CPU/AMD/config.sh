@@ -127,6 +127,13 @@ conf_vars=(
     ['DIV_PACKET_REORDERING']=0
     # ['DIV_PACKET_REORDERING']=1
 
+    # Whether to enable tracing with RAVE.
+    ['RAVE_TRACING']=0
+    # ['RAVE_TRACING']=1
+
+    # K dimension.
+    ['K_DIM']='256'
+
     # Maximum number of the machine's cores.
     # ['max_cores']=160
     ['max_cores']=256
@@ -309,6 +316,7 @@ conf_vars=(
                         # '/various/pmpakos/SpMV-Research/validation_matrices'
                         # '/various/pmpakos/SpMV-Research/validation_matrices/matrix_features/matrices'
                         # '/various/pmpakos/SpMV-Research/validation_matrices/download_matrices'
+                        # /home/pmpakos/vvrettos-stuff/SpMV-Research/validation_matrices
                     )
                     find_valid_dir "${options[@]}"
                 )"
@@ -356,8 +364,8 @@ artificial_matrices_files=(
     # "$path_artificial"/validation_matrices_10_samples_30_range_twins.txt
 
     # The synthetic dataset studied in the paper.
-    # "$path_artificial"/synthetic_matrices_medium_dataset.txt
-    "$path_artificial"/synthetic_matrices_medium_dataset2.txt
+    "$path_artificial"/synthetic_matrices_medium_dataset.txt
+    # "$path_artificial"/synthetic_matrices_medium_dataset2.txt
     # "$path_artificial"/test.txt
 )
 
@@ -494,7 +502,7 @@ progs=(
     # ['div_rf_ord2_d']="${script_dir}/spmv_code_bench/spmv_div_rf_ord2_d.exe"
     # ['div_sym_rf_local_d']="${script_dir}/spmv_code_bench/spmv_div_sym_rf_local_d.exe" # BENCH_SYM
     # ['div_sym_rf_local_f']="${script_dir}/spmv_code_bench/spmv_div_sym_rf_local_f.exe" # BENCH_SYM
-    ['csr_cuda_div_d']="${script_dir}/spmv_code_bench/spmv_cuda_div_d.exe" # BENCH_AMD, BENCH_INTEL
+    ['csr_cuda_div_nv_d']="${script_dir}/spmv_code_bench/spmv_cuda_div_nv_d.exe" # BENCH_GPU
 
     # MKL IE
     # ['mkl_ie_d']="${script_dir}/spmv_code_bench/spmv_mkl_ie_d.exe" # BENCH_AMD, BENCH_INTEL

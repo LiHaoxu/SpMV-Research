@@ -7,8 +7,8 @@
 
 #include "macros/cpp_defines.h"
 
-#include "spmv_bench_common.h"
-#include "spmv_kernel.h"
+#include "../spmv_bench_common.h"
+#include "../spmv_kernel.h"
 
 #ifdef __cplusplus
 extern "C"{
@@ -122,8 +122,8 @@ struct CSRArrays : Matrix_Format
 
 	int max_smem_per_block, multiproc_count, max_threads_per_block, warp_size, max_threads_per_multiproc, max_block_dim_x, max_persistent_l2_cache, max_num_threads;
 	int num_threads;
-	int block_size;
-	int num_blocks;
+	int thread_block_size;
+	int num_thread_blocks;
 
 	CSRArrays(INT_T * row_ptr, INT_T * ja, ValueType * a, long m, long n, long nnz) : Matrix_Format(m, n, nnz), row_ptr(row_ptr), ja(ja), a(a)
 	{
@@ -147,30 +147,30 @@ struct CSRArrays : Matrix_Format
 		printf("max_persistent_l2_cache=%d\n", max_persistent_l2_cache);
 		printf("max_num_threads=%d\n", max_num_threads);
 
-		block_size = BLOCK_SIZE;
+		thread_block_size = BLOCK_SIZE;
 
 		num_threads = (nnz + NNZ_PER_THREAD - 1) / NNZ_PER_THREAD;
 
 		num_threads = ((num_threads + BLOCK_SIZE - 1) / BLOCK_SIZE) * BLOCK_SIZE;
 
-		num_blocks = num_threads / BLOCK_SIZE;
+		num_thread_blocks = num_threads / BLOCK_SIZE;
 
-		printf("num_threads=%d, block_size=%d, num_blocks=%d\n", num_threads, BLOCK_SIZE, num_blocks);
+		printf("num_threads=%d, thread_block_size=%d, num_thread_blocks=%d\n", num_threads, BLOCK_SIZE, num_thread_blocks);
 
-		thread_block_i_s = (INT_T *) malloc(num_blocks * sizeof(*thread_block_i_s));
-		thread_block_i_e = (INT_T *) malloc(num_blocks * sizeof(*thread_block_i_e));
-		thread_block_j_s = (INT_T *) malloc(num_blocks * sizeof(*thread_block_j_s));
-		thread_block_j_e = (INT_T *) malloc(num_blocks * sizeof(*thread_block_j_e));
+		thread_block_i_s = (INT_T *) malloc(num_thread_blocks * sizeof(*thread_block_i_s));
+		thread_block_i_e = (INT_T *) malloc(num_thread_blocks * sizeof(*thread_block_i_e));
+		thread_block_j_s = (INT_T *) malloc(num_thread_blocks * sizeof(*thread_block_j_s));
+		thread_block_j_e = (INT_T *) malloc(num_thread_blocks * sizeof(*thread_block_j_e));
 		time_balance = time_it(1,
 			long lower_boundary;
-			// for (i=0;i<num_blocks;i++)
+			// for (i=0;i<num_thread_blocks;i++)
 			// {
-				// loop_partitioner_balance_iterations(num_blocks, i, 0, nnz, &thread_block_j_s[i], &thread_block_j_e[i]);
+				// loop_partitioner_balance_iterations(num_thread_blocks, i, 0, nnz, &thread_block_j_s[i], &thread_block_j_e[i]);
 				// macros_binary_search(row_ptr, 0, m, thread_block_j_s[i], &lower_boundary, NULL);           // Index boundaries are inclusive.
 				// thread_block_i_s[i] = lower_boundary;
 			// }
 			long nnz_per_block = BLOCK_SIZE * NNZ_PER_THREAD;
-			for (i=0;i<num_blocks;i++)
+			for (i=0;i<num_thread_blocks;i++)
 			{
 				thread_block_j_s[i] = nnz_per_block * i;
 				thread_block_j_e[i] = nnz_per_block * (i+ 1);
@@ -181,9 +181,9 @@ struct CSRArrays : Matrix_Format
 				macros_binary_search(row_ptr, 0, m, thread_block_j_s[i], &lower_boundary, NULL);           // Index boundaries are inclusive.
 				thread_block_i_s[i] = lower_boundary;
 			}
-			for (i=0;i<num_blocks;i++)
+			for (i=0;i<num_thread_blocks;i++)
 			{
-				if (i == num_blocks - 1)   // If we calculate each thread's boundaries individually some empty rows might be unassigned.
+				if (i == num_thread_blocks - 1)   // If we calculate each thread's boundaries individually some empty rows might be unassigned.
 					thread_block_i_e[i] = m;
 				else
 					thread_block_i_e[i] = thread_block_i_s[i+1] + 1;
@@ -232,19 +232,19 @@ struct CSRArrays : Matrix_Format
 		// cuda_push_duplicate(&a_d, a, nnz * sizeof(*a_d));
 		// cudaMalloc(&multres_d, nnz * sizeof(*y_d));
 
-		// cuda_push_duplicate(&thread_block_i_s_d, thread_block_i_s, num_blocks * sizeof(*thread_block_i_s_d));
-		// cuda_push_duplicate(&thread_block_i_e_d, thread_block_i_e, num_blocks * sizeof(*thread_block_i_e_d));
-		// cuda_push_duplicate(&thread_block_j_s_d, thread_block_j_s, num_blocks * sizeof(*thread_block_j_s_d));
-		// cuda_push_duplicate(&thread_block_j_e_d, thread_block_j_e, num_blocks * sizeof(*thread_block_j_e_d));
+		// cuda_push_duplicate(&thread_block_i_s_d, thread_block_i_s, num_thread_blocks * sizeof(*thread_block_i_s_d));
+		// cuda_push_duplicate(&thread_block_i_e_d, thread_block_i_e, num_thread_blocks * sizeof(*thread_block_i_e_d));
+		// cuda_push_duplicate(&thread_block_j_s_d, thread_block_j_s, num_thread_blocks * sizeof(*thread_block_j_s_d));
+		// cuda_push_duplicate(&thread_block_j_e_d, thread_block_j_e, num_thread_blocks * sizeof(*thread_block_j_e_d));
 
 		gpuCudaErrorCheck(cudaMalloc(&row_ptr_d, (m+1) * sizeof(*row_ptr_d)));
 		gpuCudaErrorCheck(cudaMalloc(&ia_d, nnz * sizeof(*ia_d)));
 		gpuCudaErrorCheck(cudaMalloc(&ja_d, nnz * sizeof(*ja_d)));
 		gpuCudaErrorCheck(cudaMalloc(&a_d, nnz * sizeof(*a_d)));
-		gpuCudaErrorCheck(cudaMalloc(&thread_block_i_s_d, num_blocks * sizeof(*thread_block_i_s_d)));
-		gpuCudaErrorCheck(cudaMalloc(&thread_block_i_e_d, num_blocks * sizeof(*thread_block_i_e_d)));
-		gpuCudaErrorCheck(cudaMalloc(&thread_block_j_s_d, num_blocks * sizeof(*thread_block_j_s_d)));
-		gpuCudaErrorCheck(cudaMalloc(&thread_block_j_e_d, num_blocks * sizeof(*thread_block_j_e_d)));
+		gpuCudaErrorCheck(cudaMalloc(&thread_block_i_s_d, num_thread_blocks * sizeof(*thread_block_i_s_d)));
+		gpuCudaErrorCheck(cudaMalloc(&thread_block_i_e_d, num_thread_blocks * sizeof(*thread_block_i_e_d)));
+		gpuCudaErrorCheck(cudaMalloc(&thread_block_j_s_d, num_thread_blocks * sizeof(*thread_block_j_s_d)));
+		gpuCudaErrorCheck(cudaMalloc(&thread_block_j_e_d, num_thread_blocks * sizeof(*thread_block_j_e_d)));
 		gpuCudaErrorCheck(cudaMalloc(&x_d, n * sizeof(*x_d)));
 		gpuCudaErrorCheck(cudaMalloc(&y_d, m * sizeof(*y_d)));
 
@@ -282,10 +282,10 @@ struct CSRArrays : Matrix_Format
 		gpuCudaErrorCheck(cudaMallocHost(&ia_h, nnz * sizeof(INT_T)));
 		gpuCudaErrorCheck(cudaMallocHost(&ja_h, nnz * sizeof(INT_T)));
 		gpuCudaErrorCheck(cudaMallocHost(&a_h, nnz * sizeof(ValueType)));
-		gpuCudaErrorCheck(cudaMallocHost(&thread_block_i_s_h, num_blocks * sizeof(INT_T)));
-		gpuCudaErrorCheck(cudaMallocHost(&thread_block_i_e_h, num_blocks * sizeof(INT_T)));
-		gpuCudaErrorCheck(cudaMallocHost(&thread_block_j_s_h, num_blocks * sizeof(INT_T)));
-		gpuCudaErrorCheck(cudaMallocHost(&thread_block_j_e_h, num_blocks * sizeof(INT_T)));
+		gpuCudaErrorCheck(cudaMallocHost(&thread_block_i_s_h, num_thread_blocks * sizeof(INT_T)));
+		gpuCudaErrorCheck(cudaMallocHost(&thread_block_i_e_h, num_thread_blocks * sizeof(INT_T)));
+		gpuCudaErrorCheck(cudaMallocHost(&thread_block_j_s_h, num_thread_blocks * sizeof(INT_T)));
+		gpuCudaErrorCheck(cudaMallocHost(&thread_block_j_e_h, num_thread_blocks * sizeof(INT_T)));
 		gpuCudaErrorCheck(cudaMallocHost(&x_h, n * sizeof(ValueType)));
 		gpuCudaErrorCheck(cudaMallocHost(&y_h, m * sizeof(ValueType)));
 
@@ -293,10 +293,10 @@ struct CSRArrays : Matrix_Format
 		memcpy(ia_h, ia, nnz * sizeof(INT_T));
 		memcpy(ja_h, ja, nnz * sizeof(INT_T));
 		memcpy(a_h, a, nnz * sizeof(ValueType));
-		memcpy(thread_block_i_s_h, thread_block_i_s, num_blocks * sizeof(INT_T));
-		memcpy(thread_block_i_e_h, thread_block_i_e, num_blocks * sizeof(INT_T));
-		memcpy(thread_block_j_s_h, thread_block_j_s, num_blocks * sizeof(INT_T));
-		memcpy(thread_block_j_e_h, thread_block_j_e, num_blocks * sizeof(INT_T));
+		memcpy(thread_block_i_s_h, thread_block_i_s, num_thread_blocks * sizeof(INT_T));
+		memcpy(thread_block_i_e_h, thread_block_i_e, num_thread_blocks * sizeof(INT_T));
+		memcpy(thread_block_j_s_h, thread_block_j_s, num_thread_blocks * sizeof(INT_T));
+		memcpy(thread_block_j_e_h, thread_block_j_e, num_thread_blocks * sizeof(INT_T));
 
 		if(TIME_IT) gpuCudaErrorCheck(cudaEventRecord(startEvent_memcpy_row_ptr, stream));
 		gpuCudaErrorCheck(cudaMemcpyAsync(row_ptr_d, row_ptr_h, (m+1) * sizeof(*row_ptr_d), cudaMemcpyHostToDevice, stream));
@@ -315,19 +315,19 @@ struct CSRArrays : Matrix_Format
 		if(TIME_IT) gpuCudaErrorCheck(cudaEventRecord(endEvent_memcpy_a, stream));
 
 		if(TIME_IT) gpuCudaErrorCheck(cudaEventRecord(startEvent_memcpy_thread_block_i_s, stream));
-		gpuCudaErrorCheck(cudaMemcpyAsync(thread_block_i_s_d, thread_block_i_s_h, num_blocks * sizeof(*thread_block_i_s_d), cudaMemcpyHostToDevice, stream));
+		gpuCudaErrorCheck(cudaMemcpyAsync(thread_block_i_s_d, thread_block_i_s_h, num_thread_blocks * sizeof(*thread_block_i_s_d), cudaMemcpyHostToDevice, stream));
 		if(TIME_IT) gpuCudaErrorCheck(cudaEventRecord(endEvent_memcpy_thread_block_i_s, stream));
 
 		if(TIME_IT) gpuCudaErrorCheck(cudaEventRecord(startEvent_memcpy_thread_block_i_e, stream));
-		gpuCudaErrorCheck(cudaMemcpyAsync(thread_block_i_e_d, thread_block_i_e_h, num_blocks * sizeof(*thread_block_i_e_d), cudaMemcpyHostToDevice, stream));
+		gpuCudaErrorCheck(cudaMemcpyAsync(thread_block_i_e_d, thread_block_i_e_h, num_thread_blocks * sizeof(*thread_block_i_e_d), cudaMemcpyHostToDevice, stream));
 		if(TIME_IT) gpuCudaErrorCheck(cudaEventRecord(endEvent_memcpy_thread_block_i_e, stream));
 
 		if(TIME_IT) gpuCudaErrorCheck(cudaEventRecord(startEvent_memcpy_thread_block_j_s, stream));
-		gpuCudaErrorCheck(cudaMemcpyAsync(thread_block_j_s_d, thread_block_j_s_h, num_blocks * sizeof(*thread_block_j_s_d), cudaMemcpyHostToDevice, stream));
+		gpuCudaErrorCheck(cudaMemcpyAsync(thread_block_j_s_d, thread_block_j_s_h, num_thread_blocks * sizeof(*thread_block_j_s_d), cudaMemcpyHostToDevice, stream));
 		if(TIME_IT) gpuCudaErrorCheck(cudaEventRecord(endEvent_memcpy_thread_block_j_s, stream));
 
 		if(TIME_IT) gpuCudaErrorCheck(cudaEventRecord(startEvent_memcpy_thread_block_j_e, stream));
-		gpuCudaErrorCheck(cudaMemcpyAsync(thread_block_j_e_d, thread_block_j_e_h, num_blocks * sizeof(*thread_block_j_e_d), cudaMemcpyHostToDevice, stream));
+		gpuCudaErrorCheck(cudaMemcpyAsync(thread_block_j_e_d, thread_block_j_e_h, num_thread_blocks * sizeof(*thread_block_j_e_d), cudaMemcpyHostToDevice, stream));
 		if(TIME_IT) gpuCudaErrorCheck(cudaEventRecord(endEvent_memcpy_thread_block_j_e, stream));
 
 		if(TIME_IT){
@@ -445,7 +445,7 @@ CSRArrays::spmv(ValueType * x, ValueType * y)
 
 
 struct Matrix_Format *
-csr_to_format(INT_T * row_ptr, INT_T * col_ind, ValueType * values, long m, long n, long nnz, int symmetric)
+csr_to_format(INT_T * row_ptr, INT_T * col_ind, ValueTypeReference * values, long m, long n, long nnz, long symmetric, long symmetry_expanded)
 {
 	if (symmetric)
 		error("symmetric matrices not supported by this format, expand symmetry");
@@ -973,7 +973,7 @@ void
 compute_csr(CSRArrays * restrict csr, ValueType * restrict x, ValueType * restrict y)
 {
 	dim3 block_dims(BLOCK_SIZE);
-	dim3 grid_dims(csr->num_blocks);
+	dim3 grid_dims(csr->num_thread_blocks);
 	// long shared_mem_size = BLOCK_SIZE * (sizeof(ValueType));
 	// long shared_mem_size = BLOCK_SIZE * (sizeof(ValueType) + sizeof(INT_T));
 	long shared_mem_size = 0;

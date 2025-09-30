@@ -56,6 +56,7 @@ dynarray_init(struct dynarray * da, long new_capacity)
 	da->max_size = da->capacity / sizeof(*da->data);
 	da->size = 0;
 	da->data = (typeof(da->data)) safe_mmap_annon(da->capacity);
+	da->semaphore = 0;
 }
 
 
@@ -195,27 +196,28 @@ dynarray_set_safe(struct dynarray * restrict da, long pos, _TYPE elem, _TYPE emp
 #undef  dynarray_push_back
 #define dynarray_push_back  DYNAMIC_ARRAY_GEN_EXPAND(dynarray_push_back)
 inline
-void
+long
 dynarray_push_back(struct dynarray * restrict da, _TYPE elem)
 {
 	if (__builtin_expect(da->size >= da->max_size, 0))
 		dynarray_resize(da, 2 * da->capacity);
 	da->data[da->size++] = elem;
+	return da->size - 1;
 }
 
 
 #undef  dynarray_push_back_atomic
 #define dynarray_push_back_atomic  DYNAMIC_ARRAY_GEN_EXPAND(dynarray_push_back_atomic)
 inline
-void
+long
 dynarray_push_back_atomic(struct dynarray * restrict da, _TYPE elem)
 {
 	long pos = __atomic_fetch_add(&da->size, 1, __ATOMIC_RELAXED);
 	while (__builtin_expect(pos >= __atomic_load_n(&da->max_size, __ATOMIC_ACQUIRE), 0))  // Resize.
 	{
-		if (pos == da->max_size) // It is our responsibitily to resize.
+		if (pos == da->max_size) // It is our responsibility to resize.
 		{
-			while (pos > __atomic_load_n(&da->semaphore, __ATOMIC_ACQUIRE))        // Wait all previous to complete.
+			while (pos > __atomic_load_n(&da->semaphore, __ATOMIC_ACQUIRE))        // Wait all previous insertions to complete before copying array.
 				lock_cpu_relax();
 			dynarray_resize_base(da, 2 * da->capacity);
 			__atomic_store_n(&da->max_size, da->capacity / sizeof(*da->data), __ATOMIC_RELEASE);
@@ -225,6 +227,7 @@ dynarray_push_back_atomic(struct dynarray * restrict da, _TYPE elem)
 	}
 	da->data[pos] = elem;
 	__atomic_fetch_add(&da->semaphore, 1, __ATOMIC_RELEASE);
+	return pos;
 }
 
 
@@ -236,9 +239,11 @@ dynarray_push_back_atomic(struct dynarray * restrict da, _TYPE elem)
 #undef  dynarray_push_back_array
 #define dynarray_push_back_array  DYNAMIC_ARRAY_GEN_EXPAND(dynarray_push_back_array)
 inline
-void
+long
 dynarray_push_back_array(struct dynarray * restrict da, _TYPE * restrict array, long n)
 {
+	if (n <= 0)
+		return -1;
 	if (da->size + n > da->max_size)
 	{
 		long new_capacity = 2 * da->capacity;
@@ -249,6 +254,84 @@ dynarray_push_back_array(struct dynarray * restrict da, _TYPE * restrict array, 
 	}
 	memcpy(&(da->data[da->size]), array, n * sizeof(*array));
 	da->size += n;
+	return da->size - n;
+}
+
+
+/* Note: 'data' array is always page-aligned via the mmap allocation. */
+#undef  dynarray_push_back_array_aligned
+#define dynarray_push_back_array_aligned  DYNAMIC_ARRAY_GEN_EXPAND(dynarray_push_back_array_aligned)
+inline
+long
+dynarray_push_back_array_aligned(struct dynarray * restrict da, _TYPE * restrict array, long n, long alignment)
+{
+	if (n <= 0)
+		return -1;
+	long padding = 0;
+	long mod = ((long) da->data + da->size) % alignment;
+	if (mod)
+		padding = alignment - mod;
+	if (da->size + n + padding > da->max_size)
+	{
+		long new_capacity = 2 * da->capacity;
+		long bytes = (da->size + n + padding) * sizeof(*da->data);
+		while (bytes > new_capacity)
+			new_capacity = 2 * new_capacity;
+		dynarray_resize(da, new_capacity);
+	}
+	memset(&(da->data[da->size]), 0, padding);
+	da->size += padding;
+	memcpy(&(da->data[da->size]), array, n * sizeof(*array));
+	da->size += n;
+	return da->size - n;  // Return the start of the inserted data, without the padding.
+}
+
+
+#undef  dynarray_push_back_array_atomic
+#define dynarray_push_back_array_atomic  DYNAMIC_ARRAY_GEN_EXPAND(dynarray_push_back_array_atomic)
+inline
+long
+dynarray_push_back_array_atomic(struct dynarray * restrict da, _TYPE * restrict array, long n)
+{
+	if (n <= 0)
+		return -1;
+	long pos = __atomic_fetch_add(&da->size, n, __ATOMIC_RELAXED);
+	while (__builtin_expect(pos + n > __atomic_load_n(&da->max_size, __ATOMIC_ACQUIRE), 0))  // Resize.
+	{
+		if (pos <= da->max_size) // It is our responsibility to resize.
+		{
+			while (pos > __atomic_load_n(&da->semaphore, __ATOMIC_ACQUIRE))        // Wait all previous insertions to complete before copying array.
+				lock_cpu_relax();
+			if (pos + n <= __atomic_load_n(&da->max_size, __ATOMIC_ACQUIRE))       // Check again. When max_size changes, multiple threads might pass the 'pos <= max_size'.
+				break;
+			dynarray_resize_base(da, 2 * da->capacity + n * sizeof(*da->data));
+			__atomic_store_n(&da->max_size, da->capacity / sizeof(*da->data), __ATOMIC_RELEASE);
+			break;
+		}
+		lock_cpu_relax();
+	}
+	memcpy(&(da->data[pos]), array, n * sizeof(*array));
+	__atomic_fetch_add(&da->semaphore, n, __ATOMIC_RELEASE);
+	return pos;
+}
+
+
+//==========================================================================================================================================
+//= Copy Array
+//==========================================================================================================================================
+
+
+#undef  dynarray_copy_to_array
+#define dynarray_copy_to_array  DYNAMIC_ARRAY_GEN_EXPAND(dynarray_copy_to_array)
+long
+dynarray_copy_to_array(struct dynarray * restrict da,
+		_TYPE * array_out)
+{
+	if (array_out == NULL)
+		error("return argument 'array_out' is NULL");
+	if (da->size > 0)
+		memcpy(array_out, da->data, da->size * sizeof(*array_out));
+	return da->size;
 }
 
 
@@ -270,10 +353,8 @@ dynarray_export_array(struct dynarray * restrict da,
 	{
 		array = (typeof(array)) malloc(da->size * sizeof(*array));
 		memcpy(array, da->data, da->size * sizeof(*array));
-		*array_ret = array;
 	}
 	*array_ret = array;
 	return da->size;
 }
-
 

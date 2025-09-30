@@ -339,7 +339,7 @@ done
 matrices_compression=(
 
     # spal_004
-    ldoor
+    # ldoor
     # dielFilterV2real
     # af_shell10
     # nv2
@@ -365,7 +365,7 @@ matrices_compression=(
     # nlpkkt160
     # HV15R
     # Queen_4147
-    # stokes
+    stokes
     # nlpkkt200
 
     # nlpkkt240  # SparseX OOM.
@@ -696,7 +696,7 @@ bench()
                 echo "${mtx_name}_${prog_name}"
                 # compute-sanitizer --tool initcheck --track-unused-memory --print-limit 10000000 "$prog" "${prog_args[@]}"  2>'tmp.err'
                 # compute-sanitizer --tool memcheck --print-limit 10000000 "$prog" "${prog_args[@]}"  2>'tmp.err'
-                # ncu -o ./out_logs/reports/ncu_reports/ncu_report_${mtx_name}_${prog_name} -f --print-summary=per-kernel --section={ComputeWorkloadAnalysis,InstructionStats,LaunchStats,MemoryWorkloadAnalysis,MemoryWorkloadAnalysis_Chart,MemoryWorkloadAnalysis_Tables,Occupancy,SchedulerStats,SourceCounters,SpeedOfLight,SpeedOfLight_RooflineChart,WarpStateStats} "$prog" "${prog_args[@]}"  2>'tmp.err'
+                # TMP=$HOME/tmp ncu -o ./out_logs/reports/ncu_reports/ncu_report_${mtx_name}_${prog_name} -f --print-summary=per-kernel --section={ComputeWorkloadAnalysis,InstructionStats,LaunchStats,MemoryWorkloadAnalysis,MemoryWorkloadAnalysis_Chart,MemoryWorkloadAnalysis_Tables,Occupancy,SchedulerStats,SourceCounters,SpeedOfLight,SpeedOfLight_RooflineChart,WarpStateStats} "$prog" "${prog_args[@]}"  2>'tmp.err'
                 # nsys profile -o ./out_logs/reports/nsys_reports/nsys_report_${mtx_name}_${prog_name} -f true -t cuda,cublas --cuda-memory-usage=true --stats=true -w true "$prog" "${prog_args[@]}"  2>'tmp.err'
                 "$prog" "${prog_args[@]}"  2>'tmp.err'
                 # "$prog" "${prog_args[@]}"
@@ -843,7 +843,9 @@ for format_name in "${!progs[@]}"; do
         # $((2**6))
         # $((2**7))
         # $((2**10))
-        $((2**14))
+        # $((128 * 6))
+        $((256 * 32))
+        # $((2**14))
         # $((2**17))
         # $((2**24))
         # $((2**12))
