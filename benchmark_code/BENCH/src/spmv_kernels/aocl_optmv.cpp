@@ -44,6 +44,8 @@ struct CSRArrays : Matrix_Format
 		free(row_ptr);
 		free(ja);
 		aoclsparse_destroy_mat_descr(descr);
+		aoclsparse_destroy(A);
+		// aoclsparse_destroy(&A); // AOCL-Sparse 5.0
 	}
 
 	void spmv(ValueType * x, ValueType * y);
@@ -92,10 +94,16 @@ csr_to_format(INT_T * row_ptr, INT_T * col_ind, ValueTypeReference * values, lon
 		// The input arrays provided are left unchanged except for the call to mkl_sparse_order, which performs ordering of column indexes of the matrix.
 		// To avoid any changes to the input data, use mkl_sparse_copy.
 		#if DOUBLE == 0
-			aoclsparse_create_scsr(csr->A, base, m, n, nnz, row_ptr, col_ind, values);
+			aoclsparse_create_scsr(csr->A, base, m, n, nnz, csr->row_ptr, csr->ja, csr->a);
 		#elif DOUBLE == 1
-			aoclsparse_create_dcsr(csr->A, base, m, n, nnz, row_ptr, col_ind, values);
+			aoclsparse_create_dcsr(csr->A, base, m, n, nnz, csr->row_ptr, csr->ja, csr->a);
 		#endif
+		// AOCL-Sparse 5.0
+		// #if DOUBLE == 0
+		// 	aoclsparse_create_scsr(&(csr->A), base, m, n, nnz, csr->row_ptr, csr->ja, csr->a);
+		// #elif DOUBLE == 1
+		// 	aoclsparse_create_dcsr(&(csr->A), base, m, n, nnz, csr->row_ptr, csr->ja, csr->a);
+		// #endif
 
 		// mkl_sparse_order(csr->A);  // Sort the columns.
 	);

@@ -151,7 +151,7 @@ conf_vars=(
     # ['max_cores']=8
 
     # Cores / Threads to utilize. Use spaces to define a set of different thread numbers to benchmark.
-    ['cores']="$num_cores"
+    # ['cores']="$num_cores"
     # ['cores']=1
     # ['cores']='1 2 4 8 16 32 64 128'
     # ['cores']='1 2 4 8 16 32 64'
@@ -167,7 +167,7 @@ conf_vars=(
     # ['cores']=64
     # ['cores']=56
     # ['cores']=28
-    # ['cores']=24
+    ['cores']=24
     # ['cores']=16
     # ['cores']=14
     # ['cores']=12
@@ -224,8 +224,11 @@ conf_vars=(
     ['AOCL_PATH']="$( options=(
                         # '/opt/aoclsparse'
                         # '/various/pmpakos/spmv_paper/aocl-sparse/build/release'
-                        "/pfs/lustrep2/scratch/project_465000869/pmpakos/aocl-sparse-3.2/build/release"
+                        # "/pfs/lustrep2/scratch/project_465000869/pmpakos/aocl-sparse-3.2/build/release"
                         # '/leonardo_scratch/fast/EUHPC_D12_058/pmpakos/aocl-sparse-3.2/build/release/'
+                        # /various/pmpakos/epyc5_libs/aocl-5.0/aocl-sparse/build/release
+                        # /various/pmpakos/epyc5_libs/aocl-sparse-4.0/build/release
+                        /various/pmpakos/epyc5_libs/aocl-sparse-3.2/build/release
                     )
                     find_valid_dir "${options[@]}"
                 )"
@@ -313,9 +316,9 @@ conf_vars=(
 
     # Path for the validation matrices.
     ['path_validation']="$( options=(
-                        "$HOME/Data/graphs/validation_matrices"
-                        "${script_dir}/../../../validation_matrices"
-                        # '/various/pmpakos/SpMV-Research/validation_matrices'
+                        # "$HOME/Data/graphs/validation_matrices"
+                        # "${script_dir}/../../../validation_matrices"
+                        '/various/pmpakos/SpMV-Research/validation_matrices'
                         # '/various/pmpakos/SpMV-Research/validation_matrices/matrix_features/matrices'
                         # '/various/pmpakos/SpMV-Research/validation_matrices/download_matrices'
                         # /home/pmpakos/vvrettos-stuff/SpMV-Research/validation_matrices
@@ -480,7 +483,7 @@ progs=(
     # ['csr_vector_queues_x86_d']="${script_dir}/src/spmv_csr_vector_queues_x86_d.exe"
     # ['csr_vector_perfect_nnz_balance_x86_d']="${script_dir}/src/spmv_csr_vector_perfect_nnz_balance_x86_d.exe"
 
-    ['sddmm_csr_d']="${script_dir}/src/sddmm_csr_d.exe" # BENCH_AMD, BENCH_INTEL
+    # ['sddmm_csr_d']="${script_dir}/src/sddmm_csr_d.exe" # BENCH_AMD, BENCH_INTEL
 
     # Custom lut
     # ['csr_vector_lut_x86_d']="${script_dir}/src/spmv_csr_vector_lut_x86_d.exe" # BENCH_AMD, BENCH_INTEL
@@ -518,7 +521,7 @@ progs=(
     # ['mkl_csr_d']="${script_dir}/src/spmv_mkl_csr_d.exe"
 
     # AOCL
-    # ['aocl_optmv_d']="${script_dir}/src/spmv_aocl_optmv_d.exe"
+    ['aocl_optmv_d']="${script_dir}/src/spmv_aocl_optmv_d.exe"
 
     # CSR-RV
     # ['csrrv_d']="${script_dir}/src/spmv_csrrv_d.exe" # BENCH_INTEL

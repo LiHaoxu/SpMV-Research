@@ -364,6 +364,9 @@ CPPFLAGS_AOCL += -m64 -mavx2
 LDFLAGS_AOCL =
 LDFLAGS_AOCL += -L'$(AOCL_PATH)/lib/'
 LDFLAGS_AOCL += -Wl,--no-as-needed  -laoclsparse -lgomp -lpthread -ldl
+# These are used for the AOCL-Sparse version 5
+# LDFLAGS_AOCL += -L'$(AOCL_PATH)/../../../../openssl-1.1.1o/' -L'$(AOCL_PATH)/../../../amd-blis/lib/LP64/' -L'$(AOCL_PATH)/../../../amd-libflame/lib/LP64/' -L'$(AOCL_PATH)/../../../amd-utils/lib/' 
+# LDFLAGS_AOCL += -lflame -lblis-mt -laoclutils
 
 spmv_aocl_optmv$(SUFFIX).exe: $(OBJ_DIR)/bench$(SUFFIX).o $(OBJ_DIR)/bench_spmv$(SUFFIX).o spmv_kernels/aocl_optmv.cpp $(LIB_OBJ)
 	$(CPP) $(CPPFLAGS) $(CPPFLAGS_AOCL) $^ -o $@ $(LDFLAGS) $(LDFLAGS_AOCL)
