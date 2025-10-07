@@ -96,8 +96,8 @@ conf_vars=(
     # ['USE_RCM_REORDERING']=1
 
     # Benchmark with the artificially generated matrices (1) or real matrices (0).
-    ['USE_ARTIFICIAL_MATRICES']=0
-    # ['USE_ARTIFICIAL_MATRICES']=1
+    # ['USE_ARTIFICIAL_MATRICES']=0
+    ['USE_ARTIFICIAL_MATRICES']=1
 
     # Whether to clear cpu caches before each spmv iteration.
     ['CLEAR_CACHES']=0
@@ -128,8 +128,8 @@ conf_vars=(
     # ['DIV_PACKET_REORDERING']=1
 
     # Whether to enable tracing with RAVE.
-    ['RAVE_TRACING']=0
-    # ['RAVE_TRACING']=1
+    # ['RAVE_TRACING']=0
+    ['RAVE_TRACING']=1
 
     # K dimension.
     ['K_DIM']='16'
@@ -167,7 +167,7 @@ conf_vars=(
     # ['cores']=64
     # ['cores']=56
     # ['cores']=28
-    ['cores']=24
+    # ['cores']=24
     # ['cores']=16
     # ['cores']=14
     # ['cores']=12
@@ -175,7 +175,7 @@ conf_vars=(
     # ['cores']=6
     # ['cores']=4
     # ['cores']=2
-    # ['cores']=1
+    ['cores']=1
     # ['cores']='1 2 4 8 16 24 48'
     # ['cores']='24 48'
     # ['cores']='1 2 4 8'
@@ -356,7 +356,7 @@ else
 fi
 
 
-path_artificial="${script_dir}/../../../matrix_generation_parameters"
+path_artificial="${script_dir}/../../matrix_generation_parameters"
 
 
 # Artificial matrices to benchmark.
@@ -369,8 +369,8 @@ artificial_matrices_files=(
     # "$path_artificial"/validation_matrices_10_samples_30_range_twins.txt
 
     # The synthetic dataset studied in the paper.
-    "$path_artificial"/synthetic_matrices_medium_dataset.txt
-    # "$path_artificial"/synthetic_matrices_medium_dataset2.txt
+    # "$path_artificial"/synthetic_matrices_medium_dataset.txt
+    "$path_artificial"/synthetic_matrices_medium_dataset2.txt
     # "$path_artificial"/test.txt
 )
 
@@ -483,6 +483,10 @@ progs=(
     # ['csr_vector_queues_x86_d']="${script_dir}/src/spmv_csr_vector_queues_x86_d.exe"
     # ['csr_vector_perfect_nnz_balance_x86_d']="${script_dir}/src/spmv_csr_vector_perfect_nnz_balance_x86_d.exe"
 
+    # Custom csr RISCV
+    ['csr_vector_riscv_d']="${script_dir}/src/spmv_csr_vector_riscv_d.exe" # BENCH_RISCV
+    ['csr_vector_riscv_bulk_d']="${script_dir}/src/spmv_csr_vector_riscv_bulk_d.exe" # BENCH_RISCV
+
     # ['sddmm_csr_d']="${script_dir}/src/sddmm_csr_d.exe" # BENCH_AMD, BENCH_INTEL
 
     # Custom lut
@@ -521,7 +525,7 @@ progs=(
     # ['mkl_csr_d']="${script_dir}/src/spmv_mkl_csr_d.exe"
 
     # AOCL
-    ['aocl_optmv_d']="${script_dir}/src/spmv_aocl_optmv_d.exe"
+    # ['aocl_optmv_d']="${script_dir}/src/spmv_aocl_optmv_d.exe"
 
     # CSR-RV
     # ['csrrv_d']="${script_dir}/src/spmv_csrrv_d.exe" # BENCH_INTEL
@@ -535,6 +539,7 @@ progs=(
     # sell C sigma
     # ['sell_C_s_d']="${script_dir}/src/sell-C-s/build/spmvbench/spmv_sell-C-s_d.exe"
     # ['sell_C_s_d']="/various/pmpakos/SpMV-Research/benchmark_code/BENCH/spmv_code_sell-C-s/build/spmvbench/spmv_sell-C-s_d.exe"
+    ['sell_c_s_d']="${script_dir}/src/spmv_sell_c_s_d.exe" # BENCH_RISCV
 
     # sparsex
     # ['sparsex_d']="${script_dir}/src/spmv_sparsex_d.exe" # BENCH_AMD, BENCH_INTEL

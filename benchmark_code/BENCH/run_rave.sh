@@ -3,9 +3,9 @@
 # The node is synth-hca.
 # No salloc, straight 'ssh synth-hca'.
 
-module load rave/EPI
-module load llvm/cross/EPI-development
-module load sdv_trace
+module load rave/development/EPI; # module load rave/EPI
+module load llvm/cross/EPI-development; # module load llvm/cross/EPI-development
+module load sdv_trace/development; # module load sdv_trace
 
 # bananaf3  : gcc 13.3.0
 # synth-hca : clang 22.0.0git

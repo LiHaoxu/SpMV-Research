@@ -75,6 +75,11 @@ spmv_csr_vector_perfect_nnz_balance_x86$(SUFFIX).exe: $(OBJ_DIR)/bench$(SUFFIX).
 spmv_csr_vector_queues_x86$(SUFFIX).exe: $(OBJ_DIR)/bench$(SUFFIX).o $(OBJ_DIR)/bench_spmv$(SUFFIX).o spmv_kernels/csr_x86.cpp $(LIB_OBJ)
 	$(CPP) $(CPPFLAGS) -D'CUSTOM_X86_VECTOR_QUEUES' $^ -o $@ $(LDFLAGS)
 
+spmv_csr_vector_riscv$(SUFFIX).exe: $(OBJ_DIR)/bench$(SUFFIX).o $(OBJ_DIR)/bench_spmv$(SUFFIX).o spmv_kernels/csr_riscv.cpp $(LIB_OBJ)
+	$(CPP) $(CPPFLAGS) -D'RISCV_VECTOR' -D'RISCV_VECTOR_NAIVE' $^ -o $@ $(LDFLAGS)
+spmv_csr_vector_riscv_bulk$(SUFFIX).exe: $(OBJ_DIR)/bench$(SUFFIX).o $(OBJ_DIR)/bench_spmv$(SUFFIX).o spmv_kernels/csr_riscv.cpp $(LIB_OBJ)
+	$(CPP) $(CPPFLAGS) -D'RISCV_VECTOR' -D'RISCV_VECTOR_BULK' $^ -o $@ $(LDFLAGS)
+
 CPPFLAGS_CV_BLOCK_ID = -D'COMPRESSION_KERNEL_ID'
 spmv_csr_cv_block_id$(SUFFIX).exe: $(OBJ_DIR)/bench$(SUFFIX).o $(OBJ_DIR)/bench_spmv$(SUFFIX).o $(OBJ_DIR)/csr_cv_block_id$(SUFFIX).o $(LIB_OBJ)
 	$(CPP) $(CPPFLAGS) $(CPPFLAGS_CV_BLOCK_ID) $^ -o $@ $(LDFLAGS)
@@ -444,6 +449,15 @@ $(OBJ_DIR)/sparsex_d.o: spmv_kernels/sparsex.cpp
 
 spmv_sell-C-s$(SUFFIX).exe: sell-C-s/build/spmvbench/spmv_sell-C-s_d.exe
 	@echo "sell-C-s is already compiled!"
+
+# RISC-V variant!
+SELL_C_S_ROOT=./spmv_kernels/sell-C-s/RISC-V/
+SELL_C_S_CFLAGS=-I'$(SELL_C_S_ROOT)' -D'EPI_EXT=09' -D'OMP=1' -D'RAVE_TRACING=1' -D'INDEX64=1'
+SELL_C_S_LDFLAGS=-L'$(SELL_C_S_ROOT)' -lsellcs-spmv_i64_omp
+
+spmv_sell_c_s$(SUFFIX).exe: $(OBJ_DIR)/bench$(SUFFIX).o $(OBJ_DIR)/bench_spmv$(SUFFIX).o spmv_kernels/sell_c_s.cpp $(LIB_OBJ)
+	cd $(SELL_C_S_ROOT); make clean; make EPI_EXT=09 INDEX64=1 OMP=1 RAVE_TRACING=1 CC=clang LLVM=clang -j; cd -;
+	$(CPP) $(CPPFLAGS) $(SELL_C_S_CFLAGS) $^ -o $@ $(LDFLAGS) $(SELL_C_S_LDFLAGS)
 
 # CPPFLAGS_SPARSEX_FLOAT =
 # CPPFLAGS_SPARSEX_FLOAT += -Wno-unused-variable -Wno-unused-but-set-variable -Wno-unused-parameter -Wno-sign-compare -Wno-unused-local-typedefs -Wno-deprecated-copy -Wno-placement-new -Wno-deprecated-declarations -Wno-parentheses -Wno-nonnull

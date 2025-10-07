@@ -44,6 +44,11 @@ benchmark_code/CPU/RISCV/RAVE/filtered-rave-outputs/
 benchmark_code/CPU/RISCV/RAVE/rave-outputs/
 benchmark_code/CPU/RISCV/RAVE/rave-outputs2/
 benchmark_code/CPU/RISCV/RAVE/wxparaver-4.12.0
+benchmark_code/BENCH/rave_prv_traces/
+benchmark_code/BENCH/RAVE/filtered-rave-outputs/
+benchmark_code/BENCH/RAVE/rave-outputs/
+benchmark_code/BENCH/RAVE/rave-outputs2/
+benchmark_code/BENCH/RAVE/wxparaver-4.12.0
 
 benchmark_code/FPGA/HiSparse/
 benchmark_code/FPGA/HPCG_FPGA

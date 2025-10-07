@@ -552,10 +552,17 @@ bench(struct CSR_reference_s * csr, struct Matrix_Format * MF, long print_labels
 
 	#ifdef RAVE_TRACING
 	{
-		int values[] = {0, 1};
-		const char* valueNames[] = {"Other", "Kernel"};
+		// int values[] = {0, 1};
+		// const char* valueNames[] = {"Other", "Kernel"};
 
-		trace_name_event_and_values(1000, "code_region", 2, values, valueNames);
+		// trace_name_event_and_values(1000, "code_region", 2, values, valueNames);
+
+		/* 
+			The above are not needed after 2025-09 update on SDV trace tool! 
+			Now we just need to mark the region that will be profiled through 
+			trace_begin_region("NAME") ... trace_end_region("NAME")
+		*/
+
 		trace_init();
 		trace_disable();
 	}
