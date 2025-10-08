@@ -16,9 +16,9 @@
 #include "sellcs-spmv.h"
 #include "stdio.h"
 
-#ifdef RAVE_TRACING
-    #include <sdv_tracing.h>
-#endif
+// #ifdef RAVE_TRACING
+//     #include <sdv_tracing.h>
+// #endif
 
 
 #define PREFETCH_1D_STRIDED(D, N, S)                                \
@@ -186,10 +186,10 @@ void sellcs_mv_d(const sellcs_matrix_t* matrix,
     const index_t start_slice,
     const index_t end_slice)
 {
-    #ifdef RAVE_TRACING
-        // trace_event_and_value(1000, 1);
-        trace_begin_region("Computation(SELL_C_s)");
-    #endif
+    // #ifdef RAVE_TRACING
+    //     // trace_event_and_value(1000, 1);
+    //     trace_begin_region("Computation(SELL_C_s)");
+    // #endif
 
     const uint32_t vlen = matrix->C;
 
@@ -265,10 +265,10 @@ void sellcs_mv_d(const sellcs_matrix_t* matrix,
     #endif
     }
 
-    #ifdef RAVE_TRACING
-        // trace_event_and_value(1000, 0);
-        trace_end_region("Computation(SELL_C_s)");
-    #endif
+    // #ifdef RAVE_TRACING
+    //     // trace_event_and_value(1000, 0);
+    //     trace_end_region("Computation(SELL_C_s)");
+    // #endif
 }
 
 // void kernel_sellcs_dfc_epi(const SparseMatrixSELLCS* restrict matrix,

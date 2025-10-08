@@ -349,9 +349,17 @@ compute(struct CSR_reference_s * csr, struct Matrix_Format * MF,
 
 			rapl_read_start(regs, regs_n);
 
+			#ifdef RAVE_TRACING
+				trace_begin_region("COMPUTATION-SpMV");
+			#endif
+			
 			time_iter = time_it(1,
 				MF->spmv(x, y);
 			);
+
+			#ifdef RAVE_TRACING
+				trace_end_region("COMPUTATION-SpMV");
+			#endif
 
 			rapl_read_end(regs, regs_n);
 

@@ -6,10 +6,6 @@
 
 #include "spmv_kernel.h"
 
-#ifdef RAVE_TRACING
-	#include <sdv_tracing.h>
-#endif
-
 #ifdef __cplusplus
 extern "C"{
 #endif
@@ -174,11 +170,6 @@ csr_to_format(INT_T * row_ptr, INT_T * col_ind, ValueTypeReference * values, lon
 void
 subkernel_csr_vector_riscv(CSR * restrict csr, ValueType * restrict x, ValueType * restrict y, long i_s, long i_e)
 {
-	#ifdef RAVE_TRACING
-		// trace_event_and_value(1000, 1);
-		trace_begin_region("Computation(CSR-Vector/EPI)");
-	#endif
-
 	ValueType sum;
 	long i, j;
 	long j_s, j_e; // Column Start, Column End
@@ -220,12 +211,6 @@ subkernel_csr_vector_riscv(CSR * restrict csr, ValueType * restrict x, ValueType
 
 		y[i] = sum;
 	}
-
-	#ifdef RAVE_TRACING
-		// trace_event_and_value(1000, 0);
-		trace_end_region("Computation(CSR-Vector/EPI)");
-	#endif
-
 }
 
 #else 
@@ -233,11 +218,6 @@ subkernel_csr_vector_riscv(CSR * restrict csr, ValueType * restrict x, ValueType
 void
 subkernel_csr_vector_riscv(CSR * restrict csr, ValueType * restrict x, ValueType * restrict y, long i_s, long i_e)
 {
-	#ifdef RAVE_TRACING
-		// trace_event_and_value(1000, 1);
-		trace_begin_region("Computation(CSR-Vector/RISC-V)");
-	#endif
-
 	ValueType sum;
 	long i, j;
 	long j_s, j_e; // Column Start, Column End
@@ -279,11 +259,6 @@ subkernel_csr_vector_riscv(CSR * restrict csr, ValueType * restrict x, ValueType
 
 		y[i] = sum;
 	}
-
-	#ifdef RAVE_TRACING
-		// trace_event_and_value(1000, 0);
-		trace_end_region("Computation(CSR-Vector/RISC-V)");
-	#endif
 }
 
 #endif /* EPI_INTRINSICS */
@@ -312,10 +287,6 @@ compute_csr_vector_riscv(CSR * restrict csr, ValueType * restrict x, ValueType *
 #if defined(RISCV_VECTOR_BULK)
 void subkernel_csr_vector_riscv_bulk(CSR * restrict csr, ValueType * restrict x, ValueType * restrict y, long i_s, long i_e)
 {
-	#ifdef RAVE_TRACING
-		// trace_event_and_value(1000, 1);
-		trace_begin_region("Computation(CSR-Vector-Bulk)");
-	#endif
 
 	int maxNaiveComputations = 5000;
 	int naiveComputationsCounter = 0;
@@ -355,11 +326,6 @@ void subkernel_csr_vector_riscv_bulk(CSR * restrict csr, ValueType * restrict x,
 					/* Non zeroes per row already filled with one row, use naive method instead */					
 					if (naiveComputationsCounter >= maxNaiveComputations) {
 						subkernel_csr_vector_riscv(csr, x, y, rowStart, rowEnd);
-
-						#ifdef RAVE_TRACING
-							// trace_event_and_value(1000, 0);
-							trace_end_region("Computation(CSR-Vector-Bulk)");
-						#endif
 						return;
 					}
 					else {
@@ -446,11 +412,6 @@ void subkernel_csr_vector_riscv_bulk(CSR * restrict csr, ValueType * restrict x,
 		/* Update rowStart */
 		rowStart = currentRow;
 	}
-
-	#ifdef RAVE_TRACING
-		// trace_event_and_value(1000, 0);
-		trace_end_region("Computation(CSR-Vector-Bulk)");
-	#endif
 
 	return;
 }

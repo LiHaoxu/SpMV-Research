@@ -477,7 +477,7 @@ progs=(
     # ['csr_vector_perfect_nnz_balance_d']="${script_dir}/src/spmv_csr_vector_perfect_nnz_balance_d.exe"
 
     # Custom csr x86
-    # ['csr_vec']="${script_dir}/src/spmv_csr_vec_d.exe" # BENCH_AMD, BENCH_INTEL
+    # ['csr_vec']="${script_dir}/src/spmv_csr_vec_d.exe" # BENCH_AMD, BENCH_INTEL, BENCH_RISCV
     # ['csr_vector_x86_d']="${script_dir}/src/spmv_csr_vector_x86_d.exe" # BENCH_AMD, BENCH_INTEL
     # ['csr_vector_oracle_balance_x86_d']="${script_dir}/src/spmv_csr_vector_oracle_balance_x86_d.exe"
     # ['csr_vector_queues_x86_d']="${script_dir}/src/spmv_csr_vector_queues_x86_d.exe"

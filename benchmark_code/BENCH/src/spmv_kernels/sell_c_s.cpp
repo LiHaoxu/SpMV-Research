@@ -8,10 +8,6 @@
 
 #include <riscv_vector.h> // RISCV only! watch out
 
-// #ifdef RAVE_TRACING
-// 	#include <sdv_tracing.h>
-// #endif
-
 #ifdef __cplusplus
 extern "C"{
 #endif
@@ -135,15 +131,8 @@ compute_sellcs(SELLCS_Array * sellcs, ValueType * x , ValueType * y)
 {
 	// Tracing needs to happen inside the function that is called (in the sellcs_mv_kernels_epi.c file), so remove it from here.
 
-	// #ifdef RAVE_TRACING
-	// 	trace_event_and_value(1000, 1);
-	// #endif
-	
 	sellcs_execute_mv_d(sellcs->sellcs_mtx, x, y);
 
-	// #ifdef RAVE_TRACING
-	// 	trace_event_and_value(1000, 0);
-	// #endif
 }
 
 
