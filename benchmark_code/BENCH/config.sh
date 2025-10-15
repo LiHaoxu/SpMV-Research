@@ -450,7 +450,23 @@ declare -A progs
 
 # SpMV kernels to benchmark (uncomment the ones you want).
 progs=(
+    # FOR RISC-V RAVE reproduction of errors!
+    # For all errors to appear, please compile separately.
 
+    ['div_rf_d']="${script_dir}/src/spmv_div_rf_d.exe"
+    # ERRORS of div
+    # __riscv_vrgather_vv_i64m1
+    # __riscv_vsrl_vx_u64m1
+    # __riscv_vand_vv_i64m1
+    # __riscv_vsll_vv_i64m1
+
+    ['sell_sorted_d']="${script_dir}/src/spmv_sell_sorted_d.exe"
+    # ERRORS of sell_sorted
+    # __riscv_vsll_vx_u32m1
+    # __riscv_vlmul_trunc_v_i32m1_i32mf2
+    # __riscv_vluxei32_v_f64m1
+
+    ########################################################################
     # CG
     # ['cg_csr_d']="${script_dir}/src/cg_csr_d.exe"
     # ['cg_csr_sym_d']="${script_dir}/src/cg_csr_sym_d.exe"
@@ -484,8 +500,8 @@ progs=(
     # ['csr_vector_perfect_nnz_balance_x86_d']="${script_dir}/src/spmv_csr_vector_perfect_nnz_balance_x86_d.exe"
 
     # Custom csr RISCV
-    ['csr_vector_riscv_d']="${script_dir}/src/spmv_csr_vector_riscv_d.exe" # BENCH_RISCV
-    ['csr_vector_riscv_bulk_d']="${script_dir}/src/spmv_csr_vector_riscv_bulk_d.exe" # BENCH_RISCV
+    # ['csr_vector_riscv_d']="${script_dir}/src/spmv_csr_vector_riscv_d.exe" # BENCH_RISCV
+    # ['csr_vector_riscv_bulk_d']="${script_dir}/src/spmv_csr_vector_riscv_bulk_d.exe" # BENCH_RISCV
 
     # ['sddmm_csr_d']="${script_dir}/src/sddmm_csr_d.exe" # BENCH_AMD, BENCH_INTEL
 
@@ -539,7 +555,7 @@ progs=(
     # sell C sigma
     # ['sell_C_s_d']="${script_dir}/src/sell-C-s/build/spmvbench/spmv_sell-C-s_d.exe"
     # ['sell_C_s_d']="/various/pmpakos/SpMV-Research/benchmark_code/BENCH/spmv_code_sell-C-s/build/spmvbench/spmv_sell-C-s_d.exe"
-    ['sell_c_s_d']="${script_dir}/src/spmv_sell_c_s_d.exe" # BENCH_RISCV
+    # ['sell_c_s_d']="${script_dir}/src/spmv_sell_c_s_d.exe" # BENCH_RISCV
 
     # sparsex
     # ['sparsex_d']="${script_dir}/src/spmv_sparsex_d.exe" # BENCH_AMD, BENCH_INTEL
