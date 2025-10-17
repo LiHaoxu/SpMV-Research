@@ -801,28 +801,36 @@ compress_kernel_div(INT_T * row_ptr, INT_T * ja, ValueTypeReference * vals, __at
 		ValueType d;
 		ValueTypeI u;
 	} val_prev[VEC_LEN], val;
-	ValueTypeI diff;
+	ValueTypeI diff, diff_prev[VEC_LEN], diff_ord2;
 	k_s = 0;
 	for (l=0;l<num_rfs;l++)
 	{
 		rf = rfs[l];
 		num_rf_vals_unique = num_unique_vals_per_rf[l];
 		for (long iter=0;iter<VEC_LEN;iter++)
+		{
 			val_prev[iter].u = 0;
+			diff_prev[iter] = 0;
+		}
 		for (i=0;i<num_rf_vals_unique;i++)
 		{
 			k = k_s + i;
 			lane_id = i % VEC_LEN;
 			val.d = window[k];
 			diff = val.u - val_prev[lane_id].u;
+			diff_ord2 = diff - diff_prev[lane_id];
+
+			const uint32_t Schroeppel2 = 0xAAAAAAAA;
+			diff_ord2 = (diff_ord2 + Schroeppel2) ^ Schroeppel2;
 
 			val_prev[lane_id].u += diff;
+			diff_prev[lane_id] = diff;
 
 			double error = fabs(val.d - val_prev[lane_id].d) / fabs(val.d);
 			if (error > tolerance)
 				error("tolerance exceeded");
 
-			if (diff == 0)
+			if (diff_ord2 == 0)
 			{
 				len = 0;
 				data_val_lens[k] = 0;
@@ -835,12 +843,12 @@ compress_kernel_div(INT_T * row_ptr, INT_T * ja, ValueTypeReference * vals, __at
 				 * so we keep shifts in strides of 4 (0, 4, 8, 12, ..., 60).
 				 */
 				uint64_t rem_tz;
-				ValueTypeI buf_diff = diff;
+				ValueTypeI buf_diff = diff_ord2;
 				uint64_t leading_zeros = 0;
 				uint64_t trailing_zeros = 0;
 				uint64_t trailing_zero_bits_div4 = 0;
-				leading_zeros = __builtin_clzl(diff);
-				trailing_zeros = __builtin_ctzl(diff);
+				leading_zeros = __builtin_clzl(diff_ord2);
+				trailing_zeros = __builtin_ctzl(diff_ord2);
 				rem_tz = trailing_zeros & 3ULL;
 
 				len_bits = 64ULL - leading_zeros - trailing_zeros;
@@ -873,8 +881,8 @@ compress_kernel_div(INT_T * row_ptr, INT_T * ja, ValueTypeReference * vals, __at
 				if (len > 8)
 					error("len > 8");
 
-				diff >>= trailing_zeros;
-				bytestream_write_unsafe_cast(&Bs[lane_id], (uint64_t) diff, len);   // Bytestream works with 'uint64_t' buffer (so we cast diff), and the actual size in bytes 'len'.
+				diff_ord2 >>= trailing_zeros;
+				bytestream_write_unsafe_cast(&Bs[lane_id], (uint64_t) diff_ord2, len);   // Bytestream works with 'uint64_t' buffer (so we cast diff_ord2), and the actual size in bytes 'len'.
 				len |=  (trailing_zero_bits_div4 << 4ULL);
 				data_val_lens[k] = len;
 
@@ -883,10 +891,10 @@ compress_kernel_div(INT_T * row_ptr, INT_T * ja, ValueTypeReference * vals, __at
 					error("tz: %ld %ld %ld", len, tz, trailing_zero_bits_div4);
 				len &= 15ULL;
 				ValueTypeI mask = (len == 8) ? -1ULL : (1ULL << len_bits) - 1ULL;
-				diff &= mask;
-				diff <<= tz;
-				if (diff != buf_diff)
-					error("diff != buf_diff");
+				diff_ord2 &= mask;
+				diff_ord2 <<= tz;
+				if (diff_ord2 != buf_diff)
+					error("diff_ord2 != buf_diff");
 			}
 		}
 		k_s += num_rf_vals_unique;
@@ -1013,15 +1021,17 @@ decompress_and_compute_kernel_div_base(unsigned char * restrict buf, ValueType *
 
 	for (l=0;l<num_rfs;l++)
 	{
+		vec_t(VTI, VEC_LEN) diff;
 		vec_t(VTI, VEC_LEN) val;
 		long rf = data_rfs[l];
 		long num_rf_vals_unique = data_num_unique_vals_per_rf[l];
 		long num_rf_vals_unique_div = num_rf_vals_unique / VEC_LEN;
 		long num_rf_vals_unique_multiple = num_rf_vals_unique_div * VEC_LEN;
+		diff = vec_set1(VTI, VEC_LEN, 0);
 		val = vec_set1(VTI, VEC_LEN, 0);
 		for (i=0;i<num_rf_vals_unique_multiple;i+=VEC_LEN)
 		{
-			vec_t(VTI, VEC_LEN) diff;
+			vec_t(VTI, VEC_LEN) diff_ord2;
 			vec_t(i64, VEC_LEN) len_64;
 			vec_t(VTI, VEC_LEN) len;
 			vec_t(i64, VEC_LEN) row_rel, col_rel;
@@ -1035,7 +1045,7 @@ decompress_and_compute_kernel_div_base(unsigned char * restrict buf, ValueType *
 			// len_bits = len << 3ULL;
 			vec_t(VTI, VEC_LEN) len_bits = vec_slli(VTI, VEC_LEN, len, 3ULL);
 
-			diff = vec_set_iter(VTI, VEC_LEN, iter, *((ValueTypeI *) vec_elem_get(i64, VEC_LEN, data_val_lanes, iter)));
+			diff_ord2 = vec_set_iter(VTI, VEC_LEN, iter, *((ValueTypeI *) vec_elem_get(i64, VEC_LEN, data_val_lanes, iter)));
 
 			// data_val_lanes = data_val_lanes + len_64;
 			len_64 = vec_set_iter(i64, VEC_LEN, iter, vec_elem_get(VTI, VEC_LEN, len, iter));
@@ -1044,11 +1054,16 @@ decompress_and_compute_kernel_div_base(unsigned char * restrict buf, ValueType *
 			// vec_t(VTI, VEC_LEN) mask = (1ULL << len_bits) - 1ULL;
 			vec_t(VTI, VEC_LEN) mask = vec_sub(VTI, VEC_LEN, vec_sllv(VTI, VEC_LEN, vec_set1(VTI, VEC_LEN, 1ULL), len_bits), vec_set1(VTI, VEC_LEN, 1ULL));
 			// vec_t(VTI, VEC_LEN) mask = vec_gather(VTI, VTI, VEC_LEN, masks_first_bits, len);
-			// diff &= mask;
-			diff = vec_and(VTI, VEC_LEN, diff, mask);
-			// diff <<= tz;
-			diff = vec_sllv(VTI, VEC_LEN, diff, tz);
+			// diff_ord2 &= mask;
+			diff_ord2 = vec_and(VTI, VEC_LEN, diff_ord2, mask);
+			// diff_ord2 <<= tz;
+			diff_ord2 = vec_sllv(VTI, VEC_LEN, diff_ord2, tz);
 
+			const vec_t(VTI, VEC_LEN) Schroeppel2 = vec_set1(VTI, VEC_LEN, 0xAAAAAAAA);
+			diff_ord2 = vec_sub(VTI, VEC_LEN, vec_xor(VTI, VEC_LEN, diff_ord2, Schroeppel2), Schroeppel2);
+
+			// diff = diff + diff_ord2;
+			diff = vec_add(VTI, VEC_LEN, diff, diff_ord2);
 			// val = val + diff;
 			val = vec_add(VTI, VEC_LEN, val, diff);
 
@@ -1078,7 +1093,7 @@ decompress_and_compute_kernel_div_base(unsigned char * restrict buf, ValueType *
 
 		for (i=num_rf_vals_unique_multiple;i<num_rf_vals_unique;i++)
 		{
-			ValueTypeI diff;
+			ValueTypeI diff_ord2;
 			uint64_t len;
 			long lane_id = i % VEC_LEN;
 
@@ -1088,16 +1103,20 @@ decompress_and_compute_kernel_div_base(unsigned char * restrict buf, ValueType *
 			len &= 15ULL;
 			uint64_t len_bits = len << 3ULL;
 
-			diff = *((ValueTypeI *) vec_elem_get(i64, VEC_LEN, data_val_lanes, lane_id));
+			diff_ord2 = *((ValueTypeI *) vec_elem_get(i64, VEC_LEN, data_val_lanes, lane_id));
 
 			vec_elem_get(i64, VEC_LEN, data_val_lanes, lane_id) += len;
 
 			ValueTypeI mask = (len == 8) ? -1ULL : (1ULL << len_bits) - 1ULL;
 			// ValueTypeI mask = masks_first_bits[len];
-			diff &= mask;
-			diff <<= tz;
+			diff_ord2 &= mask;
+			diff_ord2 <<= tz;
 
-			vec_elem_get(i64, VEC_LEN, val, lane_id) += diff;
+			const uint32_t Schroeppel2 = 0xAAAAAAAA;
+			diff_ord2 = (diff_ord2 ^ Schroeppel2) - Schroeppel2;
+
+			vec_elem_get(i64, VEC_LEN, diff, lane_id) += diff_ord2;
+			vec_elem_get(i64, VEC_LEN, val, lane_id) += vec_elem_get(i64, VEC_LEN, diff, lane_id);
 
 			long rf_div = rf / VEC_LEN;
 			long rf_multiple = rf_div * VEC_LEN;

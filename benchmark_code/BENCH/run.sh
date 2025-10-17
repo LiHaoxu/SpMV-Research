@@ -756,12 +756,12 @@ matrices=(
     # "${matrices_validation_tamu[@]}"
     # "${matrices_paper_csr_rv[@]}"
 
-    "${matrices_graphs_sparse_survey[@]}"
+    # "${matrices_graphs_sparse_survey[@]}"
 
     # "${matrices_compression_small[@]}"
     # "${matrices_compression_medium[@]}"
     # "${matrices_compression_medium_symmetric[@]}"
-    # "${matrices_compression[@]}"
+    "${matrices_compression[@]}"
     # "${matrices_compression_symmetric[@]}"
     # "${matrices_M3E[@]}"
     # "${matrices_compression_all[@]}"

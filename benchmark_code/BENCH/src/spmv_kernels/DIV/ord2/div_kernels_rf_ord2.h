@@ -815,7 +815,7 @@ compress_kernel_div(INT_T * row_ptr, INT_T * ja, ValueTypeReference * vals, __at
 			lane_id = i % VEC_LEN;
 			val.d = window[k];
 			diff = val.u - val_prev[lane_id].u;
-			diff_ord2 = diff ^ diff_prev[lane_id];
+			diff_ord2 = diff - diff_prev[lane_id];
 
 			val_prev[lane_id].u += diff;
 			diff_prev[lane_id] = diff;

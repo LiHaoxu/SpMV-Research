@@ -493,7 +493,7 @@ progs=(
     # ['csr_vector_riscv_bulk_d']="${script_dir}/src/spmv_csr_vector_riscv_bulk_d.exe" # BENCH_RISCV
 
     # ['sddmm_csr_d']="${script_dir}/src/sddmm_csr_d.exe" # BENCH_AMD, BENCH_INTEL
-    ['sddmm_csr_vec_d']="${script_dir}/src/sddmm_csr_vec_d.exe" # BENCH_AMD, BENCH_INTEL
+    # ['sddmm_csr_vec_d']="${script_dir}/src/sddmm_csr_vec_d.exe" # BENCH_AMD, BENCH_INTEL
     # ['sddmm_coo_vec_d']="${script_dir}/src/sddmm_coo_vec_d.exe" # BENCH_AMD, BENCH_INTEL
     # ['sddmm_coo_vec_z_order_d']="${script_dir}/src/sddmm_coo_vec_z_order_d.exe" # BENCH_AMD, BENCH_INTEL
     # ['sddmm_aspt_d']="${script_dir}/src/sddmm_aspt_d.exe" # BENCH_AMD, BENCH_INTEL
@@ -519,7 +519,7 @@ progs=(
     # ['div_rf_const_size_row_f']="${script_dir}/src/spmv_div_rf_const_size_row_f.exe"
     # ['div_select_d']="${script_dir}/src/spmv_div_select_d.exe"
     # ['div_cols_sort_d']="${script_dir}/src/spmv_div_cols_sort_d.exe"
-    # ['div_rf_ord2_d']="${script_dir}/src/spmv_div_rf_ord2_d.exe"
+    ['div_rf_ord2_d']="${script_dir}/src/spmv_div_rf_ord2_d.exe"
     # ['div_sym_rf_local_d']="${script_dir}/src/spmv_div_sym_rf_local_d.exe" # BENCH_SYM
     # ['div_sym_rf_local_f']="${script_dir}/src/spmv_div_sym_rf_local_f.exe" # BENCH_SYM
     # ['csr_cuda_div_nv_d']="${script_dir}/src/spmv_cuda_div_nv_d.exe" # BENCH_GPU

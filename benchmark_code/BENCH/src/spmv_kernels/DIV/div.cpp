@@ -118,7 +118,8 @@ init_thread_statistics(struct thread_data * td)
 	#include "div_kernels_select.h"
 #elif defined(DIV_TYPE_ORD2)
 	// #include "div_kernels_rf_ord2_buf.h"
-	#include "ord2/div_kernels_rf_ord2.h"
+	// #include "ord2/div_kernels_rf_ord2.h"
+	#include "div_kernels_rf_ord2.h"
 #elif defined(DIV_TYPE_COLS_SORT)
 	#include "div_kernels_cols_sort.h"
 #elif defined(DIV_TYPE_SYM_RF_LOCAL)
