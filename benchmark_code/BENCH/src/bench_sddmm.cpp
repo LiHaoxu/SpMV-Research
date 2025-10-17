@@ -409,6 +409,7 @@ compute(struct CSR_reference_s * csr, struct Matrix_Format * MF,
 			{
 				i += snprintf(buf + i, buf_n - i, ",%s", "num_threads");
 			}
+			i += snprintf(buf + i, buf_n - i, ",%s", "K");
 			i += snprintf(buf + i, buf_n - i, ",%s", "csr_m");
 			i += snprintf(buf + i, buf_n - i, ",%s", "csr_n");
 			i += snprintf(buf + i, buf_n - i, ",%s", "csr_nnz");
@@ -446,6 +447,7 @@ compute(struct CSR_reference_s * csr, struct Matrix_Format * MF,
 		{
 			i += snprintf(buf + i, buf_n - i, ",%d", omp_get_max_threads());
 		}
+		i += snprintf(buf + i, buf_n - i, ",%lu", K);
 		i += snprintf(buf + i, buf_n - i, ",%lu", csr->m);
 		i += snprintf(buf + i, buf_n - i, ",%lu", csr->n);
 		i += snprintf(buf + i, buf_n - i, ",%lu", csr->nnz);
@@ -500,6 +502,7 @@ compute(struct CSR_reference_s * csr, struct Matrix_Format * MF,
 			i += snprintf(buf + i, buf_n - i, ",%s", "skew");
 			i += snprintf(buf + i, buf_n - i, ",%s", "avg_num_neighbours");
 			i += snprintf(buf + i, buf_n - i, ",%s", "cross_row_similarity");
+			i += snprintf(buf + i, buf_n - i, ",%s", "K");
 			i += snprintf(buf + i, buf_n - i, ",%s", "format_name");
 			i += snprintf(buf + i, buf_n - i, ",%s", "time");
 			i += snprintf(buf + i, buf_n - i, ",%s", "gflops");
@@ -536,6 +539,7 @@ compute(struct CSR_reference_s * csr, struct Matrix_Format * MF,
 		i += snprintf(buf + i, buf_n - i, ",%lf", csr->AM_stats.skew);
 		i += snprintf(buf + i, buf_n - i, ",%lf", csr->AM_stats.avg_num_neighbours);
 		i += snprintf(buf + i, buf_n - i, ",%lf", csr->AM_stats.cross_row_similarity);
+		i += snprintf(buf + i, buf_n - i, ",%lu", K);
 		i += snprintf(buf + i, buf_n - i, ",%s" , MF->format_name);
 		i += snprintf(buf + i, buf_n - i, ",%lf", time_total);
 		i += snprintf(buf + i, buf_n - i, ",%lf", gflops);

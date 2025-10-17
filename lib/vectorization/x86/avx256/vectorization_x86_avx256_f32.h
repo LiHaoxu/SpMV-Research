@@ -97,11 +97,11 @@ typedef union __attribute__((packed, aligned(4))) { __m256 v[4]; __m256d vf64[4]
 #define vec_loadu_f32_4(ptr)                               vec_f32_4( _mm_loadu_ps((float *) (ptr)) )
 #define vec_loadu_f32_1(ptr)                               vec_f32_1( (*((float *) (ptr))) )
 
-#define vec_maskz_loadu_f32_32(ptr, mask)                  vec_loop_expr(vec_f32_32_t, 4, _tmp, _i, (_tmp).v[_i] = _mm256_maskload_ps(((float *) (ptr)) + 8*_i, (mask).v[_i]);)
-#define vec_maskz_loadu_f32_16(ptr, mask)                  vec_loop_expr(vec_f32_16_t, 2, _tmp, _i, (_tmp).v[_i] = _mm256_maskload_ps(((float *) (ptr)) + 8*_i, (mask).v[_i]);)
-#define vec_maskz_loadu_f32_8(ptr, mask)                   vec_f32_8( _mm256_maskload_ps((float *) (ptr), (mask).v) )
-#define vec_maskz_loadu_f32_4(ptr, mask)                   vec_f32_4( _mm_maskload_ps((float *) (ptr), (mask).v) )
-#define vec_maskz_loadu_f32_1(ptr, mask)                   vec_f32_1( ((mask).v) ? (*((float *) (ptr))) : 0 )
+#define vec_loadu_maskedz_f32_32(ptr, mask)                vec_loop_expr(vec_f32_32_t, 4, _tmp, _i, (_tmp).v[_i] = _mm256_maskload_ps(((float *) (ptr)) + 8*_i, (mask).v[_i]);)
+#define vec_loadu_maskedz_f32_16(ptr, mask)                vec_loop_expr(vec_f32_16_t, 2, _tmp, _i, (_tmp).v[_i] = _mm256_maskload_ps(((float *) (ptr)) + 8*_i, (mask).v[_i]);)
+#define vec_loadu_maskedz_f32_8(ptr, mask)                 vec_f32_8( _mm256_maskload_ps((float *) (ptr), (mask).v) )
+#define vec_loadu_maskedz_f32_4(ptr, mask)                 vec_f32_4( _mm_maskload_ps((float *) (ptr), (mask).v) )
+#define vec_loadu_maskedz_f32_1(ptr, mask)                 vec_f32_1( ((mask).v) ? (*((float *) (ptr))) : 0 )
 
 #define vec_storeu_f32_32(ptr, vec)                        vec_loop_stmt(4, _i, _mm256_storeu_ps(((float *) (ptr)) + 8*_i, (vec).v[_i]);)
 #define vec_storeu_f32_16(ptr, vec)                        vec_loop_stmt(2, _i, _mm256_storeu_ps(((float *) (ptr)) + 8*_i, (vec).v[_i]);)
@@ -109,11 +109,11 @@ typedef union __attribute__((packed, aligned(4))) { __m256 v[4]; __m256d vf64[4]
 #define vec_storeu_f32_4(ptr, vec)                         _mm_storeu_ps((float *) (ptr), (vec).v)
 #define vec_storeu_f32_1(ptr, vec)                         do { (*((float *) (ptr))) = ((vec).v); } while (0)
 
-#define vec_mask_storeu_f32_32(ptr, vec, mask)             vec_loop_stmt(4, _i, _mm256_maskstore_ps(((float *) (ptr)) + 8*_i, (mask).v[_i], (vec).v[_i]);)
-#define vec_mask_storeu_f32_16(ptr, vec, mask)             vec_loop_stmt(2, _i, _mm256_maskstore_ps(((float *) (ptr)) + 8*_i, (mask).v[_i], (vec).v[_i]);)
-#define vec_mask_storeu_f32_8(ptr, vec, mask)              _mm256_maskstore_ps((float *) (ptr), (mask).v, (vec).v)  /* Reversed order of vec and mask vs maskload, just to escape boredom I guess. */
-#define vec_mask_storeu_f32_4(ptr, vec, mask)              _mm_maskstore_ps((float *) (ptr), (mask).v, (vec).v)
-#define vec_mask_storeu_f32_1(ptr, vec, mask)              do { if ((mask).v) (*((float *) (ptr))) = ((vec).v); } while (0)
+#define vec_storeu_masked_f32_32(ptr, vec, mask)           vec_loop_stmt(4, _i, _mm256_maskstore_ps(((float *) (ptr)) + 8*_i, (mask).v[_i], (vec).v[_i]);)
+#define vec_storeu_masked_f32_16(ptr, vec, mask)           vec_loop_stmt(2, _i, _mm256_maskstore_ps(((float *) (ptr)) + 8*_i, (mask).v[_i], (vec).v[_i]);)
+#define vec_storeu_masked_f32_8(ptr, vec, mask)            _mm256_maskstore_ps((float *) (ptr), (mask).v, (vec).v)  /* Reversed order of vec and mask vs maskload, just to escape boredom I guess. */
+#define vec_storeu_masked_f32_4(ptr, vec, mask)            _mm_maskstore_ps((float *) (ptr), (mask).v, (vec).v)
+#define vec_storeu_masked_f32_1(ptr, vec, mask)            do { if ((mask).v) (*((float *) (ptr))) = ((vec).v); } while (0)
 
 #define vec_gather_f32_i32_32(ptr, idx)                    vec_loop_expr(vec_f32_32_t, 4, _tmp, _i, (_tmp).v[_i] = _mm256_loadu_ps(((float *) (ptr)) + 8*_i);)
 #define vec_gather_f32_i32_16(ptr, idx)                    vec_loop_expr(vec_f32_16_t, 2, _tmp, _i, (_tmp).v[_i] = _mm256_loadu_ps(((float *) (ptr)) + 8*_i);)

@@ -21,7 +21,7 @@
  */
 
 
-static inline
+static __attribute__((always_inline)) inline
 uint64_t
 bits_num_bits_to_num_bytes(uint64_t num_bits)
 {
@@ -34,7 +34,7 @@ bits_num_bits_to_num_bytes(uint64_t num_bits)
 //==========================================================================================================================================
 
 
-static inline
+static __attribute__((always_inline)) inline
 void
 bits_print_bytestream(unsigned char * data, long N)
 {
@@ -57,7 +57,7 @@ bits_print_bytestream(unsigned char * data, long N)
  * Loading mask from array involves shift and add, but it's done in the Address Generation Unit (AGU) as part of the load pipeline of the CPU.
  */
 
-static inline
+static __attribute__((always_inline)) inline
 uint64_t
 bits_u64_set_high(uint64_t v, unsigned long num_bits)
 {
@@ -75,7 +75,7 @@ bits_u64_set_high(uint64_t v, unsigned long num_bits)
 }
 
 
-static inline
+static __attribute__((always_inline)) inline
 uint64_t
 bits_u64_unset_high(uint64_t v, unsigned long num_bits)
 {
@@ -93,7 +93,7 @@ bits_u64_unset_high(uint64_t v, unsigned long num_bits)
 }
 
 
-static inline
+static __attribute__((always_inline)) inline
 uint64_t
 bits_u64_set_low(uint64_t v, unsigned long num_bits)
 {
@@ -111,7 +111,7 @@ bits_u64_set_low(uint64_t v, unsigned long num_bits)
 }
 
 
-static inline
+static __attribute__((always_inline)) inline
 uint64_t
 bits_u64_unset_low(uint64_t v, unsigned long num_bits)
 {
@@ -144,7 +144,7 @@ bits_u64_unset_low(uint64_t v, unsigned long num_bits)
  *         Extract the number of bits specified by len, starting at the bit specified by start.
  */
 
-static inline
+static __attribute__((always_inline)) inline
 uint64_t
 bits_u64_extract(uint64_t v, uint64_t start_pos, uint64_t num_bits)
 {
@@ -156,7 +156,7 @@ bits_u64_extract(uint64_t v, uint64_t start_pos, uint64_t num_bits)
 }
 
 
-static inline
+static __attribute__((always_inline)) inline
 uint32_t
 bits_u32_extract(uint32_t v, uint64_t start_pos, uint64_t num_bits)
 {
@@ -173,7 +173,7 @@ bits_u32_extract(uint32_t v, uint64_t start_pos, uint64_t num_bits)
 //==========================================================================================================================================
 
 
-static inline
+static __attribute__((always_inline)) inline
 uint64_t
 bits_u32_interleave_with_zeros(uint32_t x)
 {
@@ -191,7 +191,7 @@ bits_u32_interleave_with_zeros(uint32_t x)
 }
 
 
-static inline
+static __attribute__((always_inline)) inline
 uint64_t
 bits_u32_interleave(uint32_t first, uint32_t second)
 {
@@ -215,7 +215,7 @@ bits_u32_interleave(uint32_t first, uint32_t second)
  * 'pow2_out': First power of 2 strictly bigger than 'max_val', or 0: *num_bits_out = (max_val == 0) ? 0 : 1ULL << (*num_bits_out).
  *             e.g. if max_val == 2 then pow2_out == 4.
  */
-static inline
+static __attribute__((always_inline)) inline
 void
 bits_u64_required_bits_for_binary_representation(uint64_t max_val,
 		uint64_t * num_bits_out, uint64_t * pow2_out)
@@ -243,7 +243,7 @@ bits_u64_required_bits_for_binary_representation(uint64_t max_val,
 //==========================================================================================================================================
 
 
-static inline
+static __attribute__((always_inline)) inline
 long
 bits_u64_popcnt(uint64_t v)
 {
@@ -264,7 +264,7 @@ bits_u64_popcnt(uint64_t v)
 }
 
 
-static inline
+static __attribute__((always_inline)) inline
 long
 bits_u32_popcnt(uint64_t v)
 {
@@ -285,7 +285,7 @@ bits_u32_popcnt(uint64_t v)
 }
 
 
-static inline
+static __attribute__((always_inline)) inline
 long
 bits_hamming_distance(unsigned char * str1, unsigned char * str2, long N)
 {
@@ -321,7 +321,7 @@ bits_hamming_distance(unsigned char * str1, unsigned char * str2, long N)
 //==========================================================================================================================================
 
 
-static inline
+static __attribute__((always_inline)) inline
 void
 bits_mean(unsigned char * matrix, long N, long M, unsigned char * mean)
 {
@@ -454,7 +454,7 @@ bits_mean(unsigned char * matrix, long N, long M, unsigned char * mean)
 //==========================================================================================================================================
 
 
-static inline
+static __attribute__((always_inline)) inline
 uint64_t
 bits_double_get_sign(double val)
 {
@@ -463,7 +463,7 @@ bits_double_get_sign(double val)
 	return bits_u64_extract(bits.u, 63, 1);
 }
 
-static inline
+static __attribute__((always_inline)) inline
 int64_t
 bits_double_get_exponent(double val)
 {
@@ -475,7 +475,7 @@ bits_double_get_exponent(double val)
 	return (int64_t) bits.u;
 }
 
-static inline
+static __attribute__((always_inline)) inline
 uint64_t
 bits_double_get_exponent_bits(double val)
 {
@@ -484,7 +484,7 @@ bits_double_get_exponent_bits(double val)
 	return bits_u64_extract(bits.u, 52, 11);
 }
 
-static inline
+static __attribute__((always_inline)) inline
 uint64_t
 bits_double_get_fraction(double val)
 {
@@ -493,7 +493,7 @@ bits_double_get_fraction(double val)
 	return bits_u64_extract(bits.u, 0, 52);
 }
 
-static inline
+static __attribute__((always_inline)) inline
 uint64_t
 bits_double_get_upper_12_bits(double val)
 {

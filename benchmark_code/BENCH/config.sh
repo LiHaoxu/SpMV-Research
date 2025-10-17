@@ -96,8 +96,8 @@ conf_vars=(
     # ['USE_RCM_REORDERING']=1
 
     # Benchmark with the artificially generated matrices (1) or real matrices (0).
-    # ['USE_ARTIFICIAL_MATRICES']=0
-    ['USE_ARTIFICIAL_MATRICES']=1
+    ['USE_ARTIFICIAL_MATRICES']=0
+    # ['USE_ARTIFICIAL_MATRICES']=1
 
     # Whether to clear cpu caches before each spmv iteration.
     ['CLEAR_CACHES']=0
@@ -128,11 +128,14 @@ conf_vars=(
     # ['DIV_PACKET_REORDERING']=1
 
     # Whether to enable tracing with RAVE.
-    # ['RAVE_TRACING']=0
-    ['RAVE_TRACING']=1
+    ['RAVE_TRACING']=0
+    # ['RAVE_TRACING']=1
 
     # K dimension.
     ['K_DIM']='16'
+    # ['K_DIM']='32'
+    # ['K_DIM']='64'
+    # ['K_DIM']='128'
     # ['K_DIM']='256'
 
     # Maximum number of the machine's cores.
@@ -151,7 +154,7 @@ conf_vars=(
     # ['max_cores']=8
 
     # Cores / Threads to utilize. Use spaces to define a set of different thread numbers to benchmark.
-    # ['cores']="$num_cores"
+    ['cores']="$num_cores"
     # ['cores']=1
     # ['cores']='1 2 4 8 16 32 64 128'
     # ['cores']='1 2 4 8 16 32 64'
@@ -175,7 +178,7 @@ conf_vars=(
     # ['cores']=6
     # ['cores']=4
     # ['cores']=2
-    ['cores']=1
+    # ['cores']=1
     # ['cores']='1 2 4 8 16 24 48'
     # ['cores']='24 48'
     # ['cores']='1 2 4 8'
@@ -229,6 +232,7 @@ conf_vars=(
                         # /various/pmpakos/epyc5_libs/aocl-5.0/aocl-sparse/build/release
                         # /various/pmpakos/epyc5_libs/aocl-sparse-4.0/build/release
                         /various/pmpakos/epyc5_libs/aocl-sparse-3.2/build/release
+                        '/home/jim/lib/aocl/5.1.0/gcc'
                     )
                     find_valid_dir "${options[@]}"
                 )"
@@ -316,8 +320,8 @@ conf_vars=(
 
     # Path for the validation matrices.
     ['path_validation']="$( options=(
-                        # "$HOME/Data/graphs/validation_matrices"
-                        # "${script_dir}/../../../validation_matrices"
+                        "$HOME/Data/graphs/validation_matrices"
+                        "${script_dir}/../../../validation_matrices"
                         '/various/pmpakos/SpMV-Research/validation_matrices'
                         # '/various/pmpakos/SpMV-Research/validation_matrices/matrix_features/matrices'
                         # '/various/pmpakos/SpMV-Research/validation_matrices/download_matrices'
@@ -338,6 +342,7 @@ conf_vars=(
 
     ['path_tamu']="${HOME}/Data/graphs/tamu"
     ['path_M3E']="${HOME}/Data/graphs/M3E-Matrix-Collection"
+    ['path_graphs_sparse_survey']="${HOME}/Data/graphs/graphs_sparse_survey"
 
     ['ZFP_ROOT_DIR']="${HOME}/lib/zfp"
     ['FPZIP_ROOT_DIR']="${HOME}/lib/fpzip"
@@ -369,8 +374,8 @@ artificial_matrices_files=(
     # "$path_artificial"/validation_matrices_10_samples_30_range_twins.txt
 
     # The synthetic dataset studied in the paper.
-    # "$path_artificial"/synthetic_matrices_medium_dataset.txt
-    "$path_artificial"/synthetic_matrices_medium_dataset2.txt
+    "$path_artificial"/synthetic_matrices_medium_dataset.txt
+    # "$path_artificial"/synthetic_matrices_medium_dataset2.txt
     # "$path_artificial"/test.txt
 )
 
@@ -450,23 +455,7 @@ declare -A progs
 
 # SpMV kernels to benchmark (uncomment the ones you want).
 progs=(
-    # FOR RISC-V RAVE reproduction of errors!
-    # For all errors to appear, please compile separately.
 
-    ['div_rf_d']="${script_dir}/src/spmv_div_rf_d.exe"
-    # ERRORS of div
-    # __riscv_vrgather_vv_i64m1
-    # __riscv_vsrl_vx_u64m1
-    # __riscv_vand_vv_i64m1
-    # __riscv_vsll_vv_i64m1
-
-    ['sell_sorted_d']="${script_dir}/src/spmv_sell_sorted_d.exe"
-    # ERRORS of sell_sorted
-    # __riscv_vsll_vx_u32m1
-    # __riscv_vlmul_trunc_v_i32m1_i32mf2
-    # __riscv_vluxei32_v_f64m1
-
-    ########################################################################
     # CG
     # ['cg_csr_d']="${script_dir}/src/cg_csr_d.exe"
     # ['cg_csr_sym_d']="${script_dir}/src/cg_csr_sym_d.exe"
@@ -504,6 +493,10 @@ progs=(
     # ['csr_vector_riscv_bulk_d']="${script_dir}/src/spmv_csr_vector_riscv_bulk_d.exe" # BENCH_RISCV
 
     # ['sddmm_csr_d']="${script_dir}/src/sddmm_csr_d.exe" # BENCH_AMD, BENCH_INTEL
+    ['sddmm_csr_vec_d']="${script_dir}/src/sddmm_csr_vec_d.exe" # BENCH_AMD, BENCH_INTEL
+    # ['sddmm_coo_vec_d']="${script_dir}/src/sddmm_coo_vec_d.exe" # BENCH_AMD, BENCH_INTEL
+    # ['sddmm_coo_vec_z_order_d']="${script_dir}/src/sddmm_coo_vec_z_order_d.exe" # BENCH_AMD, BENCH_INTEL
+    # ['sddmm_aspt_d']="${script_dir}/src/sddmm_aspt_d.exe" # BENCH_AMD, BENCH_INTEL
 
     # Custom lut
     # ['csr_vector_lut_x86_d']="${script_dir}/src/spmv_csr_vector_lut_x86_d.exe" # BENCH_AMD, BENCH_INTEL

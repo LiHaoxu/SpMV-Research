@@ -125,10 +125,10 @@ csr_to_format(INT_T * row_ptr, INT_T * col_ind, ValueTypeReference * values, lon
 	#if 0
 		for (long i=0;i<m;i++)
 		{
-			for (long j=row_ptr[i];j<row_ptr[i+1];j++)
+			for (long j=csr->row_ptr[i];j<csr->row_ptr[i+1];j++)
 			{
-				if (j < row_ptr[i+1]-1 && col_ind[j] >= col_ind[j+1])
-					error("%ld: unsorted columns: %d >= %d", i, col_ind[j], col_ind[j+1]);
+				if (j < csr->row_ptr[i+1]-1 && csr->ja[j] >= csr->ja[j+1])
+					error("%ld: unsorted columns: %d >= %d", i, csr->ja[j], csr->ja[j+1]);
 			}
 		}
 	#endif
@@ -141,14 +141,14 @@ csr_to_format(INT_T * row_ptr, INT_T * col_ind, ValueTypeReference * values, lon
 
 	// for (long i=0;i<m;i++)
 	// {
-	// 	long row_curr = row_ptr[i];
+	// 	long row_curr = csr->row_ptr[i];
 	// 	long row_curr2 = csr->A->csr_mat->csr_row_ptr[i];
 	// 	printf("row_curr = %ld vs row_curr2 = %ld\n", row_curr, row_curr2);
 
-	// 	for (long j=row_ptr[i];j<row_ptr[i+1];j++)
+	// 	for (long j=csr->row_ptr[i];j<csr->row_ptr[i+1];j++)
 	// 	{
-	// 		if (j < row_ptr[i+1]-1 && col_ind[j] >= col_ind[j+1])
-	// 			error("%ld: unsorted columns: %d >= %d", i, col_ind[j], col_ind[j+1]);
+	// 		if (j < csr->row_ptr[i+1]-1 && csr->ja[j] >= csr->ja[j+1])
+	// 			error("%ld: unsorted columns: %d >= %d", i, csr->ja[j], csr->ja[j+1]);
 	// 	}
 	// }
 

@@ -125,11 +125,11 @@ typedef int32_t  vec_perm_elem_p32_32_t;
 #define vec_loadu_p32_4(ptr)                               vec_i32_4( _mm_loadu_si128((__m128i *) (ptr)) )
 #define vec_loadu_p32_1(ptr)                               vec_i32_1( (*((int32_t *) (ptr))) )
 
-#define vec_maskz_loadu_i32_32(ptr, mask)                  vec_loop_expr(vec_i32_32_t, 4, _tmp, _i, (_tmp).v[_i] = _mm256_maskload_epi32(((int const *) (ptr)) + 8*_i, (mask).v[_i]);)
-#define vec_maskz_loadu_i32_16(ptr, mask)                  vec_loop_expr(vec_i32_16_t, 2, _tmp, _i, (_tmp).v[_i] = _mm256_maskload_epi32(((int const *) (ptr)) + 8*_i, (mask).v[_i]);)
-#define vec_maskz_loadu_i32_8(ptr, mask)                   vec_i32_8( _mm256_maskload_epi32((int const *) (ptr), (mask).v) )
-#define vec_maskz_loadu_i32_4(ptr, mask)                   vec_i32_4( _mm_maskload_epi32((int const *) (ptr), (mask).v) )
-#define vec_maskz_loadu_i32_1(ptr, mask)                   vec_i32_1( ((mask).v) ? (*((int32_t *) (ptr))) : 0 )
+#define vec_loadu_maskedz_i32_32(ptr, mask)                vec_loop_expr(vec_i32_32_t, 4, _tmp, _i, (_tmp).v[_i] = _mm256_maskload_epi32(((int const *) (ptr)) + 8*_i, (mask).v[_i]);)
+#define vec_loadu_maskedz_i32_16(ptr, mask)                vec_loop_expr(vec_i32_16_t, 2, _tmp, _i, (_tmp).v[_i] = _mm256_maskload_epi32(((int const *) (ptr)) + 8*_i, (mask).v[_i]);)
+#define vec_loadu_maskedz_i32_8(ptr, mask)                 vec_i32_8( _mm256_maskload_epi32((int const *) (ptr), (mask).v) )
+#define vec_loadu_maskedz_i32_4(ptr, mask)                 vec_i32_4( _mm_maskload_epi32((int const *) (ptr), (mask).v) )
+#define vec_loadu_maskedz_i32_1(ptr, mask)                 vec_i32_1( ((mask).v) ? (*((int32_t *) (ptr))) : 0 )
 
 #define vec_loadu_firstNz_i32_32(ptr, N)                   vec_loop_expr(vec_i32_32_t, 4, _tmp, _i, (_tmp).v[_i] = _mm256_maskload_epi32(((int const *) (ptr)) + 8*_i, (_mask).v[_i]);)
 #define vec_loadu_firstNz_i32_16(ptr, N)                   vec_loop_expr(vec_i32_16_t, 2, _tmp, _i, (_tmp).v[_i] = _mm256_maskload_epi32(((int const *) (ptr)) + 8*_i, (_mask).v[_i]);)
@@ -149,11 +149,11 @@ typedef int32_t  vec_perm_elem_p32_32_t;
 #define vec_storeu_p32_4(ptr, vec)                         _mm_storeu_si128((__m128i *) (ptr), (vec).v)
 #define vec_storeu_p32_1(ptr, vec)                         do { (*((int32_t *) (ptr))) = ((vec).v); } while (0)
 
-#define vec_mask_storeu_i32_32(ptr, vec, mask)             vec_loop_stmt(4, _i, _mm256_maskstore_epi32(((int *) (ptr)) + 8*_i, (mask).v[_i], (vec).v[_i]);)
-#define vec_mask_storeu_i32_16(ptr, vec, mask)             vec_loop_stmt(2, _i, _mm256_maskstore_epi32(((int *) (ptr)) + 8*_i, (mask).v[_i], (vec).v[_i]);)
-#define vec_mask_storeu_i32_8(ptr, vec, mask)              _mm256_maskstore_epi32((int *) (ptr), (mask).v, (vec).v)  /* Reversed order of vec and mask vs maskload, just to escape boredom I guess. */
-#define vec_mask_storeu_i32_4(ptr, vec, mask)              _mm_maskstore_epi32((int *) (ptr), (mask).v, (vec).v)
-#define vec_mask_storeu_i32_1(ptr, vec, mask)              do { if ((mask).v) (*((int32_t *) (ptr))) = ((vec).v); } while (0)
+#define vec_storeu_masked_i32_32(ptr, vec, mask)           vec_loop_stmt(4, _i, _mm256_maskstore_epi32(((int *) (ptr)) + 8*_i, (mask).v[_i], (vec).v[_i]);)
+#define vec_storeu_masked_i32_16(ptr, vec, mask)           vec_loop_stmt(2, _i, _mm256_maskstore_epi32(((int *) (ptr)) + 8*_i, (mask).v[_i], (vec).v[_i]);)
+#define vec_storeu_masked_i32_8(ptr, vec, mask)            _mm256_maskstore_epi32((int *) (ptr), (mask).v, (vec).v)  /* Reversed order of vec and mask vs maskload, just to escape boredom I guess. */
+#define vec_storeu_masked_i32_4(ptr, vec, mask)            _mm_maskstore_epi32((int *) (ptr), (mask).v, (vec).v)
+#define vec_storeu_masked_i32_1(ptr, vec, mask)            do { if ((mask).v) (*((int32_t *) (ptr))) = ((vec).v); } while (0)
 
 #define vec_gather_i32_i32_32(ptr, idx)                    vec_loop_expr(vec_i32_32_t, 4, _tmp, _i, (_tmp).v[_i] = _mm256_loadu_si256(((__m256i *) (ptr)) + _i);)
 #define vec_gather_i32_i32_16(ptr, idx)                    vec_loop_expr(vec_i32_32_t, 2, _tmp, _i, (_tmp).v[_i] = _mm256_loadu_si256(((__m256i *) (ptr)) + _i);)
@@ -285,11 +285,11 @@ typedef int32_t  vec_perm_elem_p32_32_t;
 //- Shuffle - Permute
 //------------------------------------------------------------------------------------------------------------------------------------------
 
-#define vec_permutexvar_i32_32(a, idx)                     vec_loop_expr(vec_i32_32_t, 32, _tmp, _i, _tmp.s[_i] = a.s[idx.s[_i]];)
-#define vec_permutexvar_i32_16(a, idx)                     vec_loop_expr(vec_i32_16_t, 16, _tmp, _i, _tmp.s[_i] = a.s[idx.s[_i]];)
-#define vec_permutexvar_i32_8(a, idx)                      vec_i32_8( _mm256_permutevar8x32_epi32((a).v, (idx).v) )
-#define vec_permutexvar_i32_4(a, idx)                      vec_i32_4( _mm_castps_si128(_mm_permutevar_ps((a).vf32, (idx).v)) )
-#define vec_permutexvar_i32_1(a, idx)                      a
+#define vec_permute_i32_32(a, idx)                         vec_loop_expr(vec_i32_32_t, 32, _tmp, _i, _tmp.s[_i] = a.s[idx.s[_i]];)
+#define vec_permute_i32_16(a, idx)                         vec_loop_expr(vec_i32_16_t, 16, _tmp, _i, _tmp.s[_i] = a.s[idx.s[_i]];)
+#define vec_permute_i32_8(a, idx)                          vec_i32_8( _mm256_permutevar8x32_epi32((a).v, (idx).v) )
+#define vec_permute_i32_4(a, idx)                          vec_i32_4( _mm_castps_si128(_mm_permutevar_ps((a).vf32, (idx).v)) )
+#define vec_permute_i32_1(a, idx)                          a
 
 
 #endif /* VECTORIZATION_X86_AVX256_I32_H */

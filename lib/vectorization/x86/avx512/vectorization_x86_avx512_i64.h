@@ -150,11 +150,11 @@ typedef int64_t  vec_perm_elem_p64_16_t;
 #define vec_loadu_i64_2(ptr)                               vec_i64_2( _mm_loadu_si128((__m128i *) (ptr)) )
 #define vec_loadu_i64_1(ptr)                               vec_i64_1( (*((int64_t *) (ptr))) )
 
-#define vec_maskz_loadu_i64_16(ptr, mask)                  vec_loop_expr(vec_i64_16_t, 2, _tmp, _i, (_tmp).v[_i] = _mm512_maskz_loadu_epi64((mask).v[_i], ((__m512i *) (ptr)) + _i);)
-#define vec_maskz_loadu_i64_8(ptr, mask)                   vec_i64_8( _mm512_maskz_loadu_epi64((mask).v, (__m512i *) (ptr)) )
-#define vec_maskz_loadu_i64_4(ptr, mask)                   vec_i64_4( _mm256_maskz_loadu_epi64((mask).v, (__m256i *) (ptr)) )
-#define vec_maskz_loadu_i64_2(ptr, mask)                   vec_i64_2( _mm_maskz_loadu_epi64((mask).v, (__m128i *) (ptr)) )
-#define vec_maskz_loadu_i64_1(ptr, mask)                   vec_i64_1( ((mask).v) ? (*((int64_t *) (ptr))) : 0 )
+#define vec_loadu_maskedz_i64_16(ptr, mask)                vec_loop_expr(vec_i64_16_t, 2, _tmp, _i, (_tmp).v[_i] = _mm512_maskz_loadu_epi64((mask).v[_i], ((__m512i *) (ptr)) + _i);)
+#define vec_loadu_maskedz_i64_8(ptr, mask)                 vec_i64_8( _mm512_maskz_loadu_epi64((mask).v, (__m512i *) (ptr)) )
+#define vec_loadu_maskedz_i64_4(ptr, mask)                 vec_i64_4( _mm256_maskz_loadu_epi64((mask).v, (__m256i *) (ptr)) )
+#define vec_loadu_maskedz_i64_2(ptr, mask)                 vec_i64_2( _mm_maskz_loadu_epi64((mask).v, (__m128i *) (ptr)) )
+#define vec_loadu_maskedz_i64_1(ptr, mask)                 vec_i64_1( ((mask).v) ? (*((int64_t *) (ptr))) : 0 )
 
 #define vec_storeu_i64_16(ptr, vec)                        vec_loop_stmt(2, _i, _mm512_storeu_si512(((__m512i *) (ptr)) + _i, (vec).v[_i]);)
 #define vec_storeu_i64_8(ptr, vec)                         _mm512_storeu_si512((__m512i *) (ptr), (vec).v)
@@ -162,11 +162,23 @@ typedef int64_t  vec_perm_elem_p64_16_t;
 #define vec_storeu_i64_2(ptr, vec)                         _mm_storeu_si128((__m128i *) (ptr), (vec).v)
 #define vec_storeu_i64_1(ptr, vec)                         do { (*((int64_t *) (ptr))) = ((vec).v); } while (0)
 
-#define vec_mask_storeu_i64_16(ptr, vec, mask)             vec_loop_stmt(2, _i, _mm512_mask_storeu_epi64(((__m512i *) (ptr)) + _i, (mask).v[_i], (vec).v[_i]);)
-#define vec_mask_storeu_i64_8(ptr, vec, mask)              _mm512_mask_storeu_epi64((__m512i *) (ptr), (mask).v, (vec).v)
-#define vec_mask_storeu_i64_4(ptr, vec, mask)              _mm256_mask_storeu_epi64((__m256i *) (ptr), (mask).v, (vec).v)
-#define vec_mask_storeu_i64_2(ptr, vec, mask)              _mm_mask_storeu_epi64((__m128i *) (ptr), (mask).v, (vec).v)
-#define vec_mask_storeu_i64_1(ptr, vec, mask)              do { if ((mask).v) (*((int64_t *) (ptr))) = ((vec).v); } while (0)
+#define vec_storeu_masked_i64_16(ptr, vec, mask)           vec_loop_stmt(2, _i, _mm512_mask_storeu_epi64(((__m512i *) (ptr)) + _i, (mask).v[_i], (vec).v[_i]);)
+#define vec_storeu_masked_i64_8(ptr, vec, mask)            _mm512_mask_storeu_epi64((__m512i *) (ptr), (mask).v, (vec).v)
+#define vec_storeu_masked_i64_4(ptr, vec, mask)            _mm256_mask_storeu_epi64((__m256i *) (ptr), (mask).v, (vec).v)
+#define vec_storeu_masked_i64_2(ptr, vec, mask)            _mm_mask_storeu_epi64((__m128i *) (ptr), (mask).v, (vec).v)
+#define vec_storeu_masked_i64_1(ptr, vec, mask)            do { if ((mask).v) (*((int64_t *) (ptr))) = ((vec).v); } while (0)
+
+#define vec_gather_i64_i32_16(ptr, idx)                    vec_loop_expr(vec_i64_16_t, 4, _tmp, _i, (_tmp).v[_i] = _mm512_loadu_si512(((__m512i *) (ptr)) + _i);)
+#define vec_gather_i64_i32_8(ptr, idx)                     vec_i64_8( _mm512_i32gather_epi64((idx).v, (long long const *) (ptr), 8) )
+#define vec_gather_i64_i32_4(ptr, idx)                     vec_i64_4( _mm256_i32gather_epi64((long long const *) (ptr), (idx).v, 8) )
+#define vec_gather_i64_i32_2(ptr, idx)                     vec_i64_2( _mm_i32gather_epi64((long long const *) (ptr), (idx).v, 8) )
+#define vec_gather_i64_i32_1(ptr, idx)                     vec_i64_1( ((int64_t *) (ptr))[(idx).v] )
+
+#define vec_gather_i64_i64_16(ptr, idx)                    vec_loop_expr(vec_i64_16_t, 4, _tmp, _i, (_tmp).v[_i] = _mm512_loadu_si512(((__m512i *) (ptr)) + _i);)
+#define vec_gather_i64_i64_8(ptr, idx)                     vec_i64_8( _mm512_i64gather_epi64((idx).v, (long long const *) (ptr), 8) )  /* Arguments in different order for avx512! Why? */
+#define vec_gather_i64_i64_4(ptr, idx)                     vec_i64_4( _mm256_i64gather_epi64((long long const *) (ptr), (idx).v, 8) )
+#define vec_gather_i64_i64_2(ptr, idx)                     vec_i64_2( _mm_i64gather_epi64((long long const *) (ptr), (idx).v, 8) )
+#define vec_gather_i64_i64_1(ptr, idx)                     vec_i64_1( ((int64_t *) (ptr))[((idx)).v] )
 
 
 //------------------------------------------------------------------------------------------------------------------------------------------
@@ -286,11 +298,11 @@ typedef int64_t  vec_perm_elem_p64_16_t;
 //- Shuffle - Permute
 //------------------------------------------------------------------------------------------------------------------------------------------
 
-#define vec_permutexvar_i64_16(a, idx)                     vec_loop_expr(vec_i64_16_t, 16, _tmp, _i, _tmp.s[_i] = a.s[idx.s[_i]];)
-#define vec_permutexvar_i64_8(a, idx)                      vec_i64_8( _mm512_permutexvar_epi64((idx).v, (a).v) )
-#define vec_permutexvar_i64_4(a, idx)                      vec_i64_4( _mm256_permutexvar_epi64((idx).v, (a).v) )
-#define vec_permutexvar_i64_2(a, idx)                      vec_i64_2( _mm_castpd_si128(_mm_permutevar_pd(_mm_castsi128_pd((a).v), (idx).v)) )
-#define vec_permutexvar_i64_1(a, idx)                      a
+#define vec_permute_i64_16(a, idx)                         vec_loop_expr(vec_i64_16_t, 16, _tmp, _i, _tmp.s[_i] = a.s[idx.s[_i]];)
+#define vec_permute_i64_8(a, idx)                          vec_i64_8( _mm512_permutexvar_epi64((idx).v, (a).v) )
+#define vec_permute_i64_4(a, idx)                          vec_i64_4( _mm256_permutexvar_epi64((idx).v, (a).v) )
+#define vec_permute_i64_2(a, idx)                          vec_i64_2( _mm_castpd_si128(_mm_permutevar_pd(_mm_castsi128_pd((a).v), (idx).v)) )
+#define vec_permute_i64_1(a, idx)                          a
 
 
 #endif /* VECTORIZATION_X86_AVX512_I64_H */

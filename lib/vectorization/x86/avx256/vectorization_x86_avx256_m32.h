@@ -46,11 +46,11 @@ typedef uint32_t vec_mask_packed_m32_32_t;
 #define vec_mask_packed_get_bit_m32_4(a, pos)              bits_u32_extract(a, pos, 1)
 #define vec_mask_packed_get_bit_m32_1(a, pos)              bits_u32_extract(a, pos, 1)
 
-#define vec_mask_set_m32_32(expr)                          vec_loop_expr(vec_mask_m32_32_t, 4, _tmp, _i, (_tmp).v[_i] =  _mm256_set_epi32(vec_iter_expr_8(_j, 0, (expr) & (1 << (8*_i+_j)) ? -1 : 0));)
-#define vec_mask_set_m32_16(expr)                          vec_loop_expr(vec_mask_m32_16_t, 2, _tmp, _i, (_tmp).v[_i] =  _mm256_set_epi32(vec_iter_expr_8(_j, 0, (expr) & (1 << (8*_i+_j)) ? -1 : 0));)
-#define vec_mask_set_m32_8(expr)                           vec_mask_m32_8( _mm256_set_epi32(vec_iter_expr_8(_j, 0, (expr) & (1 << _j) ? -1 : 0)) )
-#define vec_mask_set_m32_4(expr)                           vec_mask_m32_4( _mm_set_epi32(vec_iter_expr_4(_j, 0, (expr) & (1 << _j) ? -1 : 0)) )
-#define vec_mask_set_m32_1(expr)                           vec_mask_m32_1( vec_iter_expr_1(_j, 0, ((expr) & (1 << _j)) ? -1 : 0) )
+#define vec_mask_loadu_packed_m32_32(ptr)                  vec_loop_expr(vec_mask_m32_32_t, 4, _tmp, _i, (_tmp).v[_i] =  _mm256_set_epi32(vec_iter_expr_8(_j, 0, ((uint32_t *) ptr)[0] & (1 << (8*_i+_j)) ? -1 : 0));)
+#define vec_mask_loadu_packed_m32_16(ptr)                  vec_loop_expr(vec_mask_m32_16_t, 2, _tmp, _i, (_tmp).v[_i] =  _mm256_set_epi32(vec_iter_expr_8(_j, 0, ((uint32_t *) ptr)[0] & (1 << (8*_i+_j)) ? -1 : 0));)
+#define vec_mask_loadu_packed_m32_8(ptr)                   vec_mask_m32_8( _mm256_set_epi32(vec_iter_expr_8(_j, 0, ((uint32_t *) ptr)[0] & (1 << _j) ? -1 : 0)) )
+#define vec_mask_loadu_packed_m32_4(ptr)                   vec_mask_m32_4( _mm_set_epi32(vec_iter_expr_4(_j, 0, ((uint32_t *) ptr)[0] & (1 << _j) ? -1 : 0)) )
+#define vec_mask_loadu_packed_m32_1(ptr)                   vec_mask_m32_1( vec_iter_expr_1(_j, 0, (((uint32_t *) ptr)[0] & (1 << _j)) ? -1 : 0) )
 
 #define vec_mask_whilelt_m32_32(i, N)                      vec_loop_expr(vec_mask_m32_32_t, 4, _tmp, _i, (_tmp).v[_i] = _mm256_cmpgt_epi32( _mm256_set1_epi32(N-i), _mm256_set_epi32(vec_iter_expr_8(_j, 4*_i, _j)) );)
 #define vec_mask_whilelt_m32_16(i, N)                      vec_loop_expr(vec_mask_m32_16_t, 2, _tmp, _i, (_tmp).v[_i] = _mm256_cmpgt_epi32( _mm256_set1_epi32(N-i), _mm256_set_epi32(vec_iter_expr_8(_j, 4*_i, _j)) );)

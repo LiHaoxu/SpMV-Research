@@ -47,11 +47,11 @@ typedef uint16_t vec_mask_packed_m64_16_t;
 #define vec_mask_packed_get_bit_m64_2(a, pos)              bits_u64_extract(a, pos, 1)
 #define vec_mask_packed_get_bit_m64_1(a, pos)              bits_u64_extract(a, pos, 1)
 
-#define vec_mask_set_m64_16(expr)                          vec_loop_expr(vec_mask_m64_16_t, 2, _tmp, _i, (_tmp).v[_i] = _cvtu32_mask8(expr);)
-#define vec_mask_set_m64_8(expr)                           vec_mask_m64_8( _cvtu32_mask8(expr) )
-#define vec_mask_set_m64_4(expr)                           vec_mask_m64_4( _cvtu32_mask8(expr) )
-#define vec_mask_set_m64_2(expr)                           vec_mask_m64_2( _cvtu32_mask8(expr) )
-#define vec_mask_set_m64_1(expr)                           vec_mask_m64_1( (uint8_t) vec_iter_expr_1(_j, 0, ((expr) & (1 << _j)) ? 1 : 0) )
+#define vec_mask_loadu_packed_m64_16(ptr)                  vec_loop_expr(vec_mask_m64_16_t, 2, _tmp, _i, (_tmp).v[_i] = _cvtu32_mask8(((uint32_t *) ptr)[0]);)
+#define vec_mask_loadu_packed_m64_8(ptr)                   vec_mask_m64_8( _cvtu32_mask8(((uint32_t *) ptr)[0]) )
+#define vec_mask_loadu_packed_m64_4(ptr)                   vec_mask_m64_4( _cvtu32_mask8(((uint32_t *) ptr)[0]) )
+#define vec_mask_loadu_packed_m64_2(ptr)                   vec_mask_m64_2( _cvtu32_mask8(((uint32_t *) ptr)[0]) )
+#define vec_mask_loadu_packed_m64_1(ptr)                   vec_mask_m64_1( (uint8_t) vec_iter_expr_1(_j, 0, ((((uint32_t *) ptr)[0]) & (1 << _j)) ? 1 : 0) )
 
 #define vec_mask_whilelt_m64_16(i, N)                      vec_loop_expr(vec_mask_m64_16_t, 2, _tmp, _i, (_tmp).v[_i] = _mm512_cmpgt_epi64_mask( _mm512_set1_epi64(N-i), _mm512_set_epi64(vec_iter_expr_8(_j, 8*_i, _j)) );)
 #define vec_mask_whilelt_m64_8(i, N)                       vec_mask_m64_8( _mm512_cmpgt_epi64_mask( _mm512_set1_epi64(N-i), _mm512_set_epi64(vec_iter_expr_8(_j, 0, _j)) ) )

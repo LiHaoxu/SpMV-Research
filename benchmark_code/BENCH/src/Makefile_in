@@ -63,6 +63,12 @@ spmv_csr_vector_perfect_nnz_balance$(SUFFIX).exe: $(OBJ_DIR)/bench$(SUFFIX).o $(
 
 sddmm_csr$(SUFFIX).exe: $(OBJ_DIR)/bench$(SUFFIX).o $(OBJ_DIR)/bench_sddmm$(SUFFIX).o sddmm_kernels/csr.cpp $(LIB_OBJ)
 	$(CPP) $(CPPFLAGS) $^ -o $@ $(LDFLAGS)
+sddmm_csr_vec$(SUFFIX).exe: $(OBJ_DIR)/bench$(SUFFIX).o $(OBJ_DIR)/bench_sddmm$(SUFFIX).o sddmm_kernels/csr_vec.cpp $(LIB_OBJ)
+	$(CPP) $(CPPFLAGS) $^ -o $@ $(LDFLAGS)
+sddmm_coo_vec$(SUFFIX).exe: $(OBJ_DIR)/bench$(SUFFIX).o $(OBJ_DIR)/bench_sddmm$(SUFFIX).o sddmm_kernels/coo_vec.cpp $(LIB_OBJ)
+	$(CPP) $(CPPFLAGS) $^ -o $@ $(LDFLAGS)
+sddmm_coo_vec_z_order$(SUFFIX).exe: $(OBJ_DIR)/bench$(SUFFIX).o $(OBJ_DIR)/bench_sddmm$(SUFFIX).o sddmm_kernels/coo_vec_z_order.cpp $(LIB_OBJ)
+	$(CPP) $(CPPFLAGS) $^ -o $@ $(LDFLAGS)
 
 spmv_csr_vec$(SUFFIX).exe: $(OBJ_DIR)/bench$(SUFFIX).o $(OBJ_DIR)/bench_spmv$(SUFFIX).o spmv_kernels/csr_vec.cpp $(LIB_OBJ)
 	$(CPP) $(CPPFLAGS) -D'CSR_VECTOR' $^ -o $@ $(LDFLAGS)
@@ -367,7 +373,8 @@ CPPFLAGS_AOCL += -I'$(AOCL_PATH)/include' -I'$(AOCL_PATH)/src/include' -I'$(AOCL
 CPPFLAGS_AOCL += -m64 -mavx2
 
 LDFLAGS_AOCL =
-LDFLAGS_AOCL += -L'$(AOCL_PATH)/lib/'
+LDFLAGS_AOCL += -L'$(AOCL_PATH)/lib'
+LDFLAGS_AOCL += -Wl,-rpath,'$(AOCL_PATH)/lib'
 LDFLAGS_AOCL += -Wl,--no-as-needed  -laoclsparse -lgomp -lpthread -ldl
 # These are used for the AOCL-Sparse version 5
 # LDFLAGS_AOCL += -L'$(AOCL_PATH)/../../../../openssl-1.1.1o/' -L'$(AOCL_PATH)/../../../amd-blis/lib/LP64/' -L'$(AOCL_PATH)/../../../amd-libflame/lib/LP64/' -L'$(AOCL_PATH)/../../../amd-utils/lib/' 
@@ -545,6 +552,10 @@ spmv_cfs$(SUFFIX).exe:
 	mv bench/bench_spmv_mmf-bench_spmv_mmf.o bench/bench_spmv_mmf${SUFFIX}-bench_spmv_mmf${SUFFIX}.o
 	sed -i "s/bench_spmv_mmf/bench_spmv_mmf${SUFFIX}/g" bench/bench_spmv_mmf
 	mv bench/bench_spmv_mmf bench/spmv_cfs${SUFFIX}.exe
+
+
+sddmm_aspt$(SUFFIX).exe: $(OBJ_DIR)/bench$(SUFFIX).o $(OBJ_DIR)/bench_sddmm$(SUFFIX).o sddmm_kernels/aspt.cpp $(LIB_OBJ)
+	$(CPP) $(CPPFLAGS) $^ -o $@ $(LDFLAGS)
 
 
 $(call Rule_Auto_Dependencies,$(OBJ_DIR)/csr_cv_block_id$(SUFFIX).o,spmv_kernels/cv_block/csr_cv_block.cpp,$(CPPFLAGS) $(CPPFLAGS_CV_BLOCK_ID))

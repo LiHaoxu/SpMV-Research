@@ -47,11 +47,11 @@ typedef uint16_t vec_mask_packed_m64_16_t;
 #define vec_mask_packed_get_bit_m64_2(a, pos)              bits_u64_extract(a, pos, 1)
 #define vec_mask_packed_get_bit_m64_1(a, pos)              bits_u64_extract(a, pos, 1)
 
-#define vec_mask_set_m64_16(expr)                          vec_loop_expr_init(vec_mask_m64_16_t, 16, _tmp, vec_mask_m64_16(0), _i, (_tmp).v |= (expr) & (1 << _i);)
-#define vec_mask_set_m64_8(expr)                           vec_loop_expr_init(vec_mask_m64_8_t,   8, _tmp, vec_mask_m64_8(0),  _i, (_tmp).v |= (expr) & (1 << _i);)
-#define vec_mask_set_m64_4(expr)                           vec_loop_expr_init(vec_mask_m64_4_t,   4, _tmp, vec_mask_m64_4(0),  _i, (_tmp).v |= (expr) & (1 << _i);)
-#define vec_mask_set_m64_2(expr)                           vec_loop_expr_init(vec_mask_m64_2_t,   2, _tmp, vec_mask_m64_2(0),  _i, (_tmp).v |= (expr) & (1 << _i);)
-#define vec_mask_set_m64_1(expr)                           vec_loop_expr_init(vec_mask_m64_1_t,   1, _tmp, vec_mask_m64_1(0),  _i, (_tmp).v |= (expr) & (1 << _i);)
+#define vec_mask_loadu_packed_m64_16(ptr)                  vec_loop_expr_init(vec_mask_m64_16_t, 16, _tmp, vec_mask_m64_16(0), _i, (_tmp).v |= (ptr) & (1 << _i);)
+#define vec_mask_loadu_packed_m64_8(ptr)                   vec_loop_expr_init(vec_mask_m64_8_t,   8, _tmp, vec_mask_m64_8(0),  _i, (_tmp).v |= (ptr) & (1 << _i);)
+#define vec_mask_loadu_packed_m64_4(ptr)                   vec_loop_expr_init(vec_mask_m64_4_t,   4, _tmp, vec_mask_m64_4(0),  _i, (_tmp).v |= (ptr) & (1 << _i);)
+#define vec_mask_loadu_packed_m64_2(ptr)                   vec_loop_expr_init(vec_mask_m64_2_t,   2, _tmp, vec_mask_m64_2(0),  _i, (_tmp).v |= (ptr) & (1 << _i);)
+#define vec_mask_loadu_packed_m64_1(ptr)                   vec_loop_expr_init(vec_mask_m64_1_t,   1, _tmp, vec_mask_m64_1(0),  _i, (_tmp).v |= (ptr) & (1 << _i);)
 
 
 //------------------------------------------------------------------------------------------------------------------------------------------

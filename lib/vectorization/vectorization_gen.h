@@ -117,13 +117,13 @@
 
 #define vec_loadu(suffix, vs, ptr)                                             VEC_CALL(vec_loadu_, suffix, vs, ptr)
 
-#define vec_maskz_loadu(suffix, vs, ptr, mask)                                 VEC_CALL(vec_maskz_loadu_, suffix, vs, ptr, mask)
+#define vec_loadu_maskedz(suffix, vs, ptr, mask)                               VEC_CALL(vec_loadu_maskedz_, suffix, vs, ptr, mask)
 
 #define vec_loadu_firstNz(suffix, vs, ptr, N)                                  VEC_CALL(vec_loadu_firstNz_, suffix, vs, ptr, N)
 
 #define vec_storeu(suffix, vs, ptr, vec)                                       VEC_CALL(vec_storeu_, suffix, vs, ptr, vec)
 
-#define vec_mask_storeu(suffix, vs, ptr, vec, mask)                            VEC_CALL(vec_mask_storeu_, suffix, vs, ptr, vec, mask)
+#define vec_storeu_masked(suffix, vs, ptr, vec, mask)                          VEC_CALL(vec_storeu_masked_, suffix, vs, ptr, vec, mask)
 
 #define vec_gather(suffix_val, suffix_idx, vs, ptr, idx)                       VEC_CALL_2(vec_gather_, suffix_val, suffix_idx, vs, ptr, idx)
 
@@ -147,7 +147,7 @@
 #define vec_mask_pack(suffix, vs, a)                                           VEC_CALL(vec_mask_pack_, suffix, vs, a)
 #define vec_mask_packed_get_bit(suffix, vs, a, pos)                            VEC_CALL(vec_mask_packed_get_bit_, suffix, vs, a, pos)
 
-#define vec_mask_set(suffix, vs, expr)                                         VEC_CALL(vec_mask_set_, suffix, vs, expr)
+#define vec_mask_loadu_packed(suffix, vs, expr)                                VEC_CALL(vec_mask_loadu_packed_, suffix, vs, expr)
 
 #define vec_mask_whilelt(suffix, vs, i, N)                                     VEC_CALL(vec_mask_whilelt_, suffix, vs, i, N)
 #define vec_mask_firstN(suffix, vs, N)                                         VEC_CALL(vec_mask_firstN_, suffix, vs, N)
@@ -187,7 +187,7 @@
 #define vec_srlv(suffix, vs, a, count)                                         VEC_CALL(vec_srlv_, suffix, vs, a, count)
 #define vec_srav(suffix, vs, a, count)                                         VEC_CALL(vec_srav_, suffix, vs, a, count)
 
-#define vec_permutexvar(suffix, vs, a, idx)                                    VEC_CALL(vec_permutexvar_, suffix, vs, a, idx)
+#define vec_permute(suffix, vs, a, idx)                                        VEC_CALL(vec_permute_, suffix, vs, a, idx)
 
 
 //==========================================================================================================================================

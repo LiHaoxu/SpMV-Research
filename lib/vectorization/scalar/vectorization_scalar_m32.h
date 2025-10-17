@@ -47,11 +47,11 @@ typedef uint32_t vec_mask_packed_m32_32_t;
 #define vec_mask_packed_get_bit_m32_4(a, pos)              bits_u32_extract(a, pos, 1)
 #define vec_mask_packed_get_bit_m32_1(a, pos)              bits_u32_extract(a, pos, 1)
 
-#define vec_mask_set_m32_32(expr)                          vec_loop_expr_init(vec_mask_m32_32_t, 32, _tmp, vec_mask_m32_32(0), _i, (_tmp).v |= (expr) & (1 << _i);)
-#define vec_mask_set_m32_16(expr)                          vec_loop_expr_init(vec_mask_m32_16_t, 16, _tmp, vec_mask_m32_16(0), _i, (_tmp).v |= (expr) & (1 << _i);)
-#define vec_mask_set_m32_8(expr)                           vec_loop_expr_init(vec_mask_m32_8_t,   8, _tmp, vec_mask_m32_8(0),  _i, (_tmp).v |= (expr) & (1 << _i);)
-#define vec_mask_set_m32_4(expr)                           vec_loop_expr_init(vec_mask_m32_4_t,   4, _tmp, vec_mask_m32_4(0),  _i, (_tmp).v |= (expr) & (1 << _i);)
-#define vec_mask_set_m32_1(expr)                           vec_loop_expr_init(vec_mask_m32_1_t,   1, _tmp, vec_mask_m32_1(0),  _i, (_tmp).v |= (expr) & (1 << _i);)
+#define vec_mask_loadu_packed_m32_32(ptr)                  vec_loop_expr_init(vec_mask_m32_32_t, 32, _tmp, vec_mask_m32_32(0), _i, (_tmp).v |= (ptr) & (1 << _i);)
+#define vec_mask_loadu_packed_m32_16(ptr)                  vec_loop_expr_init(vec_mask_m32_16_t, 16, _tmp, vec_mask_m32_16(0), _i, (_tmp).v |= (ptr) & (1 << _i);)
+#define vec_mask_loadu_packed_m32_8(ptr)                   vec_loop_expr_init(vec_mask_m32_8_t,   8, _tmp, vec_mask_m32_8(0),  _i, (_tmp).v |= (ptr) & (1 << _i);)
+#define vec_mask_loadu_packed_m32_4(ptr)                   vec_loop_expr_init(vec_mask_m32_4_t,   4, _tmp, vec_mask_m32_4(0),  _i, (_tmp).v |= (ptr) & (1 << _i);)
+#define vec_mask_loadu_packed_m32_1(ptr)                   vec_loop_expr_init(vec_mask_m32_1_t,   1, _tmp, vec_mask_m32_1(0),  _i, (_tmp).v |= (ptr) & (1 << _i);)
 
 
 //------------------------------------------------------------------------------------------------------------------------------------------

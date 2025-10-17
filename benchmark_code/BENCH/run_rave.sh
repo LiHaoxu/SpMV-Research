@@ -9,12 +9,6 @@ module load sdv_trace/development; # module load sdv_trace
 
 # bananaf3  : gcc 13.3.0
 # synth-hca : clang 22.0.0git
-#
-# DIV/spmv_kernel_div_kernels_rf.h:231:9: error: no matching function for call to '__riscv_vrgather_vv_i64m1'
-# DIV/spmv_kernel_div_kernels_rf.h:1032:51: error: no matching function for call to '__riscv_vsrl_vx_u64m1'
-# DIV/spmv_kernel_div_kernels_rf.h:1032:29: error: no matching function for call to '__riscv_vand_vv_i64m1'
-# DIV/spmv_kernel_div_kernels_rf.h:1050:11: error: no matching function for call to '__riscv_vsll_vv_i64m1'
-
 
 script_dir="$(dirname "$(readlink -e "${BASH_SOURCE[0]}")")"
 source "$script_dir"/config.sh

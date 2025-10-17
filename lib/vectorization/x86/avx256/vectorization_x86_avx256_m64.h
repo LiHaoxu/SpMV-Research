@@ -46,11 +46,11 @@ typedef uint32_t vec_mask_packed_m64_16_t;
 #define vec_mask_packed_get_bit_m64_2(a, pos)              bits_u64_extract(a, pos, 1)
 #define vec_mask_packed_get_bit_m64_1(a, pos)              bits_u64_extract(a, pos, 1)
 
-#define vec_mask_set_m64_16(expr)                          vec_loop_expr(vec_mask_m64_16_t, 4, _tmp, _i, (_tmp).v[_i] = _mm256_set_epi64x(vec_iter_expr_4(_j, 0, (expr) & (1 << (4*_i+_j)) ? -1 : 0));)
-#define vec_mask_set_m64_8(expr)                           vec_loop_expr(vec_mask_m64_8_t,  2, _tmp, _i, (_tmp).v[_i] = _mm256_set_epi64x(vec_iter_expr_4(_j, 0, (expr) & (1 << (4*_i+_j)) ? -1 : 0));)
-#define vec_mask_set_m64_4(expr)                           vec_mask_m64_4( _mm256_set_epi64x(vec_iter_expr_4(_j, 0, (expr) & (1 << _j) ? -1 : 0)) )
-#define vec_mask_set_m64_2(expr)                           vec_mask_m64_2( _mm_set_epi64x(vec_iter_expr_2(_j, 0, (expr) & (1 << _j) ? -1 : 0)) )
-#define vec_mask_set_m64_1(expr)                           vec_mask_m64_1( vec_iter_expr_1(_j, 0, ((expr) & (1 << _j)) ? -1 : 0) )
+#define vec_mask_loadu_packed_m64_16(ptr)                  vec_loop_expr(vec_mask_m64_16_t, 4, _tmp, _i, (_tmp).v[_i] = _mm256_set_epi64x(vec_iter_expr_4(_j, 0, ((uint32_t *) ptr)[0] & (1 << (4*_i+_j)) ? -1 : 0));)
+#define vec_mask_loadu_packed_m64_8(ptr)                   vec_loop_expr(vec_mask_m64_8_t,  2, _tmp, _i, (_tmp).v[_i] = _mm256_set_epi64x(vec_iter_expr_4(_j, 0, ((uint32_t *) ptr)[0] & (1 << (4*_i+_j)) ? -1 : 0));)
+#define vec_mask_loadu_packed_m64_4(ptr)                   vec_mask_m64_4( _mm256_set_epi64x(vec_iter_expr_4(_j, 0, ((uint32_t *) ptr)[0] & (1 << _j) ? -1 : 0)) )
+#define vec_mask_loadu_packed_m64_2(ptr)                   vec_mask_m64_2( _mm_set_epi64x(vec_iter_expr_2(_j, 0, ((uint32_t *) ptr)[0] & (1 << _j) ? -1 : 0)) )
+#define vec_mask_loadu_packed_m64_1(ptr)                   vec_mask_m64_1( vec_iter_expr_1(_j, 0, (((uint32_t *) ptr)[0] & (1 << _j)) ? -1 : 0) )
 
 #define vec_mask_whilelt_m64_16(i, N)                      vec_loop_expr(vec_mask_m64_16_t, 4, _tmp, _i, (_tmp).v[_i] = _mm256_cmpgt_epi64( _mm256_set1_epi64x(N-i), _mm256_set_epi64x(vec_iter_expr_4(_j, 4*_i, _j)) );)
 #define vec_mask_whilelt_m64_8(i, N)                       vec_loop_expr(vec_mask_m64_8_t,  2, _tmp, _i, (_tmp).v[_i] = _mm256_cmpgt_epi64( _mm256_set1_epi64x(N-i), _mm256_set_epi64x(vec_iter_expr_4(_j, 4*_i, _j)) );)

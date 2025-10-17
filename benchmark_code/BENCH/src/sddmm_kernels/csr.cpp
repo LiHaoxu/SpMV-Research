@@ -12,36 +12,6 @@ extern "C"{
 	#include "macros/macrolib.h"
 	#include "time_it.h"
 	#include "parallel_util.h"
-
-	// #define VEC_FORCE
-
-	// #define VEC_X86_512
-	// #define VEC_X86_256
-	// #define VEC_X86_128
-	// #define VEC_ARM_SVE
-
-	#if DOUBLE == 0
-		#define VTI   i32
-		#define VTF   f32
-		#define VTM   m32
-		#define VEC_SCALE_SHIFT  2
-		// #define VEC_LEN  1
-		#define VEC_LEN  vec_len_default_f32
-		// #define VEC_LEN  vec_len_default_f64
-		// #define VEC_LEN  4
-		// #define VEC_LEN  8
-		// #define VEC_LEN  16
-		// #define VEC_LEN  32
-	#elif DOUBLE == 1
-		#define VTI   i64
-		#define VTF   f64
-		#define VTM   m64
-		#define VEC_SCALE_SHIFT  3
-		#define VEC_LEN  vec_len_default_f64
-		// #define VEC_LEN  1
-	#endif
-
-	#include "vectorization/vectorization_gen.h"
 #ifdef __cplusplus
 }
 #endif
@@ -72,8 +42,6 @@ struct CSR : Matrix_Format
 		int num_threads = omp_get_max_threads();
 		double time_balance;
 
-		printf("VEC_LEN = %d\n", VEC_LEN);
-
 		row_ptr = (typeof(row_ptr)) aligned_alloc(64, (m+1) * sizeof(*row_ptr));
 		ja = (typeof(ja)) aligned_alloc(64, nnz * sizeof(*ja));
 		a = (typeof(a)) aligned_alloc(64, nnz * sizeof(*a));
@@ -83,8 +51,8 @@ struct CSR : Matrix_Format
 		#pragma omp parallel for
 		for(long i=0;i<nnz;i++)
 		{
-			a[i]=values[i];
-			ja[i]=col_ind[i];
+			a[i] = values[i];
+			ja[i] = col_ind[i];
 		}
 
 		tds = (typeof(tds)) aligned_alloc(64, num_threads * sizeof(*tds));
@@ -103,16 +71,20 @@ struct CSR : Matrix_Format
 				}
 				else
 				{
-					loop_partitioner_balance_prefix_sums(num_threads, tnum, row_ptr, m, nnz, &td->i_s, &td->i_e);
-					// long lower_boundary;
-					// loop_partitioner_balance_iterations(num_threads, tnum, 0, nnz, &td->j_s, &td->j_e);
-					// macros_binary_search(row_ptr, 0, m, td->j_s, &lower_boundary, NULL);           // Index boundaries are inclusive.
-					// td->i_s = lower_boundary;
-					// _Pragma("omp barrier")
-					// if (tnum == num_threads - 1)   // If we calculate each thread's boundaries individually some empty rows might be unassigned.
-						// td->i_e = m;
-					// else
-						// td->i_e = td->i_s + 1;
+
+					// loop_partitioner_balance_prefix_sums(num_threads, tnum, row_ptr, m, nnz, &td->i_s, &td->i_e);
+					// td->j_s = row_ptr[td->i_s];
+					// td->j_e = row_ptr[td->i_e];
+					long lower_boundary;
+					loop_partitioner_balance_iterations(num_threads, tnum, 0, nnz, &td->j_s, &td->j_e);
+					macros_binary_search(row_ptr, 0, m, td->j_s, &lower_boundary, NULL);           // Index boundaries are inclusive.
+					td->i_s = lower_boundary;
+					_Pragma("omp barrier")
+					if (tnum == num_threads - 1)   // If we calculate each thread's boundaries individually some empty rows might be unassigned.
+						td->i_e = m;
+					else
+						td->i_e = td->i_s + 1;
+
 				}
 			}
 		);
@@ -133,8 +105,7 @@ struct CSR : Matrix_Format
 };
 
 
-__attribute__((hot,pure))
-static inline
+static __attribute__((always_inline)) inline
 ValueType
 dot(long K, ValueType * x, ValueType * y)
 {
@@ -147,6 +118,21 @@ dot(long K, ValueType * x, ValueType * y)
 	return sum;
 }
 
+
+static __attribute__((always_inline)) inline
+void
+compute_csr_row(CSR * restrict csr, long K, ValueType * A, ValueType * B, ValueType * C, long i, long j_s, long j_e)
+{
+	long j;
+	if (j_s == j_e)
+		return;
+	for (j=j_s;j<j_e;j++)
+	{
+		C[j] = dot(K, &A[i * K], &B[csr->ja[j] * K]);
+	}
+}
+
+
 void
 compute_csr(CSR * restrict csr, long K, ValueType * A, ValueType * B, ValueType * C)
 {
@@ -154,24 +140,23 @@ compute_csr(CSR * restrict csr, long K, ValueType * A, ValueType * B, ValueType 
 	{
 		int tnum = omp_get_thread_num();
 		struct thread_data * td = csr->tds[tnum];
-		long i, i_s, i_e, j, j_s, j_e;
+		long i, i_s, i_e, j_s, j_e;
 		i_s = td->i_s;
 		i_e = td->i_e;
 		j_s = td->j_s;
-		j_e = td->j_e;
-
 		j_e = csr->row_ptr[i_s];
-		for (i=i_s;i<i_e;i++)
+		if (j_e > td->j_e)
+			j_e = td->j_e;
+		compute_csr_row(csr, K, A, B, C, i_s, j_s, j_e);
+		for (i=i_s+1;i<i_e-1;i++)
 		{
 			j_s = j_e;
 			j_e = csr->row_ptr[i+1];
-			if (j_s == j_e)
-				continue;
-			for (j=j_s;j<j_e;j++)
-			{
-				C[j] = dot(K, &A[i * K], &B[csr->ja[j] * K]);
-			}
+			compute_csr_row(csr, K, A, B, C, i, j_s, j_e);
 		}
+		j_s = j_e;
+		j_e = td->j_e;
+		compute_csr_row(csr, K, A, B, C, i_e-1, j_s, j_e);
 	}
 }
 

@@ -16,6 +16,14 @@ source "$script_dir"/../config.sh
 export AMG_PATH=../../../artificial-matrix-generator
 
 
+if ((RAVE_TRACING)); then
+    export ARCH='rave'
+else
+    export ARCH="$(uname -m)"
+    # export ARCH='riscv64'
+fi
+
+
 # if [[ -d "/home/jim/lib/gcc/gcc_12/bin" ]]; then
     # gcc_bin=/home/jim/lib/gcc/gcc_12/bin/gcc
     # gpp_bin=/home/jim/lib/gcc/gcc_12/bin/g++
@@ -40,7 +48,7 @@ else
 fi
 
 
-if ((RAVE_TRACING)); then
+if ((RAVE_TRACING)) || [[ ${ARCH} == riscv64 ]]; then
     CC=clang
     CPP=clang++
 else
@@ -72,13 +80,6 @@ else
     HIPCC="hipcc"
 fi
 export HIPCC
-
-if ((RAVE_TRACING)); then
-    export ARCH='rave'
-else
-    export ARCH="$(uname -m)"
-    # export ARCH='riscv64'
-fi
 
 
 CFLAGS=''
@@ -136,6 +137,8 @@ elif [[ ${ARCH} == rave ]]; then
     CFLAGS+=" -D'RAVE_TRACING' ${SDV_TRACE_INCL}"
     CFLAGS+=" -fno-lto"
 
+    CFLAGS+=" -Wno-vla-cxx-extension"
+
     CFLAGS+=" -mepi"
     CFLAGS+=" -mllvm -combiner-store-merging=0"
     CFLAGS+=" -mllvm -disable-loop-idiom-memcpy"
@@ -157,7 +160,7 @@ fi
 CFLAGS+=" -I'${library}'"
 CFLAGS+=" -I'${AMG_PATH}'"
 
-CFLAGS+=" -D'INT_T=int32_t'"
+CFLAGS+=" -D'INT_T=int32_t' -D'UINT_T=uint32_t'"
 
 if ((${PRINT_STATISTICS} == 1)); then
     CFLAGS+=" -D'PRINT_STATISTICS'"

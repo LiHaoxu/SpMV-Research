@@ -58,7 +58,7 @@ export MKL_VERBOSE=1
 export LD_LIBRARY_PATH="${AOCL_PATH}/lib:${MKL_PATH}/lib/intel64:${LD_LIBRARY_PATH}"
 export LD_LIBRARY_PATH="${LD_LIBRARY_PATH}:${BOOST_LIB_PATH}:${LLVM_LIB_PATH}:${SPARSEX_LIB_PATH}"
 # export LD_LIBRARY_PATH="${LD_LIBRARY_PATH}:${SPARSEX_FLOAT_LIB_PATH}"
-export LD_LIBRARY_PATH="${LD_LIBRARY_PATH}:/home/jim/lib/gcc/gcc_12/lib64"
+# export LD_LIBRARY_PATH="${LD_LIBRARY_PATH}:/home/jim/lib/gcc/gcc_12/lib64"
 export LD_LIBRARY_PATH="${LD_LIBRARY_PATH}:/various/dgal/gcc/gcc-12.2.0/gcc_bin/lib64"
 export LD_LIBRARY_PATH="${LD_LIBRARY_PATH}:/local/pmpakos/arm-compiler/gcc-13.2.0_Ubuntu-22.04/lib64"
 export LD_LIBRARY_PATH="${LD_LIBRARY_PATH}:${CUDA_PATH}/lib64"
@@ -593,6 +593,34 @@ matrices_underperform_gpu=( $(
 ) )
 
 
+matrices_graphs_sparse_survey=(
+
+    # citeseer
+    # cora
+    # pubmed
+    # PROTEINS
+    # harvard
+    ogbl-ddi
+    # com-Amazon
+    # ogbl-collab
+    # ogbn-arxiv
+    # REDDIT-BINARY
+    # com-Youtube
+    # roadNet-CA
+    # amazon0505
+    # OVCAR-8H
+    # wiki-Talk
+    # web-BerkStan
+    # ogbn-proteins
+    # sx-stackoverflow
+
+)
+for ((i=0;i<${#matrices_graphs_sparse_survey[@]};i++)); do
+    m="${matrices_graphs_sparse_survey[i]}"
+    matrices_graphs_sparse_survey[i]="${path_graphs_sparse_survey}/${m}.mtx"
+done
+
+
 matrices_validation_loop=()
 for ((i=0;i<${#matrices_validation[@]};i++)); do
     path="${matrices_validation[i]}"
@@ -725,8 +753,10 @@ matrices=(
 
     # "${matrices_openFoam[@]}"
     # "${matrices_validation[@]}"
-    "${matrices_validation_tamu[@]}"
+    # "${matrices_validation_tamu[@]}"
     # "${matrices_paper_csr_rv[@]}"
+
+    "${matrices_graphs_sparse_survey[@]}"
 
     # "${matrices_compression_small[@]}"
     # "${matrices_compression_medium[@]}"

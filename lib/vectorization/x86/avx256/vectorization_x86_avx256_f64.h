@@ -97,11 +97,11 @@ typedef union __attribute__((packed, aligned(8))) { __m256d v[4]; __m256 vf32[4]
 #define vec_loadu_f64_2(ptr)                               vec_f64_2( _mm_loadu_pd((double *) (ptr)) )
 #define vec_loadu_f64_1(ptr)                               vec_f64_1( (*((double *) (ptr))) )
 
-#define vec_maskz_loadu_f64_16(ptr, mask)                  vec_loop_expr(vec_f64_16_t, 4, _tmp, _i, (_tmp).v[_i] = _mm256_maskload_pd(((double *) (ptr)) + 4*_i, (mask).v[_i]);)
-#define vec_maskz_loadu_f64_8(ptr, mask)                   vec_loop_expr(vec_f64_8_t,  2, _tmp, _i, (_tmp).v[_i] = _mm256_maskload_pd(((double *) (ptr)) + 4*_i, (mask).v[_i]);)
-#define vec_maskz_loadu_f64_4(ptr, mask)                   vec_f64_4( _mm256_maskload_pd((double *) (ptr), (mask).v) )
-#define vec_maskz_loadu_f64_2(ptr, mask)                   vec_f64_2( _mm_maskload_pd((double *) (ptr), (mask).v) )
-#define vec_maskz_loadu_f64_1(ptr, mask)                   vec_f64_1( ((mask).v) ? (*((double *) (ptr))) : 0 )
+#define vec_loadu_maskedz_f64_16(ptr, mask)                vec_loop_expr(vec_f64_16_t, 4, _tmp, _i, (_tmp).v[_i] = _mm256_maskload_pd(((double *) (ptr)) + 4*_i, (mask).v[_i]);)
+#define vec_loadu_maskedz_f64_8(ptr, mask)                 vec_loop_expr(vec_f64_8_t,  2, _tmp, _i, (_tmp).v[_i] = _mm256_maskload_pd(((double *) (ptr)) + 4*_i, (mask).v[_i]);)
+#define vec_loadu_maskedz_f64_4(ptr, mask)                 vec_f64_4( _mm256_maskload_pd((double *) (ptr), (mask).v) )
+#define vec_loadu_maskedz_f64_2(ptr, mask)                 vec_f64_2( _mm_maskload_pd((double *) (ptr), (mask).v) )
+#define vec_loadu_maskedz_f64_1(ptr, mask)                 vec_f64_1( ((mask).v) ? (*((double *) (ptr))) : 0 )
 
 #define vec_storeu_f64_16(ptr, vec)                        vec_loop_stmt(4, _i, _mm256_storeu_pd(((double *) (ptr)) + 4*_i, (vec).v[_i]);)
 #define vec_storeu_f64_8(ptr, vec)                         vec_loop_stmt(2, _i, _mm256_storeu_pd(((double *) (ptr)) + 4*_i, (vec).v[_i]);)
@@ -109,11 +109,11 @@ typedef union __attribute__((packed, aligned(8))) { __m256d v[4]; __m256 vf32[4]
 #define vec_storeu_f64_2(ptr, vec)                         _mm_storeu_pd((double *) (ptr), (vec).v)
 #define vec_storeu_f64_1(ptr, vec)                         do { (*((double *) (ptr))) = ((vec).v); } while (0)
 
-#define vec_mask_storeu_f64_16(ptr, vec, mask)             vec_loop_stmt(4, _i, _mm256_maskstore_pd(((double *) (ptr)) + 4*_i, (mask).v[_i], (vec).v[_i]);)
-#define vec_mask_storeu_f64_8(ptr, vec, mask)              vec_loop_stmt(2, _i, _mm256_maskstore_pd(((double *) (ptr)) + 4*_i, (mask).v[_i], (vec).v[_i]);)
-#define vec_mask_storeu_f64_4(ptr, vec, mask)              _mm256_maskstore_pd((double *) (ptr), (mask).v, (vec).v)  /* Reversed order of vec and mask vs maskload, just to escape boredom I guess. */
-#define vec_mask_storeu_f64_2(ptr, vec, mask)              _mm_maskstore_pd((double *) (ptr), (mask).v, (vec).v)
-#define vec_mask_storeu_f64_1(ptr, vec, mask)              do { if ((mask).v) (*((double *) (ptr))) = ((vec).v); } while (0)
+#define vec_storeu_masked_f64_16(ptr, vec, mask)           vec_loop_stmt(4, _i, _mm256_maskstore_pd(((double *) (ptr)) + 4*_i, (mask).v[_i], (vec).v[_i]);)
+#define vec_storeu_masked_f64_8(ptr, vec, mask)            vec_loop_stmt(2, _i, _mm256_maskstore_pd(((double *) (ptr)) + 4*_i, (mask).v[_i], (vec).v[_i]);)
+#define vec_storeu_masked_f64_4(ptr, vec, mask)            _mm256_maskstore_pd((double *) (ptr), (mask).v, (vec).v)  /* Reversed order of vec and mask vs maskload, just to escape boredom I guess. */
+#define vec_storeu_masked_f64_2(ptr, vec, mask)            _mm_maskstore_pd((double *) (ptr), (mask).v, (vec).v)
+#define vec_storeu_masked_f64_1(ptr, vec, mask)            do { if ((mask).v) (*((double *) (ptr))) = ((vec).v); } while (0)
 
 #define vec_gather_f64_i32_16(ptr, idx)                    vec_loop_expr(vec_f64_16_t, 4, _tmp, _i, (_tmp).v[_i] = _mm256_loadu_pd(((double *) (ptr)) + 4*_i);)
 #define vec_gather_f64_i32_8(ptr, idx)                     vec_loop_expr(vec_f64_8_t,  2, _tmp, _i, (_tmp).v[_i] = _mm256_loadu_pd(((double *) (ptr)) + 4*_i);)
