@@ -820,7 +820,7 @@ compress_kernel_div(INT_T * row_ptr, INT_T * ja, ValueTypeReference * vals, __at
 			diff = val.u - val_prev[lane_id].u;
 			diff_ord2 = diff - diff_prev[lane_id];
 
-			const uint32_t Schroeppel2 = 0xAAAAAAAA;
+			const uint64_t Schroeppel2 = 0xAAAAAAAAAAAAAAAALL;
 			diff_ord2 = (diff_ord2 + Schroeppel2) ^ Schroeppel2;
 
 			val_prev[lane_id].u += diff;
@@ -1059,7 +1059,7 @@ decompress_and_compute_kernel_div_base(unsigned char * restrict buf, ValueType *
 			// diff_ord2 <<= tz;
 			diff_ord2 = vec_sllv(VTI, VEC_LEN, diff_ord2, tz);
 
-			const vec_t(VTI, VEC_LEN) Schroeppel2 = vec_set1(VTI, VEC_LEN, 0xAAAAAAAA);
+			const vec_t(VTI, VEC_LEN) Schroeppel2 = vec_set1(VTI, VEC_LEN, 0xAAAAAAAAAAAAAAAALL);
 			diff_ord2 = vec_sub(VTI, VEC_LEN, vec_xor(VTI, VEC_LEN, diff_ord2, Schroeppel2), Schroeppel2);
 
 			// diff = diff + diff_ord2;
@@ -1112,7 +1112,7 @@ decompress_and_compute_kernel_div_base(unsigned char * restrict buf, ValueType *
 			diff_ord2 &= mask;
 			diff_ord2 <<= tz;
 
-			const uint32_t Schroeppel2 = 0xAAAAAAAA;
+			const uint64_t Schroeppel2 = 0xAAAAAAAAAAAAAAAALL;
 			diff_ord2 = (diff_ord2 ^ Schroeppel2) - Schroeppel2;
 
 			vec_elem_get(i64, VEC_LEN, diff, lane_id) += diff_ord2;

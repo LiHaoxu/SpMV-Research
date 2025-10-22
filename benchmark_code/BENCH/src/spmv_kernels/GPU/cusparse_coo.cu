@@ -333,7 +333,7 @@ compute_coo(COOArrays * restrict coo, ValueType * restrict x, ValueType * restri
 		gpuCusparseErrorCheck(cusparseSpMV_bufferSize(coo->handle, CUSPARSE_OPERATION_NON_TRANSPOSE, &alpha, coo->matA, coo->vecX, &beta, coo->vecY, ValueTypeCuda, CUSPARSE_SPMV_ALG_DEFAULT, &coo->bufferSize));
 		gpuCudaErrorCheck(cudaMalloc(&coo->dBuffer, coo->bufferSize));
 		if(TIME_IT) gpuCudaErrorCheck(cudaEventRecord(coo->endEvent_spmv_buffersize, coo->stream));
-		// printf("SpMV_bufferSize = %zu bytes\n", coo->bufferSize, coo->bufferSize); // size of the workspace that is needed by cusparseSpMV()
+		printf("SpMV_bufferSize = %lu bytes\n", coo->bufferSize); // size of the workspace that is needed by cusparseSpMV()
 
 		if(TIME_IT){
 			gpuCudaErrorCheck(cudaEventSynchronize(coo->endEvent_create_vecX));
@@ -343,7 +343,7 @@ compute_coo(COOArrays * restrict coo, ValueType * restrict x, ValueType * restri
 			gpuCudaErrorCheck(cudaEventElapsedTime(&create_vecX_time, coo->startEvent_create_vecX, coo->endEvent_create_vecX));
 			gpuCudaErrorCheck(cudaEventElapsedTime(&create_vecY_time, coo->startEvent_create_vecY, coo->endEvent_create_vecY));
 			gpuCudaErrorCheck(cudaEventElapsedTime(&spmv_buffersize_time, coo->startEvent_spmv_buffersize, coo->endEvent_spmv_buffersize));
-			printf("(CUDA) Create vecX time = %.4lf ms, vecY time = %.4lf ms, spmv_buffersize time = %.4lf (SpMV_bufferSize = %zu)\n", create_vecX_time, create_vecY_time, spmv_buffersize_time, coo->bufferSize);
+			printf("(CUDA) Create vecX time = %.4lf ms, vecY time = %.4lf ms, spmv_buffersize time = %.4lf (SpMV_bufferSize = %lu)\n", create_vecX_time, create_vecY_time, spmv_buffersize_time, coo->bufferSize);
 		}
 
 		#ifdef PERSISTENT_L2_PREFETCH

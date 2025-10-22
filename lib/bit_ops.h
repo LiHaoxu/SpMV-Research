@@ -173,6 +173,11 @@ bits_u32_extract(uint32_t v, uint64_t start_pos, uint64_t num_bits)
 //==========================================================================================================================================
 
 
+/* _pdep_u64(unsigned __int64 a, unsigned __int64 mask):
+ *     Deposit  contiguous low bits  from unsigned 64-bit integer a to dst at the corresponding bit locations specified by mask.
+ *     All other bits in dst are set to zero.
+ */
+
 static __attribute__((always_inline)) inline
 uint64_t
 bits_u32_interleave_with_zeros(uint32_t x)
@@ -181,11 +186,11 @@ bits_u32_interleave_with_zeros(uint32_t x)
 		return _pdep_u64(x, 0x5555555555555555);
 	#else
 		uint64_t y = x;
-		y = (y ^ (y << 16)) & 0x0000ffff0000ffff;
-		y = (y ^ (y << 8 )) & 0x00ff00ff00ff00ff;
-		y = (y ^ (y << 4 )) & 0x0f0f0f0f0f0f0f0f;
-		y = (y ^ (y << 2 )) & 0x3333333333333333;
-		y = (y ^ (y << 1 )) & 0x5555555555555555;
+		y = (y | (y << 16)) & 0x0000ffff0000ffff;
+		y = (y | (y << 8 )) & 0x00ff00ff00ff00ff;
+		y = (y | (y << 4 )) & 0x0f0f0f0f0f0f0f0f;
+		y = (y | (y << 2 )) & 0x3333333333333333;
+		y = (y | (y << 1 )) & 0x5555555555555555;
 		return y;
 	#endif
 }
@@ -434,6 +439,31 @@ bits_mean(unsigned char * matrix, long N, long M, unsigned char * mean)
 		printf("\n");
 	}
 	free(mean_u);
+}
+
+
+//==========================================================================================================================================
+//------------------------------------------------------------------------------------------------------------------------------------------
+//-                                                             Negabinary                                                                 -
+//------------------------------------------------------------------------------------------------------------------------------------------
+//==========================================================================================================================================
+
+
+static __attribute__((always_inline)) inline
+uint64_t
+bits_u64_binary_to_negabinary(uint64_t val)
+{
+	const uint64_t Schroeppel2 = 0xAAAAAAAAAAAAAAAA;
+	return (val + Schroeppel2) ^ Schroeppel2;
+}
+
+
+static __attribute__((always_inline)) inline
+uint64_t
+bits_u64_negabinary_to_binary(uint64_t val)
+{
+	const uint64_t Schroeppel2 = 0xAAAAAAAAAAAAAAAA;
+	return (val ^ Schroeppel2) - Schroeppel2;
 }
 
 

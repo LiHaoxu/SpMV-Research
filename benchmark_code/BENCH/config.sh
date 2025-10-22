@@ -519,7 +519,7 @@ progs=(
     # ['div_rf_const_size_row_f']="${script_dir}/src/spmv_div_rf_const_size_row_f.exe"
     # ['div_select_d']="${script_dir}/src/spmv_div_select_d.exe"
     # ['div_cols_sort_d']="${script_dir}/src/spmv_div_cols_sort_d.exe"
-    ['div_rf_ord2_d']="${script_dir}/src/spmv_div_rf_ord2_d.exe"
+    # ['div_rf_ord2_d']="${script_dir}/src/spmv_div_rf_ord2_d.exe"
     # ['div_sym_rf_local_d']="${script_dir}/src/spmv_div_sym_rf_local_d.exe" # BENCH_SYM
     # ['div_sym_rf_local_f']="${script_dir}/src/spmv_div_sym_rf_local_f.exe" # BENCH_SYM
     # ['csr_cuda_div_nv_d']="${script_dir}/src/spmv_cuda_div_nv_d.exe" # BENCH_GPU
@@ -587,7 +587,7 @@ progs=(
     # ['csr_cuda_const_nnz_per_thread_b1024_nnz2_nv_d']="${script_dir}/src/spmv_csr_cuda_const_nnz_per_thread_b1024_nnz2_nv_d.exe"
     # ['csr_cuda_const_nnz_per_thread_b1024_nnz4_nv_d']="${script_dir}/src/spmv_csr_cuda_const_nnz_per_thread_b1024_nnz4_nv_d.exe"
     # ['csr_cuda_const_nnz_per_thread_b1024_nnz6_nv_d']="${script_dir}/src/spmv_csr_cuda_const_nnz_per_thread_b1024_nnz6_nv_d.exe"
-    # ['csr_cuda_const_nnz_per_thread_b1024_nnz6_nv_d']="${script_dir}/src/spmv_csr_cuda_const_nnz_per_thread_b1024_nnz6_nv_d.exe"
+    ['csr_cuda_const_nnz_per_thread_b1024_nnz6_nv_d']="${script_dir}/src/spmv_csr_cuda_const_nnz_per_thread_b1024_nnz6_nv_d.exe"
     # ['csr_cuda_const_nnz_per_thread_b1024_nnz8_nv_d']="${script_dir}/src/spmv_csr_cuda_const_nnz_per_thread_b1024_nnz8_nv_d.exe"
 
     # ['csr_cuda_const_nnz_per_thread_s2_b1024_nnz2_nv_d']="${script_dir}/src/spmv_csr_cuda_const_nnz_per_thread_s2_b1024_nnz2_nv_d.exe"

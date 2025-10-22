@@ -171,18 +171,18 @@ typedef int64_t  vec_perm_elem_p64_256_t;
 #define vec_storeu_masked_i64_2(ptr, vec, mask)            __riscv_vse64_v_i64m1_m(mask, (vec_alias_int64_t *) (ptr), vec,   2)
 #define vec_storeu_masked_i64_1(ptr, vec, mask)            do { if (mask) (*((vec_alias_int64_t *) (ptr))) = (vec); } while (0)
 
-#define vec_gather_i64_i32_256(ptr, idx)                   __riscv_vluxei32_v_i64m1((vec_alias_int64_t *) (ptr), __riscv_vlmul_trunc_v_i32m1_i32mf2(__riscv_vsll_vx_i32m1(idx, 3, 256)), 256)
-#define vec_gather_i64_i32_16(ptr, idx)                    __riscv_vluxei32_v_i64m1((vec_alias_int64_t *) (ptr), __riscv_vlmul_trunc_v_i32m1_i32mf2(__riscv_vsll_vx_i32m1(idx, 3,  16)),  16)
-#define vec_gather_i64_i32_8(ptr, idx)                     __riscv_vluxei32_v_i64m1((vec_alias_int64_t *) (ptr), __riscv_vlmul_trunc_v_i32m1_i32mf2(__riscv_vsll_vx_i32m1(idx, 3,   8)),   8)
-#define vec_gather_i64_i32_4(ptr, idx)                     __riscv_vluxei32_v_i64m1((vec_alias_int64_t *) (ptr), __riscv_vlmul_trunc_v_i32m1_i32mf2(__riscv_vsll_vx_i32m1(idx, 3,   4)),   4)
-#define vec_gather_i64_i32_2(ptr, idx)                     __riscv_vluxei32_v_i64m1((vec_alias_int64_t *) (ptr), __riscv_vlmul_trunc_v_i32m1_i32mf2(__riscv_vsll_vx_i32m1(idx, 3,   2)),   2)
+#define vec_gather_i64_i32_256(ptr, idx)                   __riscv_vluxei32_v_i64m1((vec_alias_int64_t *) (ptr), __riscv_vlmul_trunc_v_i32m1_i32mf2(riscv_vsll_vx_i32m1(idx, 3, 256)), 256)
+#define vec_gather_i64_i32_16(ptr, idx)                    __riscv_vluxei32_v_i64m1((vec_alias_int64_t *) (ptr), __riscv_vlmul_trunc_v_i32m1_i32mf2(riscv_vsll_vx_i32m1(idx, 3,  16)),  16)
+#define vec_gather_i64_i32_8(ptr, idx)                     __riscv_vluxei32_v_i64m1((vec_alias_int64_t *) (ptr), __riscv_vlmul_trunc_v_i32m1_i32mf2(riscv_vsll_vx_i32m1(idx, 3,   8)),   8)
+#define vec_gather_i64_i32_4(ptr, idx)                     __riscv_vluxei32_v_i64m1((vec_alias_int64_t *) (ptr), __riscv_vlmul_trunc_v_i32m1_i32mf2(riscv_vsll_vx_i32m1(idx, 3,   4)),   4)
+#define vec_gather_i64_i32_2(ptr, idx)                     __riscv_vluxei32_v_i64m1((vec_alias_int64_t *) (ptr), __riscv_vlmul_trunc_v_i32m1_i32mf2(riscv_vsll_vx_i32m1(idx, 3,   2)),   2)
 #define vec_gather_i64_i32_1(ptr, idx)                     ( ((vec_alias_int64_t *) (ptr))[idx] )
 
-#define vec_gather_i64_i64_256(ptr, idx)                   __riscv_vluxei64_v_i64m1((vec_alias_int64_t *) (ptr), __riscv_vsll_vx_i64m1(idx, 3, 256), 256)
-#define vec_gather_i64_i64_16(ptr, idx)                    __riscv_vluxei64_v_i64m1((vec_alias_int64_t *) (ptr), __riscv_vsll_vx_i64m1(idx, 3,  16),  16)
-#define vec_gather_i64_i64_8(ptr, idx)                     __riscv_vluxei64_v_i64m1((vec_alias_int64_t *) (ptr), __riscv_vsll_vx_i64m1(idx, 3,   8),   8)
-#define vec_gather_i64_i64_4(ptr, idx)                     __riscv_vluxei64_v_i64m1((vec_alias_int64_t *) (ptr), __riscv_vsll_vx_i64m1(idx, 3,   4),   4)
-#define vec_gather_i64_i64_2(ptr, idx)                     __riscv_vluxei64_v_i64m1((vec_alias_int64_t *) (ptr), __riscv_vsll_vx_i64m1(idx, 3,   2),   2)
+#define vec_gather_i64_i64_256(ptr, idx)                   __riscv_vluxei64_v_i64m1((vec_alias_int64_t *) (ptr), riscv_vsll_vx_i64m1(idx, 3, 256), 256)
+#define vec_gather_i64_i64_16(ptr, idx)                    __riscv_vluxei64_v_i64m1((vec_alias_int64_t *) (ptr), riscv_vsll_vx_i64m1(idx, 3,  16),  16)
+#define vec_gather_i64_i64_8(ptr, idx)                     __riscv_vluxei64_v_i64m1((vec_alias_int64_t *) (ptr), riscv_vsll_vx_i64m1(idx, 3,   8),   8)
+#define vec_gather_i64_i64_4(ptr, idx)                     __riscv_vluxei64_v_i64m1((vec_alias_int64_t *) (ptr), riscv_vsll_vx_i64m1(idx, 3,   4),   4)
+#define vec_gather_i64_i64_2(ptr, idx)                     __riscv_vluxei64_v_i64m1((vec_alias_int64_t *) (ptr), riscv_vsll_vx_i64m1(idx, 3,   2),   2)
 #define vec_gather_i64_i64_1(ptr, idx)                     ( ((vec_alias_int64_t *) (ptr))[idx] )
 
 
@@ -251,19 +251,21 @@ typedef int64_t  vec_perm_elem_p64_256_t;
 //- Shift
 //------------------------------------------------------------------------------------------------------------------------------------------
 
-#define vec_slli_i64_256(a, imm8)                          __riscv_vsll_vx_i64m1(a, imm8, 256)
-#define vec_slli_i64_16(a, imm8)                           __riscv_vsll_vx_i64m1(a, imm8,  16)
-#define vec_slli_i64_8(a, imm8)                            __riscv_vsll_vx_i64m1(a, imm8,   8)
-#define vec_slli_i64_4(a, imm8)                            __riscv_vsll_vx_i64m1(a, imm8,   4)
-#define vec_slli_i64_2(a, imm8)                            __riscv_vsll_vx_i64m1(a, imm8,   2)
+#define vec_slli_i64_256(a, imm8)                          riscv_vsll_vx_i64m1(a, imm8, 256)
+#define vec_slli_i64_16(a, imm8)                           riscv_vsll_vx_i64m1(a, imm8,  16)
+#define vec_slli_i64_8(a, imm8)                            riscv_vsll_vx_i64m1(a, imm8,   8)
+#define vec_slli_i64_4(a, imm8)                            riscv_vsll_vx_i64m1(a, imm8,   4)
+#define vec_slli_i64_2(a, imm8)                            riscv_vsll_vx_i64m1(a, imm8,   2)
 #define vec_slli_i64_1(a, imm8)                            ( (int64_t) ((imm8 < 64) ? ((uint64_t) a)<<imm8 : 0) )
+#define riscv_vsll_vx_i64m1(a, imm8, vl)                   __riscv_vsll_vx_i64m1(a, (uint64_t) imm8, vl)
 
-#define vec_srli_i64_256(a, imm8)                          ( (vint32m1_t) __riscv_vsrl_vx_u64m1((vuint32m1_t) a, imm8, 256) )
-#define vec_srli_i64_16(a, imm8)                           ( (vint32m1_t) __riscv_vsrl_vx_u64m1((vuint32m1_t) a, imm8,  16) )
-#define vec_srli_i64_8(a, imm8)                            ( (vint32m1_t) __riscv_vsrl_vx_u64m1((vuint32m1_t) a, imm8,   8) )
-#define vec_srli_i64_4(a, imm8)                            ( (vint32m1_t) __riscv_vsrl_vx_u64m1((vuint32m1_t) a, imm8,   4) )
-#define vec_srli_i64_2(a, imm8)                            ( (vint32m1_t) __riscv_vsrl_vx_u64m1((vuint32m1_t) a, imm8,   2) )
+#define vec_srli_i64_256(a, imm8)                          riscv_vsrl_vx_u64m1(a, imm8, 256)
+#define vec_srli_i64_16(a, imm8)                           riscv_vsrl_vx_u64m1(a, imm8,  16)
+#define vec_srli_i64_8(a, imm8)                            riscv_vsrl_vx_u64m1(a, imm8,   8)
+#define vec_srli_i64_4(a, imm8)                            riscv_vsrl_vx_u64m1(a, imm8,   4)
+#define vec_srli_i64_2(a, imm8)                            riscv_vsrl_vx_u64m1(a, imm8,   2)
 #define vec_srli_i64_1(a, imm8)                            ( (int64_t) ((imm8 < 64) ? ((uint64_t) a)>>imm8 : 0) )
+#define riscv_vsrl_vx_u64m1(a, imm8, vl)                   __riscv_vreinterpret_v_u64m1_i64m1( __riscv_vsrl_vx_u64m1(__riscv_vreinterpret_v_i64m1_u64m1(a), (uint64_t) imm8, vl) )
 
 #define vec_srai_i64_256(a, imm8)                          __riscv_vsra_vx_i64m1(a, imm8, 256)
 #define vec_srai_i64_16(a, imm8)                           __riscv_vsra_vx_i64m1(a, imm8,  16)
@@ -272,19 +274,21 @@ typedef int64_t  vec_perm_elem_p64_256_t;
 #define vec_srai_i64_2(a, imm8)                            __riscv_vsra_vx_i64m1(a, imm8,   2)
 #define vec_srai_i64_1(a, imm8)                            ((imm8 < 64) ? ((int64_t) a)>>imm8 : (((int64_t) a) < 0) ? -1 : 0)
 
-#define vec_sllv_i64_256(a, count)                         ({ vec_mask_m64_256_t _mask = __riscv_vmsge_vx_i64m1_b64(count, 64, 256); vec_i64_256_t _shifted = __riscv_vsll_vv_i64m1(a, count, 256); __riscv_vmerge_vxm_i64m1(_shifted, 0, _mask, 256); })
-#define vec_sllv_i64_16(a, count)                          ({ vec_mask_m64_16_t  _mask = __riscv_vmsge_vx_i64m1_b64(count, 64,  16); vec_i64_16_t _shifted =  __riscv_vsll_vv_i64m1(a, count,  16); __riscv_vmerge_vxm_i64m1(_shifted, 0, _mask,  16); })
-#define vec_sllv_i64_8(a, count)                           ({ vec_mask_m64_8_t   _mask = __riscv_vmsge_vx_i64m1_b64(count, 64,   8); vec_i64_8_t  _shifted =  __riscv_vsll_vv_i64m1(a, count,   8); __riscv_vmerge_vxm_i64m1(_shifted, 0, _mask,   8); })
-#define vec_sllv_i64_4(a, count)                           ({ vec_mask_m64_4_t   _mask = __riscv_vmsge_vx_i64m1_b64(count, 64,   4); vec_i64_4_t  _shifted =  __riscv_vsll_vv_i64m1(a, count,   4); __riscv_vmerge_vxm_i64m1(_shifted, 0, _mask,   4); })
-#define vec_sllv_i64_2(a, count)                           ({ vec_mask_m64_2_t   _mask = __riscv_vmsge_vx_i64m1_b64(count, 64,   2); vec_i64_2_t  _shifted =  __riscv_vsll_vv_i64m1(a, count,   2); __riscv_vmerge_vxm_i64m1(_shifted, 0, _mask,   2); })
+#define vec_sllv_i64_256(a, count)                         ({ vec_mask_m64_256_t _mask = __riscv_vmsge_vx_i64m1_b64(count, 64, 256); vec_i64_256_t _shifted = riscv_vsll_vv_i64m1(a, count, 256); __riscv_vmerge_vxm_i64m1(_shifted, 0, _mask, 256); })
+#define vec_sllv_i64_16(a, count)                          ({ vec_mask_m64_16_t  _mask = __riscv_vmsge_vx_i64m1_b64(count, 64,  16); vec_i64_16_t _shifted =  riscv_vsll_vv_i64m1(a, count,  16); __riscv_vmerge_vxm_i64m1(_shifted, 0, _mask,  16); })
+#define vec_sllv_i64_8(a, count)                           ({ vec_mask_m64_8_t   _mask = __riscv_vmsge_vx_i64m1_b64(count, 64,   8); vec_i64_8_t  _shifted =  riscv_vsll_vv_i64m1(a, count,   8); __riscv_vmerge_vxm_i64m1(_shifted, 0, _mask,   8); })
+#define vec_sllv_i64_4(a, count)                           ({ vec_mask_m64_4_t   _mask = __riscv_vmsge_vx_i64m1_b64(count, 64,   4); vec_i64_4_t  _shifted =  riscv_vsll_vv_i64m1(a, count,   4); __riscv_vmerge_vxm_i64m1(_shifted, 0, _mask,   4); })
+#define vec_sllv_i64_2(a, count)                           ({ vec_mask_m64_2_t   _mask = __riscv_vmsge_vx_i64m1_b64(count, 64,   2); vec_i64_2_t  _shifted =  riscv_vsll_vv_i64m1(a, count,   2); __riscv_vmerge_vxm_i64m1(_shifted, 0, _mask,   2); })
 #define vec_sllv_i64_1(a, count)                           ( (int64_t) ((count < 64) ? ((uint64_t) a)<<count : 0) )
+#define riscv_vsll_vv_i64m1(a, count, vl)                  __riscv_vsll_vv_i64m1(a, __riscv_vreinterpret_v_i64m1_u64m1(count), vl)
 
-#define vec_srlv_i64_256(a, count)                         ({ vec_mask_m64_256_t _mask = __riscv_vmsge_vx_i64m1_b64(count, 64, 256); vec_i64_256_t _shifted = (vint32m1_t) __riscv_vsrl_vv_u64m1((vuint32m1_t) a, count, 256); __riscv_vmerge_vxm_i64m1(_shifted, 0, _mask, 256); })
-#define vec_srlv_i64_16(a, count)                          ({ vec_mask_m64_16_t  _mask = __riscv_vmsge_vx_i64m1_b64(count, 64,  16); vec_i64_16_t _shifted =  (vint32m1_t) __riscv_vsrl_vv_u64m1((vuint32m1_t) a, count,  16); __riscv_vmerge_vxm_i64m1(_shifted, 0, _mask,  16); })
-#define vec_srlv_i64_8(a, count)                           ({ vec_mask_m64_8_t   _mask = __riscv_vmsge_vx_i64m1_b64(count, 64,   8); vec_i64_8_t  _shifted =  (vint32m1_t) __riscv_vsrl_vv_u64m1((vuint32m1_t) a, count,   8); __riscv_vmerge_vxm_i64m1(_shifted, 0, _mask,   8); })
-#define vec_srlv_i64_4(a, count)                           ({ vec_mask_m64_4_t   _mask = __riscv_vmsge_vx_i64m1_b64(count, 64,   4); vec_i64_4_t  _shifted =  (vint32m1_t) __riscv_vsrl_vv_u64m1((vuint32m1_t) a, count,   4); __riscv_vmerge_vxm_i64m1(_shifted, 0, _mask,   4); })
-#define vec_srlv_i64_2(a, count)                           ({ vec_mask_m64_2_t   _mask = __riscv_vmsge_vx_i64m1_b64(count, 64,   2); vec_i64_2_t  _shifted =  (vint32m1_t) __riscv_vsrl_vv_u64m1((vuint32m1_t) a, count,   2); __riscv_vmerge_vxm_i64m1(_shifted, 0, _mask,   2); })
+#define vec_srlv_i64_256(a, count)                         ({ vec_mask_m64_256_t _mask = __riscv_vmsge_vx_i64m1_b64(count, 64, 256); vec_i64_256_t _shifted = riscv_vsrl_vv_u64m1(a, count, 256); __riscv_vmerge_vxm_i64m1(_shifted, 0, _mask, 256); })
+#define vec_srlv_i64_16(a, count)                          ({ vec_mask_m64_16_t  _mask = __riscv_vmsge_vx_i64m1_b64(count, 64,  16); vec_i64_16_t _shifted =  riscv_vsrl_vv_u64m1(a, count,  16); __riscv_vmerge_vxm_i64m1(_shifted, 0, _mask,  16); })
+#define vec_srlv_i64_8(a, count)                           ({ vec_mask_m64_8_t   _mask = __riscv_vmsge_vx_i64m1_b64(count, 64,   8); vec_i64_8_t  _shifted =  riscv_vsrl_vv_u64m1(a, count,   8); __riscv_vmerge_vxm_i64m1(_shifted, 0, _mask,   8); })
+#define vec_srlv_i64_4(a, count)                           ({ vec_mask_m64_4_t   _mask = __riscv_vmsge_vx_i64m1_b64(count, 64,   4); vec_i64_4_t  _shifted =  riscv_vsrl_vv_u64m1(a, count,   4); __riscv_vmerge_vxm_i64m1(_shifted, 0, _mask,   4); })
+#define vec_srlv_i64_2(a, count)                           ({ vec_mask_m64_2_t   _mask = __riscv_vmsge_vx_i64m1_b64(count, 64,   2); vec_i64_2_t  _shifted =  riscv_vsrl_vv_u64m1(a, count,   2); __riscv_vmerge_vxm_i64m1(_shifted, 0, _mask,   2); })
 #define vec_srlv_i64_1(a, count)                           ( (int64_t) ((count < 64) ? ((uint64_t) a)>>count : 0) )
+#define riscv_vsrl_vv_u64m1(a, count, vl)                  __riscv_vreinterpret_v_u64m1_i64m1(__riscv_vsrl_vv_u64m1(__riscv_vreinterpret_v_i64m1_u64m1(a), __riscv_vreinterpret_v_i64m1_u64m1(count), vl) )
 
 #define vec_srav_i64_256(a, count)                         ({ vec_mask_m64_256_t _mask = __riscv_vmsge_vx_i64m1_b64(count, 64, 256); vec_i64_256_t _count = __riscv_vmerge_vxm_i64m1(count, 63, _mask, 256); __riscv_vsra_vv_i64m1(a, _count, 256); })
 #define vec_srav_i64_16(a, count)                          ({ vec_mask_m64_16_t  _mask = __riscv_vmsge_vx_i64m1_b64(count, 64,  16); vec_i64_16_t _count =  __riscv_vmerge_vxm_i64m1(count, 63, _mask,  16); __riscv_vsra_vv_i64m1(a, _count,  16); })
@@ -317,12 +321,13 @@ typedef int64_t  vec_perm_elem_p64_256_t;
 //- Shuffle - Permute
 //------------------------------------------------------------------------------------------------------------------------------------------
 
-#define vec_permute_i64_256(a, idx)                        __riscv_vrgather_vv_i64m1(a, idx, 256);
-#define vec_permute_i64_16(a, idx)                         __riscv_vrgather_vv_i64m1(a, idx,  16);
-#define vec_permute_i64_8(a, idx)                          __riscv_vrgather_vv_i64m1(a, idx,   8);
-#define vec_permute_i64_4(a, idx)                          __riscv_vrgather_vv_i64m1(a, idx,   4);
-#define vec_permute_i64_2(a, idx)                          __riscv_vrgather_vv_i64m1(a, idx,   2);
+#define vec_permute_i64_256(a, idx)                        riscv_vrgather_vv_i64m1(a, idx, 256);
+#define vec_permute_i64_16(a, idx)                         riscv_vrgather_vv_i64m1(a, idx,  16);
+#define vec_permute_i64_8(a, idx)                          riscv_vrgather_vv_i64m1(a, idx,   8);
+#define vec_permute_i64_4(a, idx)                          riscv_vrgather_vv_i64m1(a, idx,   4);
+#define vec_permute_i64_2(a, idx)                          riscv_vrgather_vv_i64m1(a, idx,   2);
 #define vec_permute_i64_1(a, idx)                          a
+#define riscv_vrgather_vv_i64m1(a, idx, vl)                __riscv_vrgather_vv_i64m1(a, __riscv_vreinterpret_v_i64m1_u64m1(idx), vl);
 
 
 #endif /* VECTORIZATION_RISCV_SVV_I64_H */
