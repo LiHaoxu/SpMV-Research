@@ -96,8 +96,8 @@ conf_vars=(
     # ['USE_RCM_REORDERING']=1
 
     # Benchmark with the artificially generated matrices (1) or real matrices (0).
-    ['USE_ARTIFICIAL_MATRICES']=0
-    # ['USE_ARTIFICIAL_MATRICES']=1
+    # ['USE_ARTIFICIAL_MATRICES']=0
+    ['USE_ARTIFICIAL_MATRICES']=1
 
     # Whether to clear cpu caches before each spmv iteration.
     ['CLEAR_CACHES']=0
@@ -154,7 +154,7 @@ conf_vars=(
     # ['max_cores']=8
 
     # Cores / Threads to utilize. Use spaces to define a set of different thread numbers to benchmark.
-    ['cores']="$num_cores"
+    # ['cores']="$num_cores"
     # ['cores']=1
     # ['cores']='1 2 4 8 16 32 64 128'
     # ['cores']='1 2 4 8 16 32 64'
@@ -178,7 +178,7 @@ conf_vars=(
     # ['cores']=6
     # ['cores']=4
     # ['cores']=2
-    # ['cores']=1
+    ['cores']=1
     # ['cores']='1 2 4 8 16 24 48'
     # ['cores']='24 48'
     # ['cores']='1 2 4 8'
@@ -374,8 +374,8 @@ artificial_matrices_files=(
     # "$path_artificial"/validation_matrices_10_samples_30_range_twins.txt
 
     # The synthetic dataset studied in the paper.
-    "$path_artificial"/synthetic_matrices_medium_dataset.txt
-    # "$path_artificial"/synthetic_matrices_medium_dataset2.txt
+    # "$path_artificial"/synthetic_matrices_medium_dataset.txt
+    "$path_artificial"/synthetic_matrices_medium_dataset2.txt
     # "$path_artificial"/test.txt
 )
 
@@ -482,7 +482,7 @@ progs=(
     # ['csr_vector_perfect_nnz_balance_d']="${script_dir}/src/spmv_csr_vector_perfect_nnz_balance_d.exe"
 
     # Custom csr x86
-    # ['csr_vec']="${script_dir}/src/spmv_csr_vec_d.exe" # BENCH_AMD, BENCH_INTEL, BENCH_RISCV
+    # ['csr_vec_d']="${script_dir}/src/spmv_csr_vec_d.exe" # BENCH_AMD, BENCH_INTEL, BENCH_RISCV
     # ['csr_vector_x86_d']="${script_dir}/src/spmv_csr_vector_x86_d.exe" # BENCH_AMD, BENCH_INTEL
     # ['csr_vector_oracle_balance_x86_d']="${script_dir}/src/spmv_csr_vector_oracle_balance_x86_d.exe"
     # ['csr_vector_queues_x86_d']="${script_dir}/src/spmv_csr_vector_queues_x86_d.exe"
@@ -511,7 +511,7 @@ progs=(
     # Custom compressed values stream
     # ['div_d']="${script_dir}/src/spmv_div_d.exe" # BENCH_AMD, BENCH_INTEL
     # ['div_f']="${script_dir}/src/spmv_div_f.exe" # BENCH_AMD, BENCH_INTEL
-    # ['div_rf_d']="${script_dir}/src/spmv_div_rf_d.exe" # BENCH_AMD, BENCH_INTEL
+    ['div_rf_d']="${script_dir}/src/spmv_div_rf_d.exe" # BENCH_AMD, BENCH_INTEL, BENCH_RISCV
     # ['div_rf_f']="${script_dir}/src/spmv_div_rf_f.exe" # BENCH_AMD, BENCH_INTEL
     # ['div_adapt_d']="${script_dir}/src/spmv_div_adapt_d.exe" # BENCH_AMD, BENCH_INTEL
     # ['div_adapt_f']="${script_dir}/src/spmv_div_adapt_f.exe" # BENCH_AMD, BENCH_INTEL
@@ -587,7 +587,7 @@ progs=(
     # ['csr_cuda_const_nnz_per_thread_b1024_nnz2_nv_d']="${script_dir}/src/spmv_csr_cuda_const_nnz_per_thread_b1024_nnz2_nv_d.exe"
     # ['csr_cuda_const_nnz_per_thread_b1024_nnz4_nv_d']="${script_dir}/src/spmv_csr_cuda_const_nnz_per_thread_b1024_nnz4_nv_d.exe"
     # ['csr_cuda_const_nnz_per_thread_b1024_nnz6_nv_d']="${script_dir}/src/spmv_csr_cuda_const_nnz_per_thread_b1024_nnz6_nv_d.exe"
-    ['csr_cuda_const_nnz_per_thread_b1024_nnz6_nv_d']="${script_dir}/src/spmv_csr_cuda_const_nnz_per_thread_b1024_nnz6_nv_d.exe"
+    # ['csr_cuda_const_nnz_per_thread_b1024_nnz6_nv_d']="${script_dir}/src/spmv_csr_cuda_const_nnz_per_thread_b1024_nnz6_nv_d.exe"
     # ['csr_cuda_const_nnz_per_thread_b1024_nnz8_nv_d']="${script_dir}/src/spmv_csr_cuda_const_nnz_per_thread_b1024_nnz8_nv_d.exe"
 
     # ['csr_cuda_const_nnz_per_thread_s2_b1024_nnz2_nv_d']="${script_dir}/src/spmv_csr_cuda_const_nnz_per_thread_s2_b1024_nnz2_nv_d.exe"

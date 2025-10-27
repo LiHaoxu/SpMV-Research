@@ -123,9 +123,12 @@ elif [[ ${ARCH} == aarch64 ]]; then
     # CFLAGS+=" -msve-vector-bits=256"
     CFLAGS+=" -msve-vector-bits=128"
 elif [[ ${ARCH} == riscv64 ]]; then
+    module load llvm/EPI-development
     CFLAGS+=" -march=rv64gv"
     # CFLAGS+=" -mrvv-vector-bits=zvl"
+    CFLAGS+=" -fmacro-backtrace-limit=0"
     CFLAGS+=" -flax-vector-conversions"
+    CFLAGS+=" -fno-lto"
 elif [[ ${ARCH} == rave ]]; then
     module load rave/development/EPI; # module load rave/EPI
     module load llvm/cross/EPI-development; # module load llvm/cross/EPI-development
@@ -138,7 +141,8 @@ elif [[ ${ARCH} == rave ]]; then
     CFLAGS+=" -fno-lto"
 
     CFLAGS+=" -Wno-vla-cxx-extension"
-
+    CFLAGS+=" -fmacro-backtrace-limit=0"
+    
     CFLAGS+=" -mepi"
     CFLAGS+=" -mllvm -combiner-store-merging=0"
     CFLAGS+=" -mllvm -disable-loop-idiom-memcpy"
@@ -229,6 +233,7 @@ elif [[ ${ARCH} == riscv64 ]]; then
     # LDFLAGS+=' -L /usr/riscv64-linux-gnu'
     # LDFLAGS+=' -Wl,-rpath,/usr/riscv64-linux-gnu/usr/lib'
     # LDFLAGS+=' -Wl,-dynamic-linker,/usr/riscv64-linux-gnu/usr/lib/ld-linux-riscv64-lp64d.so.1'
+    LDFLAGS+=" -v"
 elif [[ ${ARCH} == rave ]]; then
     :
     # LDFLAGS+=' -L /usr/riscv64-linux-gnu'
@@ -238,6 +243,7 @@ elif [[ ${ARCH} == rave ]]; then
     # LDFLAGS+=" -L'/apps/riscv/sdv_trace/lib/' -lsdv_trace_rave -lsdv_trace"
     # LDFLAGS+=" -L/apps/riscv/sdv_trace/sdvtrace-development/lib -Wl,-rpath=/apps/riscv/sdv_trace/sdvtrace-development/lib -lsdv_trace"
     LDFLAGS+=" ${SDV_TRACE_C_LINK}"
+    LDFLAGS+=" -v"
 fi
 
 export LDFLAGS
