@@ -62,12 +62,6 @@ endif
 CFLAGS	+= -mcpu=avispado 
 LLVM_FLAGS	+= -ffast-math -mllvm -combiner-store-merging=0 -Rpass=loop-vectorize -Rpass-analysis=loop-vectorize -mcpu=avispado -mllvm -vectorizer-use-vp-strided-load-store -mllvm -enable-mem-access-versioning=0
 
-# The SDV_TRACE_INCL path is set in the environment, when loading the necessary RAVE and SDV_TRACE modules.
-ifdef RAVE_TRACING
-    CFLAGS += -D'RAVE_TRACING' $(SDV_TRACE_INCL)
-    LLVM_FLAGS += -D'RAVE_TRACING' $(SDV_TRACE_INCL)
-endif
-
 AVCC_FLAGS = $(LLVM_FLAGS)
 ifdef OMP
     CFLAGS += -fopenmp

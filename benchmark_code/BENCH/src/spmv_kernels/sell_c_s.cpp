@@ -6,8 +6,6 @@
 
 #include "spmv_kernel.h"
 
-#include <riscv_vector.h> // RISCV only! watch out
-
 #ifdef __cplusplus
 extern "C"{
 #endif
@@ -40,9 +38,6 @@ struct SELLCS_Array : Matrix_Format
 
 	SELLCS_Array(INT_T * row_ptr_in, INT_T * col_ind, ValueTypeReference * values, long m, long n, long nnz) : Matrix_Format(m, n, nnz)
 	{
-		int num_threads = omp_get_max_threads();
-		double time_balance;
-
 		row_ptr = (typeof(row_ptr)) aligned_alloc(64, (m+1) * sizeof(*row_ptr));
 		ja = (typeof(ja)) aligned_alloc(64, nnz * sizeof(*ja));
 		a = (typeof(a)) aligned_alloc(64, nnz * sizeof(*a));

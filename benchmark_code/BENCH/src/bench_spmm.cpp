@@ -11,7 +11,7 @@
 
 #include "bench_common.h"
 
-#ifdef RAVE_TRACING
+#ifdef SDV_TRACING
 	#include "sdv_tracing.h"
 #endif
 
@@ -298,8 +298,8 @@ compute(struct CSR_reference_s * csr, struct Matrix_Format * MF,
 		rapl_open(reg_ids, &regs, &regs_n);
 		/*****************************************************************************************/
 
-		#ifdef RAVE_TRACING
-			printf("Rave tracing enabled\n");
+		#ifdef SDV_TRACING
+			printf("SDV tracing enabled\n");
 			trace_enable(); 
 		#endif
 
@@ -329,7 +329,7 @@ compute(struct CSR_reference_s * csr, struct Matrix_Format * MF,
 
 			rapl_read_start(regs, regs_n);
 
-			#ifdef RAVE_TRACING
+			#ifdef SDV_TRACING
 				trace_begin_region("COMPUTATION-SpMM");
 			#endif
 
@@ -337,7 +337,7 @@ compute(struct CSR_reference_s * csr, struct Matrix_Format * MF,
 				MF->spmv(x, y);
 			);
 
-			#ifdef RAVE_TRACING
+			#ifdef SDV_TRACING
 				trace_end_region("COMPUTATION-SpMM");
 			#endif
 
@@ -362,8 +362,8 @@ compute(struct CSR_reference_s * csr, struct Matrix_Format * MF,
 		free(iter_times);
 		dynarray_destroy_d(&da_iter_times);
 
-		#ifdef RAVE_TRACING
-			printf("Rave tracing disabled\n");
+		#ifdef SDV_TRACING
+			printf("SDV tracing disabled\n");
 			trace_disable(); 
 		#endif
 
@@ -558,7 +558,7 @@ bench(struct CSR_reference_s * csr, struct Matrix_Format * MF, long print_labels
 		return;
 	}
 
-	#ifdef RAVE_TRACING
+	#ifdef SDV_TRACING
 	{
 		// int values[] = {0, 1};
 		// const char* valueNames[] = {"Other", "Kernel"};
@@ -613,7 +613,7 @@ bench(struct CSR_reference_s * csr, struct Matrix_Format * MF, long print_labels
 	#endif
 
 	long min_num_loops;
-	#ifdef RAVE_TRACING
+	#ifdef SDV_TRACING
 		min_num_loops = 1;
 	#else
 		// min_num_loops = 256;
@@ -621,7 +621,7 @@ bench(struct CSR_reference_s * csr, struct Matrix_Format * MF, long print_labels
 	#endif
 
 	double min_runtime;
-	#ifdef RAVE_TRACING
+	#ifdef SDV_TRACING
 		min_runtime = 0;
 	#else
 		// min_runtime = 0;

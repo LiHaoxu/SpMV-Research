@@ -16,7 +16,7 @@ source "$script_dir"/../config.sh
 export AMG_PATH=../../../artificial-matrix-generator
 
 
-if ((RAVE_TRACING)); then
+if ((RAVE_EMULATION)); then
     export ARCH='rave'
 else
     export ARCH="$(uname -m)"
@@ -48,7 +48,7 @@ else
 fi
 
 
-if ((RAVE_TRACING)) || [[ ${ARCH} == riscv64 ]]; then
+if [[ ${ARCH} == rave ]] || [[ ${ARCH} == riscv64 ]]; then
     CC=clang
     CPP=clang++
 else
@@ -124,20 +124,21 @@ elif [[ ${ARCH} == aarch64 ]]; then
     CFLAGS+=" -msve-vector-bits=128"
 elif [[ ${ARCH} == riscv64 ]]; then
     module load llvm/EPI-development
+    
     CFLAGS+=" -march=rv64gv"
     # CFLAGS+=" -mrvv-vector-bits=zvl"
-    CFLAGS+=" -fmacro-backtrace-limit=0"
     CFLAGS+=" -flax-vector-conversions"
     CFLAGS+=" -fno-lto"
+    CFLAGS+=" -fmacro-backtrace-limit=0"
 elif [[ ${ARCH} == rave ]]; then
-    module load rave/development/EPI; # module load rave/EPI
     module load llvm/cross/EPI-development; # module load llvm/cross/EPI-development
+    module load rave/development/EPI; # module load rave/EPI
     module load sdv_trace/development # module load sdv_trace
+    
     # CFLAGS+=" -march=rv64gv"
     CFLAGS+=" -mcpu=avispado"
     # CFLAGS+=" -mrvv-vector-bits=zvl"
     CFLAGS+=" -flax-vector-conversions"
-    CFLAGS+=" -D'RAVE_TRACING' ${SDV_TRACE_INCL}"
     CFLAGS+=" -fno-lto"
 
     CFLAGS+=" -Wno-vla-cxx-extension"
@@ -150,6 +151,7 @@ elif [[ ${ARCH} == rave ]]; then
 
     # for when it crashes... simply add the function that refuses to compile... in the first case it was sth like "__epi_flog2_nxv1f64"
     CFLAGS+=" -fno-builtin-log2"
+
     CFLAGS+=" -mllvm -vectorizer-use-vp-strided-load-store"
     CFLAGS+=" -mllvm -disable-loop-idiom-memset"
     CFLAGS+=" -mllvm -riscv-uleb128-reloc=0"
@@ -192,6 +194,10 @@ fi
 CFLAGS+=" -D'ValueTypeReference=double'"
 CFLAGS+=" -D'MATRIX_MARKET_FLOAT_T=ValueTypeReference'"
 
+# For synth-hca system only. Enable SDV tracing through RAVE emulation.
+if ((RAVE_EMULATION)) && ((SDV_TRACING)); then
+    CFLAGS+=" -D'SDV_TRACING' ${SDV_TRACE_INCL}"
+fi
 
 CPPFLAGS=''
 CPPFLAGS+=" ${CFLAGS}"
@@ -242,8 +248,11 @@ elif [[ ${ARCH} == rave ]]; then
     
     # LDFLAGS+=" -L'/apps/riscv/sdv_trace/lib/' -lsdv_trace_rave -lsdv_trace"
     # LDFLAGS+=" -L/apps/riscv/sdv_trace/sdvtrace-development/lib -Wl,-rpath=/apps/riscv/sdv_trace/sdvtrace-development/lib -lsdv_trace"
-    LDFLAGS+=" ${SDV_TRACE_C_LINK}"
     LDFLAGS+=" -v"
+
+    if((SDV_TRACING)); then
+        LDFLAGS+=" ${SDV_TRACE_C_LINK}"
+    fi
 fi
 
 export LDFLAGS

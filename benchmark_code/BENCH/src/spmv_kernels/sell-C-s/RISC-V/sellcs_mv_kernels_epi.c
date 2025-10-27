@@ -16,11 +16,6 @@
 #include "sellcs-spmv.h"
 #include "stdio.h"
 
-// #ifdef RAVE_TRACING
-//     #include <sdv_tracing.h>
-// #endif
-
-
 #define PREFETCH_1D_STRIDED(D, N, S)                                \
     __asm volatile("li  t0, 1        # set count_h=1        \n"     \
                    "sll t1, %[n], 5  # set count_v=N[4:0]   \n"     \
@@ -186,11 +181,6 @@ void sellcs_mv_d(const sellcs_matrix_t* matrix,
     const index_t start_slice,
     const index_t end_slice)
 {
-    // #ifdef RAVE_TRACING
-    //     // trace_event_and_value(1000, 1);
-    //     trace_begin_region("Computation(SELL_C_s)");
-    // #endif
-
     const uint32_t vlen = matrix->C;
 
     /* This can also be achieved by shifting 3 times later??? */
@@ -264,11 +254,6 @@ void sellcs_mv_d(const sellcs_matrix_t* matrix,
         __riscv_vsuxei64_v_f64m1(&y[0], y_sc_idx, tmp_results, gvl);
     #endif
     }
-
-    // #ifdef RAVE_TRACING
-    //     // trace_event_and_value(1000, 0);
-    //     trace_end_region("Computation(SELL_C_s)");
-    // #endif
 }
 
 // void kernel_sellcs_dfc_epi(const SparseMatrixSELLCS* restrict matrix,

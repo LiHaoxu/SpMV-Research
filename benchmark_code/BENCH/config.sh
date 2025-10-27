@@ -128,8 +128,11 @@ conf_vars=(
     # ['DIV_PACKET_REORDERING']=1
 
     # Whether to enable tracing with RAVE.
-    ['RAVE_TRACING']=0
-    # ['RAVE_TRACING']=1
+    # ['RAVE_EMULATION']=0
+    ['RAVE_EMULATION']=1
+
+    # ['SDV_TRACING']=0
+    ['SDV_TRACING']=1
 
     # K dimension.
     ['K_DIM']='16'
