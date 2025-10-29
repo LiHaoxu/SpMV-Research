@@ -349,8 +349,8 @@ compute(struct CSR_reference_s * csr, struct Matrix_Format * MF,
 
 			rapl_read_start(regs, regs_n);
 
-			char region_name[] = "COMPUTATION-SpMV";
 			#ifdef SDV_TRACING
+				char region_name[] = "COMPUTATION-SpMV";
 				trace_begin_region(region_name);
 			#endif
 			

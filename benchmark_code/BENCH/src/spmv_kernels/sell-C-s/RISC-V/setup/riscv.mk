@@ -59,8 +59,27 @@ else
    LLVM_FLAGS += -O3 -DNDEBUG 
 endif
 
+# For some reason.. when setting it to atrevido-vec it gets stuck during execution (only on synth-hca)
 CFLAGS	+= -mcpu=avispado 
-LLVM_FLAGS	+= -ffast-math -mllvm -combiner-store-merging=0 -Rpass=loop-vectorize -Rpass-analysis=loop-vectorize -mcpu=avispado -mllvm -vectorizer-use-vp-strided-load-store -mllvm -enable-mem-access-versioning=0
+# CFLAGS  += -mcpu=atrevido-vec
+
+LLVM_FLAGS+= -mcpu=avispado
+# LLVM_FLAGS+= -mcpu=atrevido-vec
+
+LLVM_FLAGS+= -fno-lto
+LLVM_FLAGS+= -flax-vector-conversions
+LLVM_FLAGS+= -Wno-vla-cxx-extension
+LLVM_FLAGS+= -fno-slp-vectorize
+LLVM_FLAGS+= -mllvm -combiner-store-merging=0
+LLVM_FLAGS+= -mllvm -vectorizer-use-vp-strided-load-store
+LLVM_FLAGS+= -mllvm -disable-loop-idiom-memcpy
+LLVM_FLAGS+= -mllvm -disable-loop-idiom-memset
+LLVM_FLAGS+= -mllvm -riscv-uleb128-reloc=0
+LLVM_FLAGS+= -Xclang -target-feature -Xclang +does-not-implement-vszext
+LLVM_FLAGS+= -Xclang -target-feature -Xclang +does-not-implement-tu
+LLVM_FLAGS+= -Rpass=loop-vectorize
+LLVM_FLAGS+= -Rpass-analysis=loop-vectorize
+LLVM_FLAGS+= -Rpass-missed=loop-vectorize
 
 AVCC_FLAGS = $(LLVM_FLAGS)
 ifdef OMP

@@ -184,10 +184,9 @@ static inline
 double
 subkernel_row_csr_vec(INT_T * restrict ja, ValueType * restrict a, ValueType * restrict x, long j_s, long j_e)
 {
-	long i, j, j_e_vector;
+	long j, j_e_vector;
 	const long mask = ~(((long) VEC_LEN) - 1); // Minimum number of elements for the vectorized code (power of 2).
 	vec_t(VTF, VEC_LEN) v_a, v_x, v_sum;
-	vec_mask_t(VTM, VEC_LEN) v_m;
 	ValueType sum = 0;
 	v_sum = vec_set1(VTF, VEC_LEN, 0);
 	sum = 0;

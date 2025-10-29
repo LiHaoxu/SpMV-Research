@@ -122,43 +122,40 @@ elif [[ ${ARCH} == aarch64 ]]; then
     # CFLAGS+=" -msve-vector-bits=512"
     # CFLAGS+=" -msve-vector-bits=256"
     CFLAGS+=" -msve-vector-bits=128"
-elif [[ ${ARCH} == riscv64 ]]; then
-    module load llvm/EPI-development
-    
-    CFLAGS+=" -march=rv64gv"
-    # CFLAGS+=" -mrvv-vector-bits=zvl"
-    CFLAGS+=" -flax-vector-conversions"
+elif [[ ${ARCH} == riscv64 || ${ARCH} == rave ]]; then
+    case "${ARCH}" in
+        riscv64)
+            module load llvm/EPI-development
+            ;;
+        rave)
+            module load llvm/cross/EPI-development
+            module load rave/development/EPI
+            module load sdv_trace/development
+            ;;
+    esac
+
     CFLAGS+=" -fno-lto"
     CFLAGS+=" -fmacro-backtrace-limit=0"
-elif [[ ${ARCH} == rave ]]; then
-    module load llvm/cross/EPI-development; # module load llvm/cross/EPI-development
-    module load rave/development/EPI; # module load rave/EPI
-    module load sdv_trace/development # module load sdv_trace
-    
-    # CFLAGS+=" -march=rv64gv"
-    CFLAGS+=" -mcpu=avispado"
-    # CFLAGS+=" -mrvv-vector-bits=zvl"
-    CFLAGS+=" -flax-vector-conversions"
-    CFLAGS+=" -fno-lto"
 
+    CFLAGS+=" -flax-vector-conversions"
     CFLAGS+=" -Wno-vla-cxx-extension"
-    CFLAGS+=" -fmacro-backtrace-limit=0"
-    
+
+    # atrevido-vec gets stuck on synth-hca for sell-c-s only...
+    # CFLAGS+=" -mcpu=avispado"
+    CFLAGS+=" -mcpu=atrevido-vec"
+
     CFLAGS+=" -mepi"
-    CFLAGS+=" -mllvm -combiner-store-merging=0"
-    CFLAGS+=" -mllvm -disable-loop-idiom-memcpy"
     CFLAGS+=" -fno-slp-vectorize"
-
-    # for when it crashes... simply add the function that refuses to compile... in the first case it was sth like "__epi_flog2_nxv1f64"
-    CFLAGS+=" -fno-builtin-log2"
-
+    CFLAGS+=" -mllvm -combiner-store-merging=0"
     CFLAGS+=" -mllvm -vectorizer-use-vp-strided-load-store"
+    CFLAGS+=" -mllvm -disable-loop-idiom-memcpy"
     CFLAGS+=" -mllvm -disable-loop-idiom-memset"
     CFLAGS+=" -mllvm -riscv-uleb128-reloc=0"
-    CFLAGS+=" -Xclang -target-feature"
-    CFLAGS+=" -Xclang +does-not-implement-vszext"
-    CFLAGS+=" -Xclang -target-feature"
-    CFLAGS+=" -Xclang +does-not-implement-tu"
+    CFLAGS+=" -Xclang -target-feature -Xclang +does-not-implement-vszext"
+    CFLAGS+=" -Xclang -target-feature -Xclang +does-not-implement-tu"
+    # CFLAGS+=" -Rpass=loop-vectorize"
+    # CFLAGS+=" -Rpass-analysis=loop-vectorize"
+    # CFLAGS+=" -Rpass-missed=loop-vectorize"
 else
     CFLAGS+=" -mcpu=native"
 fi

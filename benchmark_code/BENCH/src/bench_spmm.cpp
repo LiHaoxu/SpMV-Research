@@ -330,7 +330,8 @@ compute(struct CSR_reference_s * csr, struct Matrix_Format * MF,
 			rapl_read_start(regs, regs_n);
 
 			#ifdef SDV_TRACING
-				trace_begin_region("COMPUTATION-SpMM");
+				char region_name[] = "COMPUTATION-SpMM";
+				trace_begin_region(region_name);
 			#endif
 
 			time_iter = time_it(1,
@@ -338,7 +339,7 @@ compute(struct CSR_reference_s * csr, struct Matrix_Format * MF,
 			);
 
 			#ifdef SDV_TRACING
-				trace_end_region("COMPUTATION-SpMM");
+				trace_end_region(region_name);
 			#endif
 
 			rapl_read_end(regs, regs_n);
