@@ -1078,6 +1078,7 @@ decompress_and_compute_kernel_div_base(unsigned char * restrict buf, ValueType *
 
 		for (i=num_rf_vals_unique_multiple;i<num_rf_vals_unique;i++)
 		{
+			printf("\ni = %ld/%ld\t", i+1, num_rf_vals_unique);
 			ValueTypeI diff;
 			uint64_t len;
 			long lane_id = i % VEC_LEN;
@@ -1103,6 +1104,7 @@ decompress_and_compute_kernel_div_base(unsigned char * restrict buf, ValueType *
 			long rf_multiple = rf_div * VEC_LEN;
 			for (j=0;j<rf_multiple;j+=VEC_LEN)
 			{
+				printf("%ld ", j);
 				vec_t(i64, VEC_LEN) row_rel, col_rel;
 				vec_t(VTF, VEC_LEN) val_buf = vec_set1(VTF, VEC_LEN, reinterpret_cast(ValueType, vec_elem_get(VTI, VEC_LEN, val, lane_id)));
 				k = i*rf + j;
@@ -1127,6 +1129,7 @@ decompress_and_compute_kernel_div_base(unsigned char * restrict buf, ValueType *
 
 			for (j=rf_multiple;j<rf;j++)
 			{
+				printf("%ld ", j+1);
 				uint64_t row_rel, col_rel;
 				k = i*rf + j;
 				gather_coords(k, data_coords, coords_bytes, row_bits, col_bits, &row_rel, &col_rel);

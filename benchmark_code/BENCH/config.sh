@@ -96,8 +96,8 @@ conf_vars=(
     # ['USE_RCM_REORDERING']=1
 
     # Benchmark with the artificially generated matrices (1) or real matrices (0).
-    # ['USE_ARTIFICIAL_MATRICES']=0
-    ['USE_ARTIFICIAL_MATRICES']=1
+    ['USE_ARTIFICIAL_MATRICES']=0
+    # ['USE_ARTIFICIAL_MATRICES']=1
 
     # Whether to clear cpu caches before each spmv iteration.
     ['CLEAR_CACHES']=0
@@ -128,11 +128,11 @@ conf_vars=(
     # ['DIV_PACKET_REORDERING']=1
 
     # Whether to enable tracing with RAVE.
-    # ['RAVE_EMULATION']=0
-    ['RAVE_EMULATION']=1
+    ['RAVE_EMULATION']=0
+    # ['RAVE_EMULATION']=1
 
-    # ['SDV_TRACING']=0
-    ['SDV_TRACING']=1
+    ['SDV_TRACING']=0
+    # ['SDV_TRACING']=1
 
     # K dimension.
     ['K_DIM']='16'
@@ -324,7 +324,7 @@ conf_vars=(
     # Path for the validation matrices.
     ['path_validation']="$( options=(
                         "$HOME/Data/graphs/validation_matrices"
-                        "${script_dir}/../../../validation_matrices"
+                        "${script_dir}/../../validation_matrices"
                         '/various/pmpakos/SpMV-Research/validation_matrices'
                         # '/various/pmpakos/SpMV-Research/validation_matrices/matrix_features/matrices'
                         # '/various/pmpakos/SpMV-Research/validation_matrices/download_matrices'
@@ -514,7 +514,7 @@ progs=(
     # Custom compressed values stream
     # ['div_d']="${script_dir}/src/spmv_div_d.exe" # BENCH_AMD, BENCH_INTEL
     # ['div_f']="${script_dir}/src/spmv_div_f.exe" # BENCH_AMD, BENCH_INTEL
-    # ['div_rf_d']="${script_dir}/src/spmv_div_rf_d.exe" # BENCH_AMD, BENCH_INTEL, BENCH_RISCV
+    ['div_rf_d']="${script_dir}/src/spmv_div_rf_d.exe" # BENCH_AMD, BENCH_INTEL, BENCH_RISCV
     # ['div_rf_f']="${script_dir}/src/spmv_div_rf_f.exe" # BENCH_AMD, BENCH_INTEL
     # ['div_adapt_d']="${script_dir}/src/spmv_div_adapt_d.exe" # BENCH_AMD, BENCH_INTEL
     # ['div_adapt_f']="${script_dir}/src/spmv_div_adapt_f.exe" # BENCH_AMD, BENCH_INTEL
@@ -551,7 +551,7 @@ progs=(
     # sell C sigma
     # ['sell_C_s_d']="${script_dir}/src/sell-C-s/build/spmvbench/spmv_sell-C-s_d.exe"
     # ['sell_C_s_d']="/various/pmpakos/SpMV-Research/benchmark_code/BENCH/spmv_code_sell-C-s/build/spmvbench/spmv_sell-C-s_d.exe"
-    ['sell_c_s_d']="${script_dir}/src/spmv_sell_c_s_d.exe" # BENCH_RISCV
+    # ['sell_c_s_d']="${script_dir}/src/spmv_sell_c_s_d.exe" # BENCH_RISCV
 
     # sparsex
     # ['sparsex_d']="${script_dir}/src/spmv_sparsex_d.exe" # BENCH_AMD, BENCH_INTEL

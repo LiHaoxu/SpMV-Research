@@ -141,8 +141,8 @@ elif [[ ${ARCH} == riscv64 || ${ARCH} == rave ]]; then
     CFLAGS+=" -Wno-vla-cxx-extension"
 
     # atrevido-vec gets stuck on synth-hca for sell-c-s only...
-    # CFLAGS+=" -mcpu=avispado"
-    CFLAGS+=" -mcpu=atrevido-vec"
+    CFLAGS+=" -mcpu=avispado"
+    # CFLAGS+=" -mcpu=atrevido-vec"
 
     CFLAGS+=" -mepi"
     CFLAGS+=" -fno-slp-vectorize"
