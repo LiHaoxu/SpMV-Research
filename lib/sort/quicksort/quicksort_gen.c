@@ -140,6 +140,7 @@ quicksort_no_malloc(_TYPE_V * A, long N, _TYPE_AD * aux_data, _TYPE_I * partitio
 
 #undef  quicksort
 #define quicksort  QUICKSORT_GEN_EXPAND(quicksort)
+QUICKSORT_GEN_FUNCTION_ATTRIBUTES
 void
 quicksort(_TYPE_V * A, long N, _TYPE_AD * aux_data, _TYPE_I * partitions_buf)
 {
@@ -203,6 +204,7 @@ quicksort_no_malloc_parallel(_TYPE_V * A, __attribute__((unused)) _TYPE_V * buf,
 
 #undef  quicksort_parallel
 #define quicksort_parallel  QUICKSORT_GEN_EXPAND(quicksort_parallel)
+QUICKSORT_GEN_FUNCTION_ATTRIBUTES
 void
 quicksort_parallel(_TYPE_V * A, long N, _TYPE_AD * aux_data, _TYPE_I * partitions_buf)
 {
@@ -221,6 +223,7 @@ quicksort_parallel(_TYPE_V * A, long N, _TYPE_AD * aux_data, _TYPE_I * partition
 
 #undef  quicksort_parallel_inplace
 #define quicksort_parallel_inplace  QUICKSORT_GEN_EXPAND(quicksort_parallel_inplace)
+QUICKSORT_GEN_FUNCTION_ATTRIBUTES
 void
 quicksort_parallel_inplace(_TYPE_V * A, long N, _TYPE_AD * aux_data, _TYPE_I * partitions_buf)
 {

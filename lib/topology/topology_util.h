@@ -1,6 +1,10 @@
+#ifndef TOPOLOGY_UTIL_H
+#define TOPOLOGY_UTIL_H
+
 #ifndef _GNU_SOURCE
 	#error "Define _GNU_SOURCE at the top level to compile this library."
 #endif
+
 #include <stdlib.h>
 #include <stdio.h>
 #include <unistd.h>
@@ -20,6 +24,13 @@
 #include "io.h"
 
 #include "hardware_topology.h"
+
+
+#include "data_structures/dynamic_array/dynamic_array_gen_undef.h"
+#define DYNAMIC_ARRAY_GEN_TYPE_1  long
+#define DYNAMIC_ARRAY_GEN_SUFFIX  _TOPOLOGY_UTIL
+#define DYNAMIC_ARRAY_GEN_FUNCTION_ATTRIBUTES  static __attribute((unused))
+#include "data_structures/dynamic_array/dynamic_array_gen.c"
 
 
 static inline
@@ -181,24 +192,23 @@ find_numbered_files_list(char * dirname, char * filename_prefix, long ** number_
 	struct dirent *de;  // Pointer for directory entry
 	regex_t regex;
 	long num_files;
-	long * list;
-	long i;
-
-	snprintf(buf, buf_n, "%s[[:digit:]]+", filename_prefix);
-	if (regcomp(&regex, buf, REG_EXTENDED))
-		error("regcomp");
+	struct dynarray * da;
 
 	dr = opendir(dirname);
 	if (dr == NULL)
 	{
-		// error("opendir");
+		// error("opendir: failed to open directory: %s", dirname);
+		warning("opendir: failed to open directory: %s", dirname);
 		if (number_list_ret != NULL)
 			*number_list_ret = NULL;
-		regfree(&regex);
 		return 0;
 	}
 
-	i = 0;
+	num_files = 0;
+	da = dynarray_new(0);
+	snprintf(buf, buf_n, "%s[[:digit:]]+", filename_prefix);
+	if (regcomp(&regex, buf, REG_EXTENDED))
+		error("regcomp");
 	while (1)
 	{
 		de = readdir(dr);
@@ -206,36 +216,20 @@ find_numbered_files_list(char * dirname, char * filename_prefix, long ** number_
 			break;
 		if (regexec(&regex, de->d_name, 0, NULL, 0) == 0)
 		{
-			i++;
+			dynarray_push_back(da, atol((de->d_name) + strlen(filename_prefix)));
+			num_files++;
 		}
 	}
 	closedir(dr);
-	num_files = i;
 
 	if (number_list_ret != NULL)
 	{
-		list = (typeof(list)) malloc(num_files * sizeof(*list));
-		dr = opendir(dirname);
-		if (dr == NULL)
-			error("opendir");
-		i = 0;
-		while (1)
-		{
-			de = readdir(dr);
-			if (de == NULL)
-				break;
-			if (regexec(&regex, de->d_name, 0, NULL, 0) == 0)
-			{
-				list[i] = atol((de->d_name) + strlen(filename_prefix));
-				i++;
-			}
-		}
-		closedir(dr);
-		qsort(list, num_files, sizeof(*list), cmp_long);
-		*number_list_ret = list;
+		dynarray_export_array(da, number_list_ret);
+		qsort(*number_list_ret, num_files, sizeof(**number_list_ret), cmp_long);
 	}
 
 	regfree(&regex);
+	dynarray_destroy(&da);
 	return num_files;
 }
 
@@ -282,4 +276,7 @@ translate(long * A, long N, long * dict,
 		A_out[i] = dict[A[i]];
 	}
 }
+
+
+#endif /* TOPOLOGY_UTIL_H */
 

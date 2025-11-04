@@ -159,7 +159,7 @@ long quicksort_permutation_table_i64_n;
 // vec_perm_t(p64, VEC_LEN) * quicksort_permutation_table_i64;
 vec_perm_elem_t(p64, VEC_LEN) * quicksort_permutation_table_i64;
 void
-create_permutation_table()
+quicksort_blocked_create_permutation_table()
 {
 	uint64_t permutation[VEC_LEN];
 	uint64_t mask;
@@ -398,7 +398,7 @@ compress_init_div(__attribute__((unused)) ValueTypeReference * vals, __attribute
 
 		tdks[tnum] = tdk;
 	}
-	create_permutation_table();
+	quicksort_blocked_create_permutation_table();
 }
 
 

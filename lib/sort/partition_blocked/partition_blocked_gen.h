@@ -8,6 +8,8 @@
 	#error "PARTITION_BLOCKED_GEN_VECTOR_LEN not defined: vector length (number of elements)"
 #elif !defined(PARTITION_BLOCKED_GEN_SUFFIX)
 	#error "PARTITION_BLOCKED_GEN_SUFFIX not defined"
+#elif !defined(PARTITION_BLOCKED_GEN_FUNCTION_ATTRIBUTES)
+	#define PARTITION_BLOCKED_GEN_FUNCTION_ATTRIBUTES
 #endif
 
 #include "macros/cpp_defines.h"
@@ -37,9 +39,11 @@ typedef PARTITION_BLOCKED_GEN_TYPE_3  _TYPE_AD;
 
 #undef  partition_blocked_serial
 #define partition_blocked_serial  PARTITION_BLOCKED_GEN_EXPAND(partition_blocked_serial)
+PARTITION_BLOCKED_GEN_FUNCTION_ATTRIBUTES
 long partition_blocked_serial(_TYPE_V pivot, _TYPE_V * A, long i_start, long i_end, _TYPE_AD * aux_data);
 
 #undef  partition_blocked_auto_serial
 #define partition_blocked_auto_serial  PARTITION_BLOCKED_GEN_EXPAND(partition_blocked_auto_serial)
+PARTITION_BLOCKED_GEN_FUNCTION_ATTRIBUTES
 long partition_blocked_auto_serial(_TYPE_V * A, long i_start, long i_end, _TYPE_AD * aux_data);
 

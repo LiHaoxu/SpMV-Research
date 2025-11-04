@@ -8,6 +8,8 @@
 	#error "SAMPLESORT_GEN_TYPE_4 not defined: auxiliary data value type"
 #elif !defined(SAMPLESORT_GEN_SUFFIX)
 	#error "SAMPLESORT_GEN_SUFFIX not defined"
+#elif !defined(SAMPLESORT_GEN_FUNCTION_ATTRIBUTES)
+	#define SAMPLESORT_GEN_FUNCTION_ATTRIBUTES
 #endif
 
 #include "macros/cpp_defines.h"
@@ -41,9 +43,11 @@ typedef SAMPLESORT_GEN_TYPE_4  _TYPE_AD;
 
 #undef  samplesort_concurrent
 #define samplesort_concurrent  SAMPLESORT_GEN_EXPAND(samplesort_concurrent)
+SAMPLESORT_GEN_FUNCTION_ATTRIBUTES
 void samplesort_concurrent(_TYPE_V * A, long N, _TYPE_AD * aux_data);
 
 #undef  samplesort
 #define samplesort  SAMPLESORT_GEN_EXPAND(samplesort)
+SAMPLESORT_GEN_FUNCTION_ATTRIBUTES
 void samplesort(_TYPE_V * A, long N, _TYPE_AD * aux_data);
 

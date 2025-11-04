@@ -1,10 +1,11 @@
 
+#pragma push_macro("DYNAMIC_ARRAY_GEN_TYPE_1")
 #pragma push_macro("DYNAMIC_ARRAY_GEN_SUFFIX")
-
-
-
+#pragma push_macro("DYNAMIC_ARRAY_GEN_FUNCTION_ATTRIBUTES")
+#pragma push_macro("DYNAMIC_ARRAY_GEN_EXPAND")
+#pragma push_macro("DYNAMIC_ARRAY_GEN_EXPAND_TYPE")
+#pragma push_macro("_TYPE")
 #pragma push_macro("dynarray")
-
 #pragma push_macro("dynarray_init")
 #pragma push_macro("dynarray_new")
 #pragma push_macro("dynarray_clean")
@@ -20,6 +21,4 @@
 #pragma push_macro("dynarray_push_back_array_atomic")
 #pragma push_macro("dynarray_copy_to_array")
 #pragma push_macro("dynarray_export_array")
-
 #include "dynamic_array_gen_undef.h"
-

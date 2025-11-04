@@ -1,6 +1,8 @@
+
 #pragma push_macro("RCM_GEN_TYPE_1")
 #pragma push_macro("RCM_GEN_TYPE_2")
 #pragma push_macro("RCM_GEN_SUFFIX")
+#pragma push_macro("RCM_GEN_FUNCTION_ATTRIBUTES")
 #pragma push_macro("RCM_GEN_EXPAND")
 #pragma push_macro("RCM_GEN_EXPAND_TYPE")
 #pragma push_macro("_TYPE_V")

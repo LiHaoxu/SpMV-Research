@@ -8,6 +8,8 @@
 	#error "QUICKSORT_BLOCKED_GEN_VECTOR_LEN not defined: vector length (number of elements)"
 #elif !defined(QUICKSORT_BLOCKED_GEN_SUFFIX)
 	#error "QUICKSORT_BLOCKED_GEN_SUFFIX not defined"
+#elif !defined(QUICKSORT_BLOCKED_GEN_FUNCTION_ATTRIBUTES)
+	#define QUICKSORT_BLOCKED_GEN_FUNCTION_ATTRIBUTES
 #endif
 
 #include "macros/cpp_defines.h"
@@ -41,5 +43,6 @@ typedef QUICKSORT_BLOCKED_GEN_TYPE_3  _TYPE_AD;
 
 #undef  quicksort_blocked
 #define quicksort_blocked  QUICKSORT_BLOCKED_GEN_EXPAND(quicksort_blocked)
+QUICKSORT_BLOCKED_GEN_FUNCTION_ATTRIBUTES
 void quicksort_blocked(_TYPE_V * A, long N, _TYPE_AD * aux_data, _TYPE_I * partitions_buf);
 

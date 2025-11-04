@@ -291,6 +291,7 @@ hashtable_init_base(struct hashtable * ht, long buckets_n)
 
 #undef  hashtable_init_serial
 #define hashtable_init_serial  HASHTABLE_GEN_EXPAND(hashtable_init_serial)
+HASHTABLE_GEN_FUNCTION_ATTRIBUTES
 void
 hashtable_init_serial(struct hashtable * ht, long buckets_n)
 {
@@ -302,6 +303,7 @@ hashtable_init_serial(struct hashtable * ht, long buckets_n)
 
 #undef  hashtable_init_concurrent
 #define hashtable_init_concurrent  HASHTABLE_GEN_EXPAND(hashtable_init_concurrent)
+HASHTABLE_GEN_FUNCTION_ATTRIBUTES
 void
 hashtable_init_concurrent(struct hashtable * ht, long buckets_n)
 {
@@ -321,6 +323,7 @@ hashtable_init_concurrent(struct hashtable * ht, long buckets_n)
 
 #undef  hashtable_init
 #define hashtable_init  HASHTABLE_GEN_EXPAND(hashtable_init)
+HASHTABLE_GEN_FUNCTION_ATTRIBUTES
 void
 hashtable_init(struct hashtable * ht, long buckets_n)
 {
@@ -338,6 +341,7 @@ hashtable_init(struct hashtable * ht, long buckets_n)
 
 #undef  hashtable_new_serial
 #define hashtable_new_serial  HASHTABLE_GEN_EXPAND(hashtable_new_serial)
+HASHTABLE_GEN_FUNCTION_ATTRIBUTES
 struct hashtable *
 hashtable_new_serial(long buckets_n)
 {
@@ -349,6 +353,7 @@ hashtable_new_serial(long buckets_n)
 
 #undef  hashtable_new_concurrent
 #define hashtable_new_concurrent  HASHTABLE_GEN_EXPAND(hashtable_new_concurrent)
+HASHTABLE_GEN_FUNCTION_ATTRIBUTES
 struct hashtable *
 hashtable_new_concurrent(long buckets_n)
 {
@@ -365,6 +370,7 @@ hashtable_new_concurrent(long buckets_n)
 
 #undef  hashtable_new
 #define hashtable_new  HASHTABLE_GEN_EXPAND(hashtable_new)
+HASHTABLE_GEN_FUNCTION_ATTRIBUTES
 struct hashtable *
 hashtable_new(long buckets_n)
 {
@@ -401,6 +407,7 @@ hashtable_clean_free(struct hashtable * ht)
 
 #undef  hashtable_clean_serial
 #define hashtable_clean_serial  HASHTABLE_GEN_EXPAND(hashtable_clean_serial)
+HASHTABLE_GEN_FUNCTION_ATTRIBUTES
 void
 hashtable_clean_serial(struct hashtable * ht)
 {
@@ -412,6 +419,7 @@ hashtable_clean_serial(struct hashtable * ht)
 
 #undef  hashtable_clean_concurrent
 #define hashtable_clean_concurrent  HASHTABLE_GEN_EXPAND(hashtable_clean_concurrent)
+HASHTABLE_GEN_FUNCTION_ATTRIBUTES
 void
 hashtable_clean_concurrent(struct hashtable * ht)
 {
@@ -431,6 +439,7 @@ hashtable_clean_concurrent(struct hashtable * ht)
 
 #undef  hashtable_clean
 #define hashtable_clean  HASHTABLE_GEN_EXPAND(hashtable_clean)
+HASHTABLE_GEN_FUNCTION_ATTRIBUTES
 void
 hashtable_clean(struct hashtable * ht)
 {
@@ -448,6 +457,7 @@ hashtable_clean(struct hashtable * ht)
 
 #undef  hashtable_destroy_serial
 #define hashtable_destroy_serial  HASHTABLE_GEN_EXPAND(hashtable_destroy_serial)
+HASHTABLE_GEN_FUNCTION_ATTRIBUTES
 void
 hashtable_destroy_serial(struct hashtable ** ht_ptr)
 {
@@ -458,6 +468,7 @@ hashtable_destroy_serial(struct hashtable ** ht_ptr)
 
 #undef  hashtable_destroy_concurrent
 #define hashtable_destroy_concurrent  HASHTABLE_GEN_EXPAND(hashtable_destroy_concurrent)
+HASHTABLE_GEN_FUNCTION_ATTRIBUTES
 void
 hashtable_destroy_concurrent(struct hashtable ** ht_ptr)
 {
@@ -473,6 +484,7 @@ hashtable_destroy_concurrent(struct hashtable ** ht_ptr)
 
 #undef  hashtable_destroy
 #define hashtable_destroy  HASHTABLE_GEN_EXPAND(hashtable_destroy)
+HASHTABLE_GEN_FUNCTION_ATTRIBUTES
 void
 hashtable_destroy(struct hashtable ** ht_ptr)
 {
@@ -495,6 +507,7 @@ hashtable_destroy(struct hashtable ** ht_ptr)
 
 #undef  hashtable_empty_serial
 #define hashtable_empty_serial  HASHTABLE_GEN_EXPAND(hashtable_empty_serial)
+HASHTABLE_GEN_FUNCTION_ATTRIBUTES
 void
 hashtable_empty_serial(struct hashtable * ht)
 {
@@ -508,6 +521,7 @@ hashtable_empty_serial(struct hashtable * ht)
 
 #undef  hashtable_empty_concurrent
 #define hashtable_empty_concurrent  HASHTABLE_GEN_EXPAND(hashtable_empty_concurrent)
+HASHTABLE_GEN_FUNCTION_ATTRIBUTES
 void
 hashtable_empty_concurrent(struct hashtable * ht)
 {
@@ -525,6 +539,7 @@ hashtable_empty_concurrent(struct hashtable * ht)
 
 #undef  hashtable_empty
 #define hashtable_empty  HASHTABLE_GEN_EXPAND(hashtable_empty)
+HASHTABLE_GEN_FUNCTION_ATTRIBUTES
 void
 hashtable_empty(struct hashtable * ht)
 {
@@ -666,8 +681,8 @@ hashtable_bucket_resize_concurrent(struct hashtable * ht, long bucket_pos, long 
  * For example, for float/double types "nan == nan" is always false!
  * Therefore, cast to integer type before comparison.
  */
-#undef  hashtable_bucket_contains
-#define hashtable_bucket_contains  HASHTABLE_GEN_EXPAND(hashtable_bucket_contains)
+#undef  hashtable_test_equal_keys_basic_type
+#define hashtable_test_equal_keys_basic_type  HASHTABLE_GEN_EXPAND(hashtable_test_equal_keys_basic_type)
 static inline
 int
 hashtable_test_equal_keys_basic_type(_TYPE_K key_1, _TYPE_K key_2)
@@ -798,6 +813,7 @@ hashtable_bucket_contains_mru(struct hashtable_bucket * bucket, _TYPE_K target_k
 
 #undef  hashtable_contains
 #define hashtable_contains  HASHTABLE_GEN_EXPAND(hashtable_contains)
+HASHTABLE_GEN_FUNCTION_ATTRIBUTES
 int
 hashtable_contains(struct hashtable * ht, _TYPE_K key  _VC(, _TYPE_V * value_out))
 {
@@ -825,6 +841,7 @@ hashtable_contains(struct hashtable * ht, _TYPE_K key  _VC(, _TYPE_V * value_out
 
 #undef  hashtable_insert_serial
 #define hashtable_insert_serial  HASHTABLE_GEN_EXPAND(hashtable_insert_serial)
+HASHTABLE_GEN_FUNCTION_ATTRIBUTES
 int 
 hashtable_insert_serial(struct hashtable * ht, _TYPE_K key  _VC(, _TYPE_V value, long replace))
 {
@@ -878,6 +895,7 @@ hashtable_insert_serial(struct hashtable * ht, _TYPE_K key  _VC(, _TYPE_V value,
 
 #undef  hashtable_insert_concurrent
 #define hashtable_insert_concurrent  HASHTABLE_GEN_EXPAND(hashtable_insert_concurrent)
+HASHTABLE_GEN_FUNCTION_ATTRIBUTES
 int 
 hashtable_insert_concurrent(struct hashtable * ht, _TYPE_K key  _VC(, _TYPE_V value, long replace))
 {
@@ -966,6 +984,7 @@ hashtable_insert_concurrent(struct hashtable * ht, _TYPE_K key  _VC(, _TYPE_V va
 
 #undef  hashtable_insert
 #define hashtable_insert  HASHTABLE_GEN_EXPAND(hashtable_insert)
+HASHTABLE_GEN_FUNCTION_ATTRIBUTES
 int 
 hashtable_insert(struct hashtable * ht, _TYPE_K key  _VC(, _TYPE_V value, long replace))
 {
@@ -987,6 +1006,7 @@ hashtable_insert(struct hashtable * ht, _TYPE_K key  _VC(, _TYPE_V value, long r
 
 #undef  hashtable_num_entries_serial
 #define hashtable_num_entries_serial  HASHTABLE_GEN_EXPAND(hashtable_num_entries_serial)
+HASHTABLE_GEN_FUNCTION_ATTRIBUTES
 long
 hashtable_num_entries_serial(struct hashtable * ht)
 {
@@ -1029,6 +1049,7 @@ hashtable_num_entries_concurrent_base(struct hashtable * ht, long * local_offset
 
 #undef  hashtable_num_entries_concurrent
 #define hashtable_num_entries_concurrent  HASHTABLE_GEN_EXPAND(hashtable_num_entries_concurrent)
+HASHTABLE_GEN_FUNCTION_ATTRIBUTES
 long
 hashtable_num_entries_concurrent(struct hashtable * ht)
 {
@@ -1037,6 +1058,7 @@ hashtable_num_entries_concurrent(struct hashtable * ht)
 
 #undef  hashtable_num_entries
 #define hashtable_num_entries  HASHTABLE_GEN_EXPAND(hashtable_num_entries)
+HASHTABLE_GEN_FUNCTION_ATTRIBUTES
 long
 hashtable_num_entries(struct hashtable * ht)
 {
@@ -1080,6 +1102,7 @@ hashtable_entries_check_parameters(_TYPE_K ** keys_out, _VC(_TYPE_V ** values_ou
 
 #undef  hashtable_entries_serial
 #define hashtable_entries_serial  HASHTABLE_GEN_EXPAND(hashtable_entries_serial)
+HASHTABLE_GEN_FUNCTION_ATTRIBUTES
 void
 hashtable_entries_serial(struct hashtable * ht, _TYPE_K ** keys_out, _VC(_TYPE_V ** values_out,) long * num_entries_out)
 {
@@ -1122,6 +1145,7 @@ hashtable_entries_serial(struct hashtable * ht, _TYPE_K ** keys_out, _VC(_TYPE_V
 
 #undef  hashtable_entries_concurrent
 #define hashtable_entries_concurrent  HASHTABLE_GEN_EXPAND(hashtable_entries_concurrent)
+HASHTABLE_GEN_FUNCTION_ATTRIBUTES
 void
 hashtable_entries_concurrent(struct hashtable * ht, _TYPE_K ** keys_out, _VC(_TYPE_V ** values_out,) long * num_entries_out)
 {
@@ -1175,6 +1199,7 @@ hashtable_entries_concurrent(struct hashtable * ht, _TYPE_K ** keys_out, _VC(_TY
 
 #undef  hashtable_entries
 #define hashtable_entries  HASHTABLE_GEN_EXPAND(hashtable_entries)
+HASHTABLE_GEN_FUNCTION_ATTRIBUTES
 void
 hashtable_entries(struct hashtable * ht, _TYPE_K ** keys_out, _VC(_TYPE_V ** values_out,) long * num_entries_out)
 {

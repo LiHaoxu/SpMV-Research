@@ -127,10 +127,11 @@ conf_vars=(
     ['DIV_PACKET_REORDERING']=0
     # ['DIV_PACKET_REORDERING']=1
 
-    # Whether to enable tracing with RAVE.
+    # Whether the RAVE emulator is used.
     ['RAVE_EMULATION']=0
     # ['RAVE_EMULATION']=1
 
+    # Whether to enable tracing with SDV.
     ['SDV_TRACING']=0
     # ['SDV_TRACING']=1
 
@@ -157,7 +158,7 @@ conf_vars=(
     # ['max_cores']=8
 
     # Cores / Threads to utilize. Use spaces to define a set of different thread numbers to benchmark.
-    # ['cores']="$num_cores"
+    ['cores']="$num_cores"
     # ['cores']=1
     # ['cores']='1 2 4 8 16 32 64 128'
     # ['cores']='1 2 4 8 16 32 64'
@@ -181,7 +182,7 @@ conf_vars=(
     # ['cores']=6
     # ['cores']=4
     # ['cores']=2
-    ['cores']=1
+    # ['cores']=1
     # ['cores']='1 2 4 8 16 24 48'
     # ['cores']='24 48'
     # ['cores']='1 2 4 8'
@@ -378,8 +379,8 @@ artificial_matrices_files=(
 
     # The synthetic dataset studied in the paper.
     # "$path_artificial"/synthetic_matrices_medium_dataset.txt
-    "$path_artificial"/synthetic_matrices_medium_dataset2.txt
-    # "$path_artificial"/test.txt
+    # "$path_artificial"/synthetic_matrices_medium_dataset2.txt
+    "$path_artificial"/test.txt
 )
 
 
@@ -514,7 +515,7 @@ progs=(
     # Custom compressed values stream
     # ['div_d']="${script_dir}/src/spmv_div_d.exe" # BENCH_AMD, BENCH_INTEL
     # ['div_f']="${script_dir}/src/spmv_div_f.exe" # BENCH_AMD, BENCH_INTEL
-    ['div_rf_d']="${script_dir}/src/spmv_div_rf_d.exe" # BENCH_AMD, BENCH_INTEL, BENCH_RISCV
+    ['div_rf_d']="${script_dir}/src/spmv_div_rf_d.exe" # BENCH_AMD, BENCH_INTEL
     # ['div_rf_f']="${script_dir}/src/spmv_div_rf_f.exe" # BENCH_AMD, BENCH_INTEL
     # ['div_adapt_d']="${script_dir}/src/spmv_div_adapt_d.exe" # BENCH_AMD, BENCH_INTEL
     # ['div_adapt_f']="${script_dir}/src/spmv_div_adapt_f.exe" # BENCH_AMD, BENCH_INTEL
@@ -586,6 +587,7 @@ progs=(
     # ['csr_cuda_buffer_nv_d']="${script_dir}/src/spmv_csr_cuda_buffer_nv_d.exe"
     # ['csr_cuda_reduce_nv_d']="${script_dir}/src/spmv_csr_cuda_reduce_nv_d.exe"
     # ['csr_cuda_const_nnz_per_thread_nv_d']="${script_dir}/src/spmv_csr_cuda_const_nnz_per_thread_nv_d.exe"
+    # ['csr_cuda_const_nnz_per_thread_better_reduce_nv_d']="${script_dir}/src/spmv_csr_cuda_const_nnz_per_thread_better_reduce_nv_d.exe"
 
     # ['csr_cuda_const_nnz_per_thread_b1024_nnz2_nv_d']="${script_dir}/src/spmv_csr_cuda_const_nnz_per_thread_b1024_nnz2_nv_d.exe"
     # ['csr_cuda_const_nnz_per_thread_b1024_nnz4_nv_d']="${script_dir}/src/spmv_csr_cuda_const_nnz_per_thread_b1024_nnz4_nv_d.exe"

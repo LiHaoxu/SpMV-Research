@@ -147,6 +147,7 @@ find_splitters(_TYPE_V * A, long N, _TYPE_V * splitters, long num_splitters, _TY
 
 #undef  samplesort_concurrent
 #define samplesort_concurrent  SAMPLESORT_GEN_EXPAND(samplesort_concurrent)
+SAMPLESORT_GEN_FUNCTION_ATTRIBUTES
 void
 samplesort_concurrent(_TYPE_V * A, long N, _TYPE_AD * aux_data)
 {
@@ -384,6 +385,7 @@ samplesort_concurrent(_TYPE_V * A, long N, _TYPE_AD * aux_data)
 
 #undef  samplesort
 #define samplesort  SAMPLESORT_GEN_EXPAND(samplesort)
+SAMPLESORT_GEN_FUNCTION_ATTRIBUTES
 void
 samplesort(_TYPE_V * A, long N, _TYPE_AD * aux_data)
 {

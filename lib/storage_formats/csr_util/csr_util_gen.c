@@ -284,6 +284,7 @@ array_mean_of_windowed_ctz_min(double * A, long N, long window_len)
 // Expand row indices.
 #undef  csr_row_indices
 #define csr_row_indices  CSR_UTIL_GEN_EXPAND(csr_row_indices)
+CSR_UTIL_GEN_FUNCTION_ATTRIBUTES
 void
 csr_row_indices(_TYPE_I * row_ptr, __attribute__((unused)) _TYPE_I * col_idx, long m, __attribute__((unused)) long n, long nnz,
 		_TYPE_I ** row_idx_out)
@@ -305,6 +306,7 @@ csr_row_indices(_TYPE_I * row_ptr, __attribute__((unused)) _TYPE_I * col_idx, lo
 // Returns how many rows in matrix have less than "nnz_threshold" nonzeros
 #undef  csr_count_short_rows
 #define csr_count_short_rows  CSR_UTIL_GEN_EXPAND(csr_count_short_rows)
+CSR_UTIL_GEN_FUNCTION_ATTRIBUTES
 long 
 csr_count_short_rows(_TYPE_I * row_ptr, long m, long nnz_threshold)
 {
@@ -336,6 +338,7 @@ csr_count_short_rows(_TYPE_I * row_ptr, long m, long nnz_threshold)
 // Returns how many nonzeros are "distant" from others within same row (depending on "max_distance")
 #undef  csr_count_distant_nonzeros
 #define csr_count_distant_nonzeros  CSR_UTIL_GEN_EXPAND(csr_count_distant_nonzeros)
+CSR_UTIL_GEN_FUNCTION_ATTRIBUTES
 long 
 csr_count_distant_nonzeros(_TYPE_I * row_ptr, _TYPE_I * col_idx, long m, long max_distance)
 {
@@ -400,6 +403,7 @@ csr_count_distant_nonzeros(_TYPE_I * row_ptr, _TYPE_I * col_idx, long m, long ma
 // Average nnz distances per row is: bandwidths / degrees_rows .
 #undef  csr_degrees_bandwidths_scatters
 #define csr_degrees_bandwidths_scatters  CSR_UTIL_GEN_EXPAND(csr_degrees_bandwidths_scatters)
+CSR_UTIL_GEN_FUNCTION_ATTRIBUTES
 void
 csr_degrees_bandwidths_scatters(_TYPE_I * row_ptr, _TYPE_I * col_idx, long m, long n, long nnz,
 		_TYPE_I ** degrees_rows_out, _TYPE_I ** degrees_cols_out, double ** bandwidths_out, double ** scatters_out)
@@ -471,6 +475,7 @@ csr_degrees_bandwidths_scatters(_TYPE_I * row_ptr, _TYPE_I * col_idx, long m, lo
 
 #undef  csr_column_distances_and_groupping
 #define csr_column_distances_and_groupping  CSR_UTIL_GEN_EXPAND(csr_column_distances_and_groupping)
+CSR_UTIL_GEN_FUNCTION_ATTRIBUTES
 long
 csr_column_distances_and_groupping(_TYPE_I * row_ptr, _TYPE_I * col_idx, long m, __attribute__((unused)) long n, long nnz, long max_gap_size,
 		_TYPE_I ** nnz_col_dist_out, _TYPE_I ** group_col_dist_out, _TYPE_I ** group_sizes_out, _TYPE_I ** groups_per_row_out)
@@ -590,6 +595,7 @@ csr_column_distances_and_groupping(_TYPE_I * row_ptr, _TYPE_I * col_idx, long m,
  */
 #undef  csr_row_neighbours
 #define csr_row_neighbours  CSR_UTIL_GEN_EXPAND(csr_row_neighbours)
+CSR_UTIL_GEN_FUNCTION_ATTRIBUTES
 void
 csr_row_neighbours(_TYPE_I * row_ptr, _TYPE_I * col_idx, long m, __attribute__((unused)) long n, long nnz, long window_size,
 		_TYPE_I ** num_neigh_out)
@@ -629,6 +635,7 @@ csr_row_neighbours(_TYPE_I * row_ptr, _TYPE_I * col_idx, long m, __attribute__((
  */
 #undef  csr_cross_row_similarity
 #define csr_cross_row_similarity  CSR_UTIL_GEN_EXPAND(csr_cross_row_similarity)
+CSR_UTIL_GEN_FUNCTION_ATTRIBUTES
 double
 csr_cross_row_similarity(_TYPE_I * row_ptr, _TYPE_I * col_idx, long m, __attribute__((unused)) long n, __attribute__((unused)) long nnz, long window_size)
 {
@@ -692,6 +699,7 @@ csr_cross_row_similarity(_TYPE_I * row_ptr, _TYPE_I * col_idx, long m, __attribu
 
 #undef  csr_cross_row_neighbours
 #define csr_cross_row_neighbours  CSR_UTIL_GEN_EXPAND(csr_cross_row_neighbours)
+CSR_UTIL_GEN_FUNCTION_ATTRIBUTES
 double
 csr_cross_row_neighbours(_TYPE_I * row_ptr, _TYPE_I * col_idx, long m, __attribute__((unused)) long n, __attribute__((unused)) long nnz, long window_size, _TYPE_I *crs_row)
 {
@@ -761,6 +769,7 @@ csr_cross_row_neighbours(_TYPE_I * row_ptr, _TYPE_I * col_idx, long m, __attribu
 
 #undef  csr_matrix_features
 #define csr_matrix_features  CSR_UTIL_GEN_EXPAND(csr_matrix_features)
+CSR_UTIL_GEN_FUNCTION_ATTRIBUTES
 void
 csr_matrix_features(char * title_base, _TYPE_I * row_ptr, _TYPE_I * col_idx, long m, long n, long nnz, int do_plot, long num_pixels_x, long num_pixels_y)
 {
@@ -1030,6 +1039,7 @@ csr_matrix_features(char * title_base, _TYPE_I * row_ptr, _TYPE_I * col_idx, lon
 
 #undef  csr_matrix_features_validation
 #define csr_matrix_features_validation  CSR_UTIL_GEN_EXPAND(csr_matrix_features_validation)
+CSR_UTIL_GEN_FUNCTION_ATTRIBUTES
 void
 csr_matrix_features_validation(char * title_base, _TYPE_I * row_ptr, _TYPE_I * col_idx, long m, long n, long nnz)
 {
@@ -1440,6 +1450,7 @@ csr_value_distances_from_cluster_centers(char * title_base, double * vals, doubl
 
 #undef  csr_value_features
 #define csr_value_features  CSR_UTIL_GEN_EXPAND(csr_value_features)
+CSR_UTIL_GEN_FUNCTION_ATTRIBUTES
 void
 csr_value_features(char * title_base, _TYPE_I * row_ptr, _TYPE_I * col_idx, _TYPE_V * values, long m, long n, long nnz, int do_plot, long num_pixels_x, long num_pixels_y)
 {
@@ -1994,6 +2005,7 @@ csr_value_features(char * title_base, _TYPE_I * row_ptr, _TYPE_I * col_idx, _TYP
 
 #undef  csr_plot
 #define csr_plot  CSR_UTIL_GEN_EXPAND(csr_plot)
+CSR_UTIL_GEN_FUNCTION_ATTRIBUTES
 void
 csr_plot(char * title_base, _TYPE_I * row_ptr, _TYPE_I * col_idx, __attribute__((unused)) _TYPE_V * val, long m, long n, long nnz, int enable_legend, long num_pixels_x, long num_pixels_y)
 {
@@ -2019,6 +2031,7 @@ csr_plot(char * title_base, _TYPE_I * row_ptr, _TYPE_I * col_idx, __attribute__(
 
 #undef  csr_row_size_histogram_plot
 #define csr_row_size_histogram_plot  CSR_UTIL_GEN_EXPAND(csr_row_size_histogram_plot)
+CSR_UTIL_GEN_FUNCTION_ATTRIBUTES
 void
 csr_row_size_histogram_plot(char * title_base, _TYPE_I * row_ptr, __attribute__((unused)) _TYPE_I * col_idx, __attribute__((unused)) _TYPE_V * val, long m, __attribute__((unused)) long n, __attribute__((unused)) long nnz,
 		int enable_legend, long num_pixels_x, long num_pixels_y)
@@ -2060,6 +2073,7 @@ csr_row_size_histogram_plot(char * title_base, _TYPE_I * row_ptr, __attribute__(
 
 #undef  csr_cross_row_similarity_histogram_plot
 #define csr_cross_row_similarity_histogram_plot  CSR_UTIL_GEN_EXPAND(csr_cross_row_similarity_histogram_plot)
+CSR_UTIL_GEN_FUNCTION_ATTRIBUTES
 void
 csr_cross_row_similarity_histogram_plot(char * title_base, _TYPE_I * row_ptr, _TYPE_I * col_idx, __attribute__((unused)) _TYPE_V * val, long m, long n, long nnz, int window_size,
 		int enable_legend, long num_pixels_x, long num_pixels_y)
@@ -2099,6 +2113,7 @@ csr_cross_row_similarity_histogram_plot(char * title_base, _TYPE_I * row_ptr, _T
 
 #undef  csr_num_neigh_histogram_plot
 #define csr_num_neigh_histogram_plot  CSR_UTIL_GEN_EXPAND(csr_num_neigh_histogram_plot)
+CSR_UTIL_GEN_FUNCTION_ATTRIBUTES
 void
 csr_num_neigh_histogram_plot(char * title_base, _TYPE_I * row_ptr, _TYPE_I * col_idx, __attribute__((unused)) _TYPE_V * val, long m, long n, long nnz, int window_size,
 		int enable_legend, long num_pixels_x, long num_pixels_y)
@@ -2137,6 +2152,7 @@ csr_num_neigh_histogram_plot(char * title_base, _TYPE_I * row_ptr, _TYPE_I * col
 
 #undef  csr_bandwidth_histogram_plot
 #define csr_bandwidth_histogram_plot  CSR_UTIL_GEN_EXPAND(csr_bandwidth_histogram_plot)
+CSR_UTIL_GEN_FUNCTION_ATTRIBUTES
 void
 csr_bandwidth_histogram_plot(char * title_base, _TYPE_I * row_ptr, _TYPE_I * col_idx, __attribute__((unused)) _TYPE_V * val, long m, __attribute__((unused)) long n, __attribute__((unused)) long nnz,
 		int enable_legend, long num_pixels_x, long num_pixels_y)
@@ -2193,6 +2209,7 @@ csr_bandwidth_histogram_plot(char * title_base, _TYPE_I * row_ptr, _TYPE_I * col
 
 #undef  csr_bandwidth_batch_nnz_bar_plot
 #define csr_bandwidth_batch_nnz_bar_plot  CSR_UTIL_GEN_EXPAND(csr_bandwidth_batch_nnz_bar_plot)
+CSR_UTIL_GEN_FUNCTION_ATTRIBUTES
 void
 csr_bandwidth_batch_nnz_bar_plot(char * title_base, __attribute__((unused)) _TYPE_I * row_ptr, _TYPE_I * col_idx, __attribute__((unused)) _TYPE_V * val, __attribute__((unused)) long m, long n, __attribute__((unused)) long nnz, int batch_nnz, 
 		__attribute__((unused)) int enable_legend, __attribute__((unused)) long num_pixels_x, __attribute__((unused)) long num_pixels_y)
@@ -2357,6 +2374,7 @@ csr_bandwidth_batch_nnz_bar_plot(char * title_base, __attribute__((unused)) _TYP
  */
 #undef  csr_quantize_columns
 #define csr_quantize_columns  CSR_UTIL_GEN_EXPAND(csr_quantize_columns)
+CSR_UTIL_GEN_FUNCTION_ATTRIBUTES
 void
 csr_quantize_columns(_TYPE_I * row_ptr, _TYPE_I * col_idx, long m, __attribute__((unused)) long n, long nnz, long window_len,
 		_TYPE_I ** q_row_ptr_out, _TYPE_I ** q_col_idx_out, _TYPE_I ** q_frequencies_out, _TYPE_I * q_nnz_out)
@@ -2434,6 +2452,7 @@ csr_quantize_columns(_TYPE_I * row_ptr, _TYPE_I * col_idx, long m, __attribute__
 
 #undef  csr_reorder_rows
 #define csr_reorder_rows  CSR_UTIL_GEN_EXPAND(csr_reorder_rows)
+CSR_UTIL_GEN_FUNCTION_ATTRIBUTES
 void
 csr_reorder_rows(_TYPE_I * permutation, _TYPE_I * row_ptr, _TYPE_I * col_idx, _TYPE_V * values, long m, __attribute__((unused)) long n, long nnz,
 		_TYPE_I * reordered_row_ptr, _TYPE_I * reordered_col_idx, _TYPE_V * reordered_values)

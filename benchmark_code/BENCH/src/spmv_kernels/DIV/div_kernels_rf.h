@@ -135,7 +135,6 @@ extern "C"{
 #ifdef __cplusplus
 }
 #endif
-
 static inline
 int
 quicksort_cmp(struct cmp_data_packed_t a, struct cmp_data_packed_t b, __attribute__((unused)) void * unused)
@@ -156,16 +155,16 @@ quicksort_cmp(struct cmp_data_packed_t a, struct cmp_data_packed_t b, __attribut
 #define QUICKSORT_BLOCKED_GEN_SUFFIX  _packed
 #include "sort/quicksort_blocked/quicksort_blocked_gen.c"
 long quicksort_permutation_table_i64_n;
-// vec_perm_t(p64, VEC_LEN) * quicksort_permutation_table_i64;
 vec_perm_elem_t(p64, VEC_LEN) * quicksort_permutation_table_i64;
 void
-create_permutation_table()
+quicksort_blocked_create_permutation_table()
 {
 	uint64_t permutation[VEC_LEN];
 	uint64_t mask;
 	long i, j, l, r;
+	if (VEC_LEN > 8)
+		error("too big permutation table, due to vector length: %ld > 8", VEC_LEN);
 	quicksort_permutation_table_i64_n = VEC_LEN * (1ULL << VEC_LEN);
-	// quicksort_permutation_table_i64 = (typeof(quicksort_permutation_table_i64)) malloc(quicksort_permutation_table_i64_n * sizeof(*quicksort_permutation_table_i64));
 	quicksort_permutation_table_i64 = (typeof(quicksort_permutation_table_i64)) malloc(quicksort_permutation_table_i64_n * VEC_LEN * sizeof(*quicksort_permutation_table_i64));
 	for (i=0;i<1LL << VEC_LEN;i++)
 	{
@@ -180,9 +179,6 @@ create_permutation_table()
 				permutation[l++] = j;
 			mask <<= 1;
 		}
-		// quicksort_permutation_table_i64[i] = vec_set_iter(p64, VEC_LEN, iter, permutation[iter]);
-		// for (j=0;j<VEC_LEN;j++)
-			// ((int64_t *)quicksort_permutation_table_i64)[i*VEC_LEN + j] = permutation[j];
 		vec_storeu(p64, VEC_LEN, &(quicksort_permutation_table_i64[i*VEC_LEN]), vec_set_iter(p64, VEC_LEN, iter, permutation[iter]));
 	}
 }
@@ -225,7 +221,6 @@ quicksort_blocked_buffer_and_partition_block(struct cmp_data_packed_t pivot_scal
 	}
 	mask = vec_mask_pack(m64, VEC_LEN, cmp_flag);
 
-	// vec_perm_t(p64, VEC_LEN) perm = quicksort_permutation_table_i64[mask];
 	vec_perm_t(p64, VEC_LEN) perm = vec_loadu(p64, VEC_LEN, &quicksort_permutation_table_i64[VEC_LEN * mask]);
 	val0 = vec_permute(i64, VEC_LEN, val0, perm);
 	val1 = vec_permute(i64, VEC_LEN, val1, perm);
@@ -398,7 +393,7 @@ compress_init_div(__attribute__((unused)) ValueTypeReference * vals, __attribute
 
 		tdks[tnum] = tdk;
 	}
-	create_permutation_table();
+	quicksort_blocked_create_permutation_table();
 }
 
 
@@ -1078,7 +1073,6 @@ decompress_and_compute_kernel_div_base(unsigned char * restrict buf, ValueType *
 
 		for (i=num_rf_vals_unique_multiple;i<num_rf_vals_unique;i++)
 		{
-			printf("\ni = %ld/%ld\t", i+1, num_rf_vals_unique);
 			ValueTypeI diff;
 			uint64_t len;
 			long lane_id = i % VEC_LEN;
@@ -1104,7 +1098,6 @@ decompress_and_compute_kernel_div_base(unsigned char * restrict buf, ValueType *
 			long rf_multiple = rf_div * VEC_LEN;
 			for (j=0;j<rf_multiple;j+=VEC_LEN)
 			{
-				printf("%ld ", j);
 				vec_t(i64, VEC_LEN) row_rel, col_rel;
 				vec_t(VTF, VEC_LEN) val_buf = vec_set1(VTF, VEC_LEN, reinterpret_cast(ValueType, vec_elem_get(VTI, VEC_LEN, val, lane_id)));
 				k = i*rf + j;
@@ -1129,7 +1122,6 @@ decompress_and_compute_kernel_div_base(unsigned char * restrict buf, ValueType *
 
 			for (j=rf_multiple;j<rf;j++)
 			{
-				printf("%ld ", j+1);
 				uint64_t row_rel, col_rel;
 				k = i*rf + j;
 				gather_coords(k, data_coords, coords_bytes, row_bits, col_bits, &row_rel, &col_rel);

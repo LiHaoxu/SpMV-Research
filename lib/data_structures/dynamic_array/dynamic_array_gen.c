@@ -46,6 +46,7 @@ typedef DYNAMIC_ARRAY_GEN_TYPE_1  _TYPE;
 
 #undef  dynarray_init
 #define dynarray_init  DYNAMIC_ARRAY_GEN_EXPAND(dynarray_init)
+DYNAMIC_ARRAY_GEN_FUNCTION_ATTRIBUTES
 void
 dynarray_init(struct dynarray * da, long new_capacity)
 {
@@ -62,6 +63,7 @@ dynarray_init(struct dynarray * da, long new_capacity)
 
 #undef  dynarray_new
 #define dynarray_new  DYNAMIC_ARRAY_GEN_EXPAND(dynarray_new)
+DYNAMIC_ARRAY_GEN_FUNCTION_ATTRIBUTES
 struct dynarray *
 dynarray_new(long new_capacity)
 {
@@ -73,6 +75,7 @@ dynarray_new(long new_capacity)
 
 #undef  dynarray_clean
 #define dynarray_clean  DYNAMIC_ARRAY_GEN_EXPAND(dynarray_clean)
+DYNAMIC_ARRAY_GEN_FUNCTION_ATTRIBUTES
 void
 dynarray_clean(struct dynarray * da)
 {
@@ -82,6 +85,7 @@ dynarray_clean(struct dynarray * da)
 
 #undef  dynarray_destroy
 #define dynarray_destroy  DYNAMIC_ARRAY_GEN_EXPAND(dynarray_destroy)
+DYNAMIC_ARRAY_GEN_FUNCTION_ATTRIBUTES
 void
 dynarray_destroy(struct dynarray ** v_ptr)
 {
@@ -114,6 +118,7 @@ dynarray_resize_base(struct dynarray * da, long new_capacity)
 
 #undef  dynarray_resize
 #define dynarray_resize  DYNAMIC_ARRAY_GEN_EXPAND(dynarray_resize)
+DYNAMIC_ARRAY_GEN_FUNCTION_ATTRIBUTES
 inline
 void
 dynarray_resize(struct dynarray * da, long new_capacity)
@@ -133,6 +138,7 @@ dynarray_resize(struct dynarray * da, long new_capacity)
 // Clear array without deallocating space.
 #undef  dynarray_clear
 #define dynarray_clear  DYNAMIC_ARRAY_GEN_EXPAND(dynarray_clear)
+DYNAMIC_ARRAY_GEN_FUNCTION_ATTRIBUTES
 inline
 void
 dynarray_clear(struct dynarray * restrict da)
@@ -149,6 +155,7 @@ dynarray_clear(struct dynarray * restrict da)
 // Set element at position WITHOUT bounds checking.
 #undef  dynarray_set
 #define dynarray_set  DYNAMIC_ARRAY_GEN_EXPAND(dynarray_set)
+DYNAMIC_ARRAY_GEN_FUNCTION_ATTRIBUTES
 inline
 void
 dynarray_set(struct dynarray * restrict da, long pos, _TYPE elem)
@@ -159,6 +166,7 @@ dynarray_set(struct dynarray * restrict da, long pos, _TYPE elem)
 // Set element at position with bounds checking.
 #undef  dynarray_set_safe
 #define dynarray_set_safe  DYNAMIC_ARRAY_GEN_EXPAND(dynarray_set_safe)
+DYNAMIC_ARRAY_GEN_FUNCTION_ATTRIBUTES
 inline
 void
 dynarray_set_safe(struct dynarray * restrict da, long pos, _TYPE elem, _TYPE empty_value)
@@ -195,6 +203,7 @@ dynarray_set_safe(struct dynarray * restrict da, long pos, _TYPE elem, _TYPE emp
 
 #undef  dynarray_push_back
 #define dynarray_push_back  DYNAMIC_ARRAY_GEN_EXPAND(dynarray_push_back)
+DYNAMIC_ARRAY_GEN_FUNCTION_ATTRIBUTES
 inline
 long
 dynarray_push_back(struct dynarray * restrict da, _TYPE elem)
@@ -208,6 +217,7 @@ dynarray_push_back(struct dynarray * restrict da, _TYPE elem)
 
 #undef  dynarray_push_back_atomic
 #define dynarray_push_back_atomic  DYNAMIC_ARRAY_GEN_EXPAND(dynarray_push_back_atomic)
+DYNAMIC_ARRAY_GEN_FUNCTION_ATTRIBUTES
 inline
 long
 dynarray_push_back_atomic(struct dynarray * restrict da, _TYPE elem)
@@ -238,6 +248,7 @@ dynarray_push_back_atomic(struct dynarray * restrict da, _TYPE elem)
 
 #undef  dynarray_push_back_array
 #define dynarray_push_back_array  DYNAMIC_ARRAY_GEN_EXPAND(dynarray_push_back_array)
+DYNAMIC_ARRAY_GEN_FUNCTION_ATTRIBUTES
 inline
 long
 dynarray_push_back_array(struct dynarray * restrict da, _TYPE * restrict array, long n)
@@ -261,6 +272,7 @@ dynarray_push_back_array(struct dynarray * restrict da, _TYPE * restrict array, 
 /* Note: 'data' array is always page-aligned via the mmap allocation. */
 #undef  dynarray_push_back_array_aligned
 #define dynarray_push_back_array_aligned  DYNAMIC_ARRAY_GEN_EXPAND(dynarray_push_back_array_aligned)
+DYNAMIC_ARRAY_GEN_FUNCTION_ATTRIBUTES
 inline
 long
 dynarray_push_back_array_aligned(struct dynarray * restrict da, _TYPE * restrict array, long n, long alignment)
@@ -289,6 +301,7 @@ dynarray_push_back_array_aligned(struct dynarray * restrict da, _TYPE * restrict
 
 #undef  dynarray_push_back_array_atomic
 #define dynarray_push_back_array_atomic  DYNAMIC_ARRAY_GEN_EXPAND(dynarray_push_back_array_atomic)
+DYNAMIC_ARRAY_GEN_FUNCTION_ATTRIBUTES
 inline
 long
 dynarray_push_back_array_atomic(struct dynarray * restrict da, _TYPE * restrict array, long n)
@@ -323,6 +336,7 @@ dynarray_push_back_array_atomic(struct dynarray * restrict da, _TYPE * restrict 
 
 #undef  dynarray_copy_to_array
 #define dynarray_copy_to_array  DYNAMIC_ARRAY_GEN_EXPAND(dynarray_copy_to_array)
+DYNAMIC_ARRAY_GEN_FUNCTION_ATTRIBUTES
 long
 dynarray_copy_to_array(struct dynarray * restrict da,
 		_TYPE * array_out)
@@ -342,6 +356,7 @@ dynarray_copy_to_array(struct dynarray * restrict da,
 
 #undef  dynarray_export_array
 #define dynarray_export_array  DYNAMIC_ARRAY_GEN_EXPAND(dynarray_export_array)
+DYNAMIC_ARRAY_GEN_FUNCTION_ATTRIBUTES
 long
 dynarray_export_array(struct dynarray * restrict da,
 		_TYPE ** array_ret)

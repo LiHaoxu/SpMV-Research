@@ -122,6 +122,7 @@ reduce_sum(_TYPE_I x, _TYPE_I y)
 
 #undef  reverse_cuthill_mckee
 #define reverse_cuthill_mckee  RCM_GEN_EXPAND(reverse_cuthill_mckee)
+RCM_GEN_FUNCTION_ATTRIBUTES
 void
 reverse_cuthill_mckee(_TYPE_I * row_ptr, _TYPE_I * col_idx, _TYPE_V * values, long m, long n, long nnz, long sort_columns,
 	_TYPE_I ** reordered_row_ptr_ret, _TYPE_I ** reordered_col_idx_ret, _TYPE_V ** reordered_values_ret, _TYPE_I ** permutation_ret)

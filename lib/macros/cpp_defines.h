@@ -24,13 +24,18 @@
 
 	#include <type_traits>
 	#include <typeinfo>
+	#include <cstring>
 
 	#define __auto_type  auto
 
 	// This is more correct (decays to pass by value), but needs C++14 (decay is C++11 but decay::type is C++14 ...).
 	#if __cplusplus >= 201400L
 		// #define typeof(t)  std::decay<decltype(t)>::type
-		#define typeof(t)  decltype(({ typename std::decay<decltype(t)>::type __typeof_tmp; __typeof_tmp; }))
+		#define typeof(t)  decltype(({                                                    \
+					typename std::decay<decltype(t)>::type __typeof_tmp;      \
+					__typeof_tmp;                                             \
+					}))
+
 	#else
 		#define typeof(t)  decltype(t)
 	#endif

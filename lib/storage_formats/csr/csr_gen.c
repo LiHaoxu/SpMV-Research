@@ -98,6 +98,7 @@ typedef CSR_GEN_TYPE_2  _TYPE_I;
 
 #undef  csr_sort_columns
 #define csr_sort_columns  CSR_GEN_EXPAND(csr_sort_columns)
+CSR_GEN_FUNCTION_ATTRIBUTES
 void
 csr_sort_columns(_TYPE_I * row_ptr, _TYPE_I * col_idx, _TYPE_V * values, long m, long n, long nnz)
 {
@@ -176,6 +177,7 @@ csr_sort_columns(_TYPE_I * row_ptr, _TYPE_I * col_idx, _TYPE_V * values, long m,
 // An implementation from scratch (without bucketsort ...) doesn't seem to be any faster.
 #undef  coo_to_csr
 #define coo_to_csr  CSR_GEN_EXPAND(coo_to_csr)
+CSR_GEN_FUNCTION_ATTRIBUTES
 void
 coo_to_csr(_TYPE_I * R, _TYPE_I * C, _TYPE_V * V, long m, long n, long nnz, _TYPE_I * row_ptr, _TYPE_I * col_idx, _TYPE_V * values, const int sort_columns, const int transpose)
 {
@@ -218,6 +220,7 @@ coo_to_csr(_TYPE_I * R, _TYPE_I * C, _TYPE_V * V, long m, long n, long nnz, _TYP
 
 #undef  csr_save_to_mtx
 #define csr_save_to_mtx  CSR_GEN_EXPAND(csr_save_to_mtx)
+CSR_GEN_FUNCTION_ATTRIBUTES
 void
 csr_save_to_mtx(_TYPE_I * row_ptr, _TYPE_I * col_idx, _TYPE_V * values, long m, long n, const char* filename)
 {
@@ -254,6 +257,7 @@ csr_save_to_mtx(_TYPE_I * row_ptr, _TYPE_I * col_idx, _TYPE_V * values, long m, 
 
 #undef  csr_expand_symmetric
 #define csr_expand_symmetric  CSR_GEN_EXPAND(csr_expand_symmetric)
+CSR_GEN_FUNCTION_ATTRIBUTES
 void
 csr_expand_symmetric(_TYPE_I * row_ptr, _TYPE_I * col_idx, _TYPE_V * values, long m, long n, __attribute__((unused)) long nnz, _TYPE_I ** row_ptr_ret, _TYPE_I ** col_idx_ret, _TYPE_V ** values_ret, long * nnz_out, long * nnz_diag_out, const int sort_columns)
 {
@@ -351,7 +355,9 @@ csr_expand_symmetric(_TYPE_I * row_ptr, _TYPE_I * col_idx, _TYPE_V * values, lon
 
 #undef  csr_drop_upper
 #define csr_drop_upper  CSR_GEN_EXPAND(csr_drop_upper)
-void csr_drop_upper(_TYPE_I * row_ptr, _TYPE_I * col_idx, _TYPE_V * values, long m, long n, __attribute__((unused)) long nnz, _TYPE_I ** row_ptr_ret, _TYPE_I ** col_idx_ret, _TYPE_V ** values_ret, long * nnz_out, long * nnz_diag_out, const int sort_columns)
+CSR_GEN_FUNCTION_ATTRIBUTES
+void
+csr_drop_upper(_TYPE_I * row_ptr, _TYPE_I * col_idx, _TYPE_V * values, long m, long n, __attribute__((unused)) long nnz, _TYPE_I ** row_ptr_ret, _TYPE_I ** col_idx_ret, _TYPE_V ** values_ret, long * nnz_out, long * nnz_diag_out, const int sort_columns)
 {
 	_TYPE_I * row_ptr_new;
 	_TYPE_I * col_idx_new;

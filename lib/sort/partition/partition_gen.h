@@ -6,6 +6,8 @@
 	#error "PARTITION_GEN_TYPE_3 not defined: auxiliary data value type"
 #elif !defined(PARTITION_GEN_SUFFIX)
 	#error "PARTITION_GEN_SUFFIX not defined"
+#elif !defined(PARTITION_GEN_FUNCTION_ATTRIBUTES)
+	#define PARTITION_GEN_FUNCTION_ATTRIBUTES
 #endif
 
 #include "macros/cpp_defines.h"
@@ -35,18 +37,22 @@ typedef PARTITION_GEN_TYPE_3  _TYPE_AD;
 
 #undef  partition_serial
 #define partition_serial  PARTITION_GEN_EXPAND(partition_serial)
+PARTITION_GEN_FUNCTION_ATTRIBUTES
 long partition_serial(_TYPE_V pivot, _TYPE_V * A, long i_start, long i_end, _TYPE_AD * aux_data);
 
 #undef  partition_auto_serial
 #define partition_auto_serial  PARTITION_GEN_EXPAND(partition_auto_serial)
+PARTITION_GEN_FUNCTION_ATTRIBUTES
 long partition_auto_serial(_TYPE_V * A, long i_start, long i_end, _TYPE_AD * aux_data);
 
 
 #undef  partition_concurrent
 #define partition_concurrent  PARTITION_GEN_EXPAND(partition_concurrent)
+PARTITION_GEN_FUNCTION_ATTRIBUTES
 long partition_concurrent(_TYPE_V pivot, _TYPE_V * A, long i_start, long i_end, _TYPE_AD * aux_data, const int inplace, _TYPE_V * buf);
 
 #undef  partition_auto_concurrent
 #define partition_auto_concurrent  PARTITION_GEN_EXPAND(partition_auto_concurrent)
+PARTITION_GEN_FUNCTION_ATTRIBUTES
 long partition_auto_concurrent(_TYPE_V * A, long i_start, long i_end, _TYPE_AD * aux_data, const int inplace, _TYPE_V * buf);
 

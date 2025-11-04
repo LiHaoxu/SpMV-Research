@@ -153,6 +153,7 @@ quicksort_blocked_no_malloc(_TYPE_V * A, long N, _TYPE_AD * aux_data, _TYPE_I * 
 
 #undef  quicksort_blocked
 #define quicksort_blocked  QUICKSORT_BLOCKED_GEN_EXPAND(quicksort_blocked)
+QUICKSORT_BLOCKED_GEN_FUNCTION_ATTRIBUTES
 void
 quicksort_blocked(_TYPE_V * A, long N, _TYPE_AD * aux_data, _TYPE_I * partitions_buf)
 {
@@ -164,4 +165,11 @@ quicksort_blocked(_TYPE_V * A, long N, _TYPE_AD * aux_data, _TYPE_I * partitions
 	if (partitions_buf == NULL)
 		free(partitions_buf_tmp);
 }
+
+
+//==========================================================================================================================================
+//= Includes Undefs
+//==========================================================================================================================================
+
+#include "sort/partition_blocked/partition_blocked_gen_pop.h"
 

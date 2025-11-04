@@ -4,6 +4,8 @@
 	#error "RCM_GEN_TYPE_2 not defined: index type"
 #elif !defined(RCM_GEN_SUFFIX)
 	#error "RCM_GEN_SUFFIX not defined"
+#elif !defined(RCM_GEN_FUNCTION_ATTRIBUTES)
+	#define RCM_GEN_FUNCTION_ATTRIBUTES
 #endif
 
 #include "macros/cpp_defines.h"
@@ -29,6 +31,7 @@ typedef RCM_GEN_TYPE_2  _TYPE_I;
 
 #undef  reverse_cuthill_mckee
 #define reverse_cuthill_mckee  RCM_GEN_EXPAND(reverse_cuthill_mckee)
+RCM_GEN_FUNCTION_ATTRIBUTES
 void reverse_cuthill_mckee(_TYPE_I * row_ptr, _TYPE_I * col_idx, _TYPE_V * values, long m, long n, long nnz, long sort_columns,
 	_TYPE_I ** reordered_row_ptr_ret, _TYPE_I ** reordered_col_idx_ret, _TYPE_V ** reordered_values_ret, _TYPE_I ** permutation_ret);
 

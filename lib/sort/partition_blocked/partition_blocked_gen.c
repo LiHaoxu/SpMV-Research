@@ -262,6 +262,7 @@ partition_blocked_serial_base(_TYPE_V pivot, _TYPE_V * A, long i_start, long i_e
  */
 #undef  partition_blocked_serial
 #define partition_blocked_serial  PARTITION_BLOCKED_GEN_EXPAND(partition_blocked_serial)
+PARTITION_BLOCKED_GEN_FUNCTION_ATTRIBUTES
 long
 partition_blocked_serial(_TYPE_V pivot, _TYPE_V * A, long i_start, long i_end, _TYPE_AD * aux_data)
 {
@@ -278,6 +279,7 @@ partition_blocked_serial(_TYPE_V pivot, _TYPE_V * A, long i_start, long i_end, _
  */
 #undef  partition_blocked_auto_serial
 #define partition_blocked_auto_serial  PARTITION_BLOCKED_GEN_EXPAND(partition_blocked_auto_serial)
+PARTITION_BLOCKED_GEN_FUNCTION_ATTRIBUTES
 long
 partition_blocked_auto_serial(_TYPE_V * A, long i_start, long i_end, _TYPE_AD * aux_data)
 {

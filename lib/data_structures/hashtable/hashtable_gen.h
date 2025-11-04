@@ -12,6 +12,8 @@
 	#error "HASHTABLE_GEN_TYPE_3 not defined: [ Bucket Size Type (Integer) ] Decide while considering the ratio of the hashtable size versus the total inserted data and also the possible collisions for the total amount of inserted data (note: a small %% of a big number can also be a big number)"
 #elif !defined(HASHTABLE_GEN_SUFFIX)
 	#error "HASHTABLE_GEN_SUFFIX not defined"
+#elif !defined(HASHTABLE_GEN_FUNCTION_ATTRIBUTES)
+	#define HASHTABLE_GEN_FUNCTION_ATTRIBUTES
 #endif
 
 #include <stdlib.h>
@@ -123,22 +125,28 @@ struct hashtable {
 
 #undef  hashtable_init_serial
 #define hashtable_init_serial  HASHTABLE_GEN_EXPAND(hashtable_init_serial)
+HASHTABLE_GEN_FUNCTION_ATTRIBUTES
 void hashtable_init_serial(struct hashtable * ht, long buckets_n);
 #undef  hashtable_init_concurrent
 #define hashtable_init_concurrent  HASHTABLE_GEN_EXPAND(hashtable_init_concurrent)
+HASHTABLE_GEN_FUNCTION_ATTRIBUTES
 void hashtable_init_concurrent(struct hashtable * ht, long buckets_n);
 #undef  hashtable_init
 #define hashtable_init  HASHTABLE_GEN_EXPAND(hashtable_init)
+HASHTABLE_GEN_FUNCTION_ATTRIBUTES
 void hashtable_init(struct hashtable * ht, long buckets_n);
 
 #undef  hashtable_new_serial
 #define hashtable_new_serial  HASHTABLE_GEN_EXPAND(hashtable_new_serial)
+HASHTABLE_GEN_FUNCTION_ATTRIBUTES
 struct hashtable * hashtable_new_serial(long buckets_n);
 #undef  hashtable_new_concurrent
 #define hashtable_new_concurrent  HASHTABLE_GEN_EXPAND(hashtable_new_concurrent)
+HASHTABLE_GEN_FUNCTION_ATTRIBUTES
 struct hashtable * hashtable_new_concurrent(long buckets_n);
 #undef  hashtable_new
 #define hashtable_new  HASHTABLE_GEN_EXPAND(hashtable_new)
+HASHTABLE_GEN_FUNCTION_ATTRIBUTES
 struct hashtable * hashtable_new(long buckets_n);
 
 
@@ -149,22 +157,28 @@ struct hashtable * hashtable_new(long buckets_n);
 
 #undef  hashtable_clean_serial
 #define hashtable_clean_serial  HASHTABLE_GEN_EXPAND(hashtable_clean_serial)
+HASHTABLE_GEN_FUNCTION_ATTRIBUTES
 void hashtable_clean_serial(struct hashtable * ht);
 #undef  hashtable_clean_concurrent
 #define hashtable_clean_concurrent  HASHTABLE_GEN_EXPAND(hashtable_clean_concurrent)
+HASHTABLE_GEN_FUNCTION_ATTRIBUTES
 void hashtable_clean_concurrent(struct hashtable * ht);
 #undef  hashtable_clean
 #define hashtable_clean  HASHTABLE_GEN_EXPAND(hashtable_clean)
+HASHTABLE_GEN_FUNCTION_ATTRIBUTES
 void hashtable_clean(struct hashtable * ht);
 
 #undef  hashtable_destroy_serial
 #define hashtable_destroy_serial  HASHTABLE_GEN_EXPAND(hashtable_destroy_serial)
+HASHTABLE_GEN_FUNCTION_ATTRIBUTES
 void hashtable_destroy_serial(struct hashtable ** ht_ptr);
 #undef  hashtable_destroy_concurrent
 #define hashtable_destroy_concurrent  HASHTABLE_GEN_EXPAND(hashtable_destroy_concurrent)
+HASHTABLE_GEN_FUNCTION_ATTRIBUTES
 void hashtable_destroy_concurrent(struct hashtable ** ht_ptr);
 #undef  hashtable_destroy
 #define hashtable_destroy  HASHTABLE_GEN_EXPAND(hashtable_destroy)
+HASHTABLE_GEN_FUNCTION_ATTRIBUTES
 void hashtable_destroy(struct hashtable ** ht_ptr);
 
 
@@ -175,47 +189,60 @@ void hashtable_destroy(struct hashtable ** ht_ptr);
 
 #undef  hashtable_empty_serial
 #define hashtable_empty_serial  HASHTABLE_GEN_EXPAND(hashtable_empty_serial)
+HASHTABLE_GEN_FUNCTION_ATTRIBUTES
 void hashtable_empty_serial(struct hashtable * ht);
 #undef  hashtable_empty_concurrent
 #define hashtable_empty_concurrent  HASHTABLE_GEN_EXPAND(hashtable_empty_concurrent)
+HASHTABLE_GEN_FUNCTION_ATTRIBUTES
 void hashtable_empty_concurrent(struct hashtable * ht);
 #undef  hashtable_empty
 #define hashtable_empty  HASHTABLE_GEN_EXPAND(hashtable_empty)
+HASHTABLE_GEN_FUNCTION_ATTRIBUTES
 void hashtable_empty(struct hashtable * ht);
 
 #undef  hashtable_contains
 #define hashtable_contains  HASHTABLE_GEN_EXPAND(hashtable_contains)
+HASHTABLE_GEN_FUNCTION_ATTRIBUTES
 int hashtable_contains(struct hashtable * ht, _TYPE_K key  _VC(, _TYPE_V * value_out));
 
 #undef  hashtable_insert_serial
 #define hashtable_insert_serial  HASHTABLE_GEN_EXPAND(hashtable_insert_serial)
+HASHTABLE_GEN_FUNCTION_ATTRIBUTES
 int hashtable_insert_serial(struct hashtable * ht, _TYPE_K key  _VC(, _TYPE_V value, long replace));
 
 #undef  hashtable_insert_concurrent
 #define hashtable_insert_concurrent  HASHTABLE_GEN_EXPAND(hashtable_insert_concurrent)
+HASHTABLE_GEN_FUNCTION_ATTRIBUTES
 int hashtable_insert_concurrent(struct hashtable * ht, _TYPE_K key  _VC(, _TYPE_V value, long replace));
 
 #undef  hashtable_insert
 #define hashtable_insert  HASHTABLE_GEN_EXPAND(hashtable_insert)
+HASHTABLE_GEN_FUNCTION_ATTRIBUTES
 int hashtable_insert(struct hashtable * ht, _TYPE_K key  _VC(, _TYPE_V value, long replace));
 
 #undef  hashtable_num_entries_serial
 #define hashtable_num_entries_serial  HASHTABLE_GEN_EXPAND(hashtable_num_entries_serial)
+HASHTABLE_GEN_FUNCTION_ATTRIBUTES
 long hashtable_num_entries_serial(struct hashtable * ht);
 #undef  hashtable_num_entries_concurrent
 #define hashtable_num_entries_concurrent  HASHTABLE_GEN_EXPAND(hashtable_num_entries_concurrent)
+HASHTABLE_GEN_FUNCTION_ATTRIBUTES
 long hashtable_num_entries_concurrent(struct hashtable * ht);
 #undef  hashtable_num_entries
 #define hashtable_num_entries  HASHTABLE_GEN_EXPAND(hashtable_num_entries)
+HASHTABLE_GEN_FUNCTION_ATTRIBUTES
 long hashtable_num_entries(struct hashtable * ht);
 
 #undef  hashtable_entries_serial
 #define hashtable_entries_serial  HASHTABLE_GEN_EXPAND(hashtable_entries_serial)
+HASHTABLE_GEN_FUNCTION_ATTRIBUTES
 void hashtable_entries_serial(struct hashtable * ht, _TYPE_K ** keys_out, _VC(_TYPE_V ** values_out,) long * num_entries_out);
 #undef  hashtable_entries_concurrent
 #define hashtable_entries_concurrent  HASHTABLE_GEN_EXPAND(hashtable_entries_concurrent)
+HASHTABLE_GEN_FUNCTION_ATTRIBUTES
 void hashtable_entries_concurrent(struct hashtable * ht, _TYPE_K ** keys_out, _VC(_TYPE_V ** values_out,) long * num_entries_out);
 #undef  hashtable_entries
 #define hashtable_entries  HASHTABLE_GEN_EXPAND(hashtable_entries)
+HASHTABLE_GEN_FUNCTION_ATTRIBUTES
 void hashtable_entries(struct hashtable * ht, _TYPE_K ** keys_out, _VC(_TYPE_V ** values_out,) long * num_entries_out);
 

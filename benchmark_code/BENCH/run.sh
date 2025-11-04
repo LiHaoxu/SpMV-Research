@@ -752,7 +752,7 @@ bench()
 matrices=(
 
     # "${matrices_openFoam[@]}"
-    "${matrices_validation[@]}"
+    # "${matrices_validation[@]}"
     # "${matrices_validation_tamu[@]}"
     # "${matrices_paper_csr_rv[@]}"
 
@@ -761,7 +761,7 @@ matrices=(
     # "${matrices_compression_small[@]}"
     # "${matrices_compression_medium[@]}"
     # "${matrices_compression_medium_symmetric[@]}"
-    # "${matrices_compression[@]}"
+    "${matrices_compression[@]}"
     # "${matrices_compression_symmetric[@]}"
     # "${matrices_M3E[@]}"
     # "${matrices_compression_all[@]}"

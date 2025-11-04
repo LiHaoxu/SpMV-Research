@@ -93,7 +93,10 @@ void display_error(int do_exit, int exit_status, const char *file_name, const ch
 	
 	buf[buf_size] = '\0';
 	
-	n = snprintf(buf, buf_size, "\n\tERROR\n[tid %ld] %s\n => %s(): line [%d]\n", syscall(SYS_gettid), file_name, function_name, line);
+	if (do_exit)
+		n = snprintf(buf, buf_size, "\n\tERROR\n[tid %ld] %s\n => %s(): line [%d]\n", syscall(SYS_gettid), file_name, function_name, line);
+	else
+		n = snprintf(buf, buf_size, "\n\tWARNING\n[tid %ld] %s\n => %s(): line [%d]\n", syscall(SYS_gettid), file_name, function_name, line);
 	
 	#ifdef DEBUG_BACKTRACE
 		n += error_backtrace_print(buf + n,  buf_size - n);

@@ -8,12 +8,14 @@
 
 /* Execution Task
  * /proc/self/task
+ *
+ * Lists contain ONLY the tasks that are pinned to one cpu.
  */
 struct topotk_task {
 	long id;    // Task id, as contiguous numbers.
 	long tid;   // Thread id.
 
-	long cpu_id;
+	long cpu_id;   // -1 if the task is not pinned to one cpu.
 
 	// Affinity
 	long num_cpus_allowed;

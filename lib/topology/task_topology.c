@@ -75,7 +75,7 @@ parse_task_data(long tid_procfs, long id, struct topotk_task * task)
 	if (task->num_cpus_allowed == 1)
 		task->cpu_id = task->cpus_allowed_list[0];
 	else
-		task->cpu_id = -1;
+		task->cpu_id = -1;   // Task is not pinned.
 }
 
 
@@ -312,7 +312,7 @@ topotk_get_topology()
 	tp->task_tid_list = task_tid_list;
 	tp->task_tid_max = task_tid_max;
 
-	/* Find all the tasks of each cpu. */
+	/* Find all the PINNED tasks of each cpu. */
 	das = (typeof(das)) malloc(tphw->num_cpus * sizeof(*das));
 	tp->dict_cpu_id_to_num_tasks = (typeof(tp->dict_cpu_id_to_num_tasks)) malloc(tphw->num_cpus * sizeof(*tp->dict_cpu_id_to_num_tasks));
 	tp->dict_cpu_id_to_task_id_list = (typeof(tp->dict_cpu_id_to_task_id_list)) malloc(tphw->num_cpus * sizeof(*tp->dict_cpu_id_to_task_id_list));
@@ -321,7 +321,8 @@ topotk_get_topology()
 	for (i=0;i<num_tasks;i++)
 	{
 		task = &tasks[i];
-		dynarray_push_back(das[task->cpu_id], task->id);
+		if (task->cpu_id >= 0)
+			dynarray_push_back(das[task->cpu_id], task->id);
 	}
 	for (i=0;i<tphw->num_cpus;i++)
 	{
